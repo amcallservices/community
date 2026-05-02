@@ -1,7 +1,7 @@
 node_modules/
 .next/
 .env
-.env.production
+.env.*
 *.log
 .vercel/
 build/
