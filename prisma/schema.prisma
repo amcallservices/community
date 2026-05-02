@@ -1,0 +1,138 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("PRISMA_DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String
+  nome      String?
+  cognome   String?
+  password  String
+  avatar    String?
+  bio       String?
+  role      String   @default("scrittore")
+  banned    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  books     Book[]
+  posts     Post[]
+  likes     Like[]
+  comments  Comment[]
+  letturaComments LetturaComment[]
+  notifications Notification[]
+  sentMessages     Message[] @relation("sentMessages")
+  receivedMessages Message[] @relation("receivedMessages")
+}
+
+model Book {
+  id        Int      @id @default(autoincrement())
+  title     String
+  status    String   @default("draft")
+  sales     Int      @default(0)
+  cover     String?
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id])
+  likes     Int      @default(0)
+  comments  Int      @default(0)
+  category  String   @default("writing")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  likesRel Like[]
+  commentsRel Comment[]
+}
+model Message {
+  id         Int      @id @default(autoincrement())
+  content    String
+  senderId   Int
+  sender     User     @relation("sentMessages", fields: [senderId], references: [id])
+  receiverId Int
+  receiver   User     @relation("receivedMessages", fields: [receiverId], references: [id])
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  postId    Int
+  post      Post     @relation(fields: [postId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Like {
+  id     Int  @id @default(autoincrement())
+  userId Int
+  postId Int
+  user   User @relation(fields: [userId], references: [id])
+  post   Post @relation(fields: [postId], references: [id])
+
+  @@unique([userId, postId])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId   Int
+  user     User     @relation(fields: [userId], references: [id])
+  type     String
+  title    String
+  message  String
+  link     String?
+  read     Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Video {
+  id          Int      @id @default(autoincrement())
+  title       String
+  youtubeUrl  String
+  description String?
+  createdAt   DateTime @default(now())
+}
+
+model Event {
+  id        Int      @id @default(autoincrement())
+  title     String
+  date      String
+  type      String   @default("webinar")
+  meetLink  String?
+  createdAt DateTime @default(now())
+}
+
+model Lettura {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  dataUrl     String
+  createdAt   DateTime @default(now())
+  comments   LetturaComment[]
+}
+
+model LetturaComment {
+  id         Int      @id @default(autoincrement())
+  content    String
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id])
+  letturaId  Int
+  lettura    Lettura  @relation(fields: [letturaId], references: [id])
+  createdAt  DateTime @default(now())
+}

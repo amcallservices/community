@@ -1,0 +1,146 @@
+
+  const handleLike = async (postId: number) => {
+    await fetch("/api/posts/like", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ postId }) });
+    loadPosts();
+  };
+
+  const openComments = async (post: Post) => {
+    setSelectedPost(post);
+    try {
+      const res = await fetch(`/api/posts-comments?postId=${post.id}`);
+      if (res.ok) setComments(await res.json());
+    } catch (e) { console.error(e); }
+  };
+
+  const handleAddComment = async (postId: number) => {
+    if (!newComment.trim()) return;
+    const res = await fetch("/api/posts-comments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ postId, content: newComment })
+    });
+    if (res.ok) { setNewComment(""); openComments(await (await fetch(`/api/posts-comments?postId=${postId}`)).json()); }
+    loadPosts();
+  };
+
+  const isAdmin = user?.email === "admin@scrittore.site";
+
+  const deletePost = async (id: number) => {
+    if (!confirm("Eliminare questo post?")) return;
+    const res = await fetch("/api/posts?id=" + id, { method: "DELETE" });
+    if (res.ok) loadPosts();
+  };
+
+  const deleteComment = async (commentId: number, postId: number) => {
+    if (!confirm("Eliminare questo commento?")) return;
+    const res = await fetch(`/api/posts-comments?id=${commentId}`, { method: "DELETE" });
+    if (res.ok) openComments(posts.find(p => p.id === postId)!);
+    loadPosts();
+  };
+
+  const filteredPosts = category === "all" ? posts : posts.filter(p => p.category === category);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      {/* Header */}
+      <header className="sticky top-0 z-50 bg-slate-900/80 backdrop-blur-xl border-b border-white/10">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center">
+              <PenLine className="w-5 h-5 text-white" />
+            </div>
+            <span className="text-white font-bold hidden sm:block">Self Publishing<span className="text-amber-400">Italia</span></span>
+          </Link>
+          <nav className="hidden md:flex items-center gap-1">
+            {[{ href: "/community", icon: User, label: "Community" }, { href: "/video", icon: Video, label: "Video" }, { href: "/eventi", icon: Calendar, label: "Eventi" }, { href: "/letture", icon: BookOpen, label: "Letture" }].map((item) => (
+              <Link key={item.href} href={item.href} className={`px-3 py-2 ${item.href === "/community" ? "text-amber-400 bg-amber-500/20" : "text-slate-300 hover:text-white hover:bg-white/10"} rounded-lg transition-all text-sm font-medium`}>{item.label}</Link>
+            ))}
+          </nav>
+          <div className="flex items-center gap-2">
+            {user ? (
+              <>
+                <Link href="/profilo" className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center text-white text-sm font-bold">{user.nome?.[0]}</Link>
+                <button onClick={() => { localStorage.removeItem("user"); setUser(null); }} className="text-slate-400 hover:text-white"><LogOut className="w-4 h-4" /></button>
+              </>
+            ) : (
+              <div className="flex gap-2">
+                <Link href="/login" className="px-3 py-2 text-slate-300 hover:text-white text-sm font-medium">Login</Link>
+                <Link href="/registrati" className="px-3 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 text-sm font-medium">Registrati</Link>
+              </div>
+            )}
+            <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden text-white"><Menu className="w-5 h-5" /></button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-3xl mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold text-white mb-6">Community Feed</h1>
+        
+        {/* Create Post */}
+        {user && (
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 mb-6 border border-white/10">
+            <div className="flex gap-3">
+              <div className="w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center text-white font-bold">{user.nome?.[0]}</div>
+              <div className="flex-1">
+                <input type="text" placeholder="Condividi con la community..." value={newPost} onChange={(e) => setNewPost(e.target.value)} className="w-full bg-transparent text-white placeholder-slate-500 outline-none" onKeyDown={(e) => e.key === "Enter" && createPost()} />
+                <div className="flex justify-between items-center mt-3">
+                  <div className="flex gap-2">
+                    {["all", "writing", "marketing", "editing", "produttività"].map((cat) => (
+                      <button key={cat} onClick={() => setCategory(cat)} className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${category === cat ? "bg-amber-500 text-white" : "bg-white/10 text-slate-400 hover:bg-white/20"}`}>{cat}</button>
+                    ))}
+                  </div>
+                  <button onClick={createPost} disabled={!newPost.trim()} className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg text-sm font-medium disabled:opacity-50"><Send className="w-4 h-4" /></button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!user && (
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-6 border border-white/10 text-center">
+            <p className="text-slate-400 mb-3">Effettua il login per creare un post</p>
+            <Link href="/login" className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg font-medium">Accedi</Link>
+          </div>
+        )}
+
+        {/* Filter */}
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+          {["all", "writing", "marketing", "editing", "produttività"].map((cat) => (
+            <button key={cat} onClick={() => setCategory(cat)} className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap capitalize ${category === cat ? "bg-amber-500 text-white" : "bg-white/10 text-slate-400 hover:bg-white/20"}`}>{cat === "all" ? "Tutti" : cat}</button>
+          ))}
+        </div>
+
+        {/* Posts */}
+        <div className="space-y-4">
+          {loading ? (
+            <div className="text-center py-8"><div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto" /></div>
+          ) : filteredPosts.length === 0 ? (
+            <div className="text-center py-8 text-slate-500">Nessun post</div>
+          ) : filteredPosts.map((post) => (
+            <div key={post.id} className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm">{post.authorNome?.[0] || post.authorCognome?.[0] || "?"}</div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-white font-medium text-sm">{post.authorNome} {post.authorCognome}</span>
+                    <span className="text-slate-500 text-xs">•</span>
+                    <span className="text-slate-500 text-xs">{post.authorRole}</span>
+                    <span className="text-slate-500 text-xs">•</span>
+                    <span className="text-slate-500 text-xs">{new Date(post.createdAt).toLocaleDateString("it-IT")}</span>
+                  </div>
+                  <h3 className="text-white font-semibold mb-2">{post.title}</h3>
+                  <p className="text-slate-300 text-sm mb-3">{post.content}</p>
+                  <div className="flex items-center gap-4">
+                    <button onClick={() => handleLike(post.id)} className="flex items-center gap-1 text-slate-400 hover:text-amber-400 text-sm"><Heart className="w-4 h-4" />{post.likes || 0}</button>
+                    <button onClick={() => openComments(post)} className="flex items-center gap-1 text-slate-400 hover:text-white text-sm"><MessageCircle className="w-4 h-4" />{post.comments || 0}</button>
+                    {isAdmin && <button onClick={() => deletePost(post.id)} className="flex items-center gap-1 text-red-400 hover:text-red-300 text-sm ml-auto"><Trash2 className="w-4 h-4" />Elimina</button>}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </main>
+    </div>
+  );
+}

@@ -1,0 +1,35 @@
+"use client";
+import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
+import { PenLine, User, Video, Calendar, BookOpen, MessageCircle, Heart, Send, Menu, Zap, ArrowRight, Star, Users, Award, LogIn, LogOut, UserPlus, Filter, Trash2 } from "lucide-react";
+
+type Post = { id: number; title: string; content: string; authorNome: string; authorCognome: string; authorRole: string; likes: number; comments: number; category: string; createdAt: string };
+type Comment = { id: number; content: string; authorNome: string; authorCognito: string; createdAt: string };
+
+export default function Page() {
+  const [user, setUser] = useState<any>(null);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [newPost, setNewPost] = useState("");
+  const [category, setCategory] = useState("all");
+  const [loading, setLoading] = useState(true);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [newComment, setNewComment] = useState("");
+
+  useEffect(() => {
+    const stored = localStorage.getItem("user");
+    if (stored) setUser(JSON.parse(stored));
+    loadPosts();
+  }, []);
+
+  const loadPosts = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/posts?_=" + Date.now());
+      if (res.ok) setPosts(await res.json());
+    } catch (e) { console.error(e); }
+    setLoading(false);
+  };
+
+  const createPost = async () => {
