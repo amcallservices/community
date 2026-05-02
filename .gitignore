@@ -1,4 +1,8 @@
-.vercel
-.env*.local
-
-/src/generated/prisma
+node_modules/
+.next/
+.env
+.env.production
+*.log
+.vercel/
+build/
+dist/
