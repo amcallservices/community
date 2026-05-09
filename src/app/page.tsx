@@ -27,7 +27,7 @@ export default function Home() {
           </h1>
           <p className="text-lg md:text-xl text-slate-400 mb-8 max-w-2xl mx-auto">Migliaia di scrittori italiani si confrontano, imparano e crescono insieme.</p>
           <div className="flex flex-wrap justify-center gap-4 mt-10">
-            <a href="https://scrittore.site" target="_blank" className="px-12 py-6 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-2xl font-bold text-2xl hover:opacity-90 transition-all shadow-2xl shadow-amber-500/40">
+            <a href="https://scrittore.site" target="_blank" className="px-12 py-6 bg-gradient-to-r from-red-600 to-red-500 text-white rounded-2xl font-bold text-2xl hover:opacity-90 transition-all shadow-2xl shadow-red-600/40">
               Acquista il nostro programma per scrivere Ebook -&gt; Scrittore.site
             </a>
           </div>
