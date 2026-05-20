@@ -34,6 +34,21 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Video Section */}
+      <section className="py-16 px-4">
+        <div className="max-w-3xl mx-auto">
+          <div className="relative w-full rounded-2xl overflow-hidden shadow-2xl shadow-black/50" style={{ paddingTop: "56.25%" }}>
+            <iframe
+              className="absolute inset-0 w-full h-full"
+              src="https://www.youtube.com/embed/A53E5DZ00sU"
+              title="Video Self Publishing Italia"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="py-8 border-t border-white/10">
         <div className="max-w-4xl mx-auto px-4 text-center">
