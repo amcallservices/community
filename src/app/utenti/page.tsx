@@ -20,7 +20,7 @@ export default function UtentiPage() {
     const u = JSON.parse(stored);
     
     // Directly check role from localStorage (set during login)
-    setIsAdmin(u.email === 'admin@scrittore.site' || u.role === 'admin');
+    setIsAdmin(u.role === 'admin');
     setCheckDone(true);
     
     fetch("/api/utenti")
@@ -31,6 +31,14 @@ export default function UtentiPage() {
       })
       .catch(() => setLoading(false));
   }, []);
+
+  const resetLink = async (u: any) => {
+    const res = await fetch("/api/admin/reset-link", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: u.id }) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return alert(data.error || "Errore");
+    try { await navigator.clipboard.writeText(data.link); } catch {}
+    prompt(`Link di recupero per ${u.email} (valido ${data.validFor}). Copialo e mandaglielo:`, data.link);
+  };
 
   const deleteUsers = async (ids: number[]) => {
     if (!confirm(`Eliminare ${ids.length} utente/i?`)) return;
@@ -82,7 +90,7 @@ export default function UtentiPage() {
           </div>
         ) : (
           <div className="bg-white/10 rounded-2xl border border-white/10 overflow-hidden">
-            <table className="w-full">
+            <div className="overflow-x-auto"><table className="w-full">
               <thead className="bg-slate-800">
                 <tr>
                   <th className="text-left px-6 py-3 text-slate-300 font-medium">ID</th>
@@ -106,6 +114,7 @@ export default function UtentiPage() {
                       </span>
                     </td>
                     <td className="px-6 py-3">
+                      <button onClick={() => resetLink(u)} className="text-amber-400 hover:text-amber-300 text-xs mr-3 underline">Link recupero</button>
                       <button onClick={() => deleteUsers([u.id])} className="text-red-400 hover:text-red-300">
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -113,7 +122,7 @@ export default function UtentiPage() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           </div>
         )}
 

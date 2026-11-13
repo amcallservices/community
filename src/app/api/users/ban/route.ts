@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
+import { requireAdmin } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
+  const { error: authError } = await requireAdmin()
+  if (authError) return authError
   try {
     const body = await request.json()
     const { email, name, banned } = body
@@ -11,7 +14,7 @@ export async function POST(request: NextRequest) {
         where: { email },
         data: { banned: banned !== undefined ? banned : true }
       })
-      return NextResponse.json(user)
+      return NextResponse.json({ id: user.id, banned: user.banned })
     }
     
     if (name) {

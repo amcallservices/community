@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
+import { requireAdmin } from '@/lib/auth'
 
 export async function GET() {
   try {
@@ -11,6 +12,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const { error: authError } = await requireAdmin()
+  if (authError) return authError
   try {
     const body = await request.json()
     const { title, dataUrl, description } = body
@@ -24,6 +27,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const { error: authError } = await requireAdmin()
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const id = parseInt(searchParams.get('id') || '0')

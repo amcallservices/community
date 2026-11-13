@@ -20,7 +20,7 @@ export default function Page() {
       const u = JSON.parse(stored);
       setUser(u);
       // Check admin by email (admin always has admin role)
-      setIsAdmin(u.email === 'admin@scrittore.site' || u.role === 'admin');
+      setIsAdmin(u.role === 'admin');
     }
     loadBooks();
   }, []);

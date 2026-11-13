@@ -52,7 +52,7 @@ export default function UtentePage({ params }: { params: Promise<{ id: string }>
     setSending(true);
     
     try {
-      const res = await fetch("/api/messaggi", {
+      const res = await fetch("/api/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

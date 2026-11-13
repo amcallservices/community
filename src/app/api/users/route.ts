@@ -1,59 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
+import { requireUser, publicUser } from '@/lib/auth'
 
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url)
-    const email = searchParams.get('email')
-    const name = searchParams.get('name')
-    
-    if (email) {
-      const user = await prisma.user.findUnique({ where: { email } })
-      return NextResponse.json(user)
-    }
-    
-    if (name) {
-      const user = await prisma.user.findFirst({ where: { name } })
-      return NextResponse.json(user)
-    }
-    
-    return NextResponse.json({ error: 'Email or name required' }, { status: 400 })
-  } catch (error) {
-    return NextResponse.json({ error: 'Error fetching user' }, { status: 500 })
-  }
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const { email, name, password, avatar, bio } = body
-    const user = await prisma.user.create({ 
-      data: { email, name, password, avatar, bio },
-      select: { id: true, email: true, name: true, avatar: true, bio: true, role: true }
-    })
-    return NextResponse.json(user)
-  } catch (error) {
-    return NextResponse.json({ error: 'Error creating user' }, { status: 500 })
-  }
-}
-
+// Aggiorna il PROPRIO profilo (l'utente è quello della sessione, non quello del body)
 export async function PUT(request: NextRequest) {
+  const { user, error } = await requireUser()
+  if (error) return error
   try {
-    const body = await request.json()
-    const { id, nome, cognome, bio, avatar } = body
-    
+    const { nome, cognome, bio, avatar } = await request.json()
     const updated = await prisma.user.update({
-      where: { id },
-      data: { 
+      where: { id: user!.id },
+      data: {
         nome: nome || '',
         cognome: cognome || '',
+        name: `${nome || ''} ${cognome || ''}`.trim() || user!.name,
         bio: bio || null,
-        avatar: avatar || null
-      }
+        avatar: avatar || null,
+      },
     })
-    
-    return NextResponse.json(updated)
-  } catch (error) {
-    return NextResponse.json({ error: 'Error updating user' }, { status: 500 })
+    return NextResponse.json(publicUser(updated))
+  } catch (e) {
+    return NextResponse.json({ error: 'Errore aggiornamento' }, { status: 500 })
   }
 }

@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
+import { requireUser } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
+  const { user: sessionUser, error: authError } = await requireUser()
+  if (authError) return authError
+  const user = sessionUser!
   try {
     const body = await request.json()
-    const { postId, text, userEmail } = body
-    let user = await prisma.user.findUnique({ where: { email: userEmail } })
-    if (!user) return NextResponse.json({ error: 'Utente non trovato' }, { status: 400 })
+    const { postId, text } = body
+    if (typeof text !== 'string' || !text.trim() || text.length > 500_000) {
+      return NextResponse.json({ error: 'Commento non valido' }, { status: 400 })
+    }
 
     // Get post to find author
     const post = await prisma.post.findUnique({ where: { id: postId } })
@@ -69,31 +74,23 @@ export async function GET(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const { user, error: authError } = await requireUser()
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
-    const id = searchParams.get('id')
-    const userId = searchParams.get('userId')
-    
-    if (!id || !userId) return NextResponse.json({ error: 'ID e userId richiesti' }, { status: 400 })
-    
-    const comment = await prisma.comment.findUnique({ where: { id: parseInt(id) } })
+    const id = parseInt(searchParams.get('id') || '')
+    if (!id) return NextResponse.json({ error: 'ID richiesto' }, { status: 400 })
+
+    const comment = await prisma.comment.findUnique({ where: { id } })
     if (!comment) return NextResponse.json({ error: 'Commento non trovato' }, { status: 404 })
-    
-    const user = await prisma.user.findUnique({ where: { id: parseInt(userId) } })
-    const isAdmin = user?.role === 'admin'
-    
-    if (!isAdmin && comment.userId !== parseInt(userId)) {
+    if (user!.role !== 'admin' && comment.userId !== user!.id) {
       return NextResponse.json({ error: 'Non autorizzato' }, { status: 403 })
     }
 
-    await prisma.comment.delete({ where: { id: parseInt(id) } })
-    
-    // Decrement comment count on post
-    await prisma.post.update({
-      where: { id: comment.postId },
-      data: { comments: { decrement: 1 } }
-    })
-    
+    await prisma.$transaction([
+      prisma.comment.delete({ where: { id } }),
+      prisma.post.update({ where: { id: comment.postId }, data: { comments: { decrement: 1 } } }),
+    ])
     return NextResponse.json({ success: true })
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 })

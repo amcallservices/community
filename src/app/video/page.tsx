@@ -11,7 +11,7 @@ export default function Page() {
   const [desc, setDesc] = useState("");
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const isAdmin = user?.email === "admin@scrittore.site";
+  const isAdmin = user?.role === "admin";
 
   useEffect(() => {
     const stored = localStorage.getItem("user");
