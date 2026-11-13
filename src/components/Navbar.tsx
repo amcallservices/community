@@ -65,7 +65,7 @@ export default function Navbar() {
       <div className="max-w-6xl mx-auto px-4 md:px-8">
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-3" aria-label="Self Publishing Italia">
-            <span className="w-10 h-10 bg-brass text-ink grid place-items-center italic font-semibold text-xl">S</span>
+            <img src="/logo.svg" alt="" width={40} height={40} className="w-10 h-10 rounded-xl" />
             <span className="font-semibold hidden sm:block">Self Publishing Italia</span>
           </Link>
 
