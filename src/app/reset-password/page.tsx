@@ -23,19 +23,19 @@ function ResetForm() {
   };
 
   return (
-    <div className="w-full max-w-md bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
-      <h1 className="text-2xl font-bold text-white text-center mb-6">Nuova password</h1>
+    <div className="w-full max-w-md bg-card p-6 border border-card2">
+      <h1 className="text-2xl font-bold text-paper text-center mb-6">Nuova password</h1>
       {done ? (
         <div className="text-center">
-          <p className="text-slate-300 mb-4">Password aggiornata! Ora puoi accedere.</p>
-          <Link href="/login" className="inline-block px-6 py-3 bg-amber-500 text-white rounded-xl font-semibold">Vai al login</Link>
+          <p className="text-newsprint mb-4">Password aggiornata! Ora puoi accedere.</p>
+          <Link href="/login" className="inline-block px-6 py-3 bg-brass text-ink font-semibold">Vai al login</Link>
         </div>
       ) : (
         <form onSubmit={submit} className="space-y-4">
-          {error && <div className="bg-red-500/20 text-red-400 p-3 rounded-xl text-center">{error}</div>}
-          <input type="password" required minLength={8} placeholder="Nuova password (min. 8 caratteri)" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500" />
-          <input type="password" required minLength={8} placeholder="Ripeti la password" value={confirm} onChange={e => setConfirm(e.target.value)} className="w-full p-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500" />
-          <button disabled={loading || !token} className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-semibold disabled:opacity-50">{loading ? "Salvataggio..." : "Salva password"}</button>
+          {error && <div className="bg-red-500/20 text-red-400 p-3 text-center">{error}</div>}
+          <input type="password" required minLength={8} placeholder="Nuova password (min. 8 caratteri)" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-3 bg-card2 border border-card2 text-paper placeholder-surface/50" />
+          <input type="password" required minLength={8} placeholder="Ripeti la password" value={confirm} onChange={e => setConfirm(e.target.value)} className="w-full p-3 bg-card2 border border-card2 text-paper placeholder-surface/50" />
+          <button disabled={loading || !token} className="w-full py-3 bg-brass text-ink font-semibold disabled:opacity-50">{loading ? "Salvataggio..." : "Salva password"}</button>
         </form>
       )}
     </div>
@@ -44,7 +44,7 @@ function ResetForm() {
 
 export default function ResetPassword() {
   return (
-    <div className="min-h-[calc(100vh-56px)] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-[calc(100vh-56px)] bg-ink flex items-center justify-center p-4">
       <Suspense fallback={null}><ResetForm /></Suspense>
     </div>
   );

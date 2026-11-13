@@ -50,42 +50,42 @@ export default function Page() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-ink">
       <main className="max-w-4xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-white">Video Corsi</h1>
-          {isAdmin && <button onClick={() => setShowForm(true)} className="px-4 py-2 bg-amber-500 text-white rounded-xl hover:bg-amber-600 flex items-center gap-2"><Plus className="w-4 h-4" /> Aggiungi Video</button>}
+          <h1 className="text-3xl font-bold text-paper">Video Corsi</h1>
+          {isAdmin && <button onClick={() => setShowForm(true)} className="px-4 py-2 bg-brass text-ink hover:opacity-90 flex items-center gap-2"><Plus className="w-4 h-4" /> Aggiungi Video</button>}
         </div>
         
-        {!isAdmin && user && <p className="text-sm text-slate-400 mb-4">Solo l'admin puo aggiungere video</p>}
-        {!isAdmin && !user && <p className="text-sm text-slate-400 mb-4"><Link href="/login" className="text-amber-400">Accedi</Link> come admin per aggiungere video</p>}
+        {!isAdmin && user && <p className="text-sm text-surface/80 mb-4">Solo l'admin puo aggiungere video</p>}
+        {!isAdmin && !user && <p className="text-sm text-surface/80 mb-4"><Link href="/login" className="text-brass">Accedi</Link> come admin per aggiungere video</p>}
         
         {showForm && (
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-5 mb-6 border border-white/10">
-            <h3 className="font-bold text-white mb-4">Nuovo Video</h3>
-            <input type="text" placeholder="Titolo" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 mb-3" />
-            <input type="text" placeholder="URL YouTube" value={url} onChange={e => setUrl(e.target.value)} className="w-full p-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 mb-3" />
-            <textarea placeholder="Descrizione" value={desc} onChange={e => setDesc(e.target.value)} className="w-full p-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 mb-3" />
+          <div className="bg-card p-5 mb-6 border border-card2">
+            <h3 className="font-bold text-paper mb-4">Nuovo Video</h3>
+            <input type="text" placeholder="Titolo" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-3 bg-card2 border border-card2 text-paper placeholder-surface/50 mb-3" />
+            <input type="text" placeholder="URL YouTube" value={url} onChange={e => setUrl(e.target.value)} className="w-full p-3 bg-card2 border border-card2 text-paper placeholder-surface/50 mb-3" />
+            <textarea placeholder="Descrizione" value={desc} onChange={e => setDesc(e.target.value)} className="w-full p-3 bg-card2 border border-card2 text-paper placeholder-surface/50 mb-3" />
             <div className="flex gap-2">
-              <button onClick={saveVideo} disabled={!title || !url} className="px-4 py-2 bg-amber-500 text-white rounded-xl disabled:opacity-50">Salva</button>
-              <button onClick={() => setShowForm(false)} className="px-4 py-2 bg-white/10 text-white rounded-xl">Annulla</button>
+              <button onClick={saveVideo} disabled={!title || !url} className="px-4 py-2 bg-brass text-ink disabled:opacity-50">Salva</button>
+              <button onClick={() => setShowForm(false)} className="px-4 py-2 bg-card text-paper">Annulla</button>
             </div>
           </div>
         )}
 
         {loading ? (
-          <div className="text-center py-8"><div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto" /></div>
+          <div className="text-center py-8"><div className="w-8 h-8 border-2 border-brass border-t-transparent rounded-full animate-spin mx-auto" /></div>
         ) : videos.length === 0 ? (
-          <div className="text-center py-8 text-slate-500">Nessun video ancora</div>
+          <div className="text-center py-8 text-surface/80">Nessun video ancora</div>
         ) : (
           <div className="grid gap-6">
             {videos.map(video => (
-              <div key={video.id} className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
-                <div className="aspect-video mb-4 rounded-xl overflow-hidden">
+              <div key={video.id} className="bg-card p-4 border border-card2">
+                <div className="aspect-video mb-4 overflow-hidden">
                   <iframe src={"https://www.youtube.com/embed/" + video.youtubeUrl} className="w-full h-full" allowFullScreen></iframe>
                 </div>
                 <div className="flex justify-between items-start">
-                  <div><h3 className="font-bold text-white">{video.title}</h3><p className="text-slate-400 text-sm">{video.description}</p></div>
+                  <div><h3 className="font-bold text-paper">{video.title}</h3><p className="text-surface/80 text-sm">{video.description}</p></div>
                   {isAdmin && <button onClick={() => deleteVideo(video.id)} className="text-red-400 hover:text-red-300 p-2"><Trash2 className="w-4 h-4" /></button>}
                 </div>
               </div>

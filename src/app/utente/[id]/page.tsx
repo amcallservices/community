@@ -118,16 +118,16 @@ export default function UtentePage({ params }: { params: Promise<{ id: string }>
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-      <div className="text-white">Caricamento...</div>
+    <div className="min-h-screen bg-ink flex items-center justify-center">
+      <div className="text-paper">Caricamento...</div>
     </div>
   );
 
   if (error || !utente) return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+    <div className="min-h-screen bg-ink flex items-center justify-center">
       <div className="text-red-400 text-center">
         <p>{error || "Utente non trovato"}</p>
-        <a href="/community" className="text-amber-400 hover:underline mt-4 block">Torna alla Community</a>
+        <a href="/community" className="text-brass hover:underline mt-4 block">Torna alla Community</a>
       </div>
     </div>
   );
@@ -135,47 +135,47 @@ export default function UtentePage({ params }: { params: Promise<{ id: string }>
   const isOwnProfile = currentUser && utente && currentUser.id === utente.id;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-ink">
       <main className="max-w-2xl mx-auto px-4 py-12">
-        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/10 text-center">
+        <div className="bg-card p-8 border border-card2 text-center">
           
           {passwordSuccess && (
-            <div className="bg-green-500/20 text-green-400 p-3 rounded-xl mb-4">
+            <div className="bg-green-500/20 text-green-400 p-3 mb-4">
               ✓ Password cambiata con successo!
             </div>
           )}
           
           <div className="mb-6">
             {utente.avatar ? (
-              <img src={utente.avatar} alt={utente.nome} className="w-32 h-32 rounded-full object-cover border-4 border-amber-500 mx-auto" />
+              <img src={utente.avatar} alt={utente.nome} className="w-32 h-32 rounded-full object-cover border-4 border-brass mx-auto" />
             ) : (
-              <div className="w-32 h-32 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold text-5xl mx-auto border-4 border-amber-500">
+              <div className="w-32 h-32 bg-brass rounded-full flex items-center justify-center text-ink font-bold text-5xl mx-auto border-4 border-brass">
                 {(utente.nome || utente.name)?.[0]?.toUpperCase() || "?"}
               </div>
             )}
           </div>
           
-          <h1 className="text-3xl font-bold text-white mb-2">
+          <h1 className="text-3xl font-bold text-paper mb-2">
             {utente.nome} {utente.cognome}
           </h1>
           
-          <p className="text-amber-400 mb-6 capitalize text-lg">{utente.role || "scrittore"}</p>
+          <p className="text-brass mb-6 capitalize text-lg">{utente.role || "scrittore"}</p>
 
           {currentUser && !isOwnProfile && (
             <div className="mb-6">
               {!showMessageForm ? (
-                <button onClick={() => setShowMessageForm(true)} className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 text-white rounded-xl hover:bg-amber-600 font-medium transition-all">
+                <button onClick={() => setShowMessageForm(true)} className="inline-flex items-center gap-2 px-6 py-3 bg-brass text-ink hover:opacity-90 font-medium transition-all">
                   <Send className="w-5 h-5" />Invia Messaggio
                 </button>
               ) : (
-                <div className="bg-white/5 rounded-xl p-4 mt-2 text-left">
-                  {sent && <div className="bg-green-500/20 text-green-400 p-3 rounded-xl mb-3">✓ Messaggio inviato!</div>}
-                  <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Scrivi il tuo messaggio..." className="w-full p-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 resize-none" rows={4} />
+                <div className="bg-card2 p-4 mt-2 text-left">
+                  {sent && <div className="bg-green-500/20 text-green-400 p-3 mb-3">✓ Messaggio inviato!</div>}
+                  <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Scrivi il tuo messaggio..." className="w-full p-3 bg-card border border-card2 text-paper placeholder-surface/50 focus:outline-none focus:border-brass resize-none" rows={4} />
                   <div className="flex gap-2 mt-3">
-                    <button onClick={handleSendMessage} disabled={sending || !message.trim()} className="flex-1 py-2 bg-amber-500 text-white rounded-xl hover:bg-amber-600 disabled:opacity-50 flex items-center justify-center gap-2">
+                    <button onClick={handleSendMessage} disabled={sending || !message.trim()} className="flex-1 py-2 bg-brass text-ink hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2">
                       <Send className="w-4 h-4" />{sending ? "Invio..." : "Invia"}
                     </button>
-                    <button onClick={() => { setShowMessageForm(false); setMessage(""); }} className="px-4 py-2 bg-white/10 text-white rounded-xl hover:bg-white/20">Annulla</button>
+                    <button onClick={() => { setShowMessageForm(false); setMessage(""); }} className="px-4 py-2 bg-card text-paper hover:bg-card2">Annulla</button>
                   </div>
                 </div>
               )}
@@ -185,62 +185,62 @@ export default function UtentePage({ params }: { params: Promise<{ id: string }>
           {isOwnProfile && (
             <div className="mb-6">
               {!showPasswordForm ? (
-                <button onClick={() => setShowPasswordForm(true)} className="inline-flex items-center gap-2 px-6 py-3 bg-red-500/80 text-white rounded-xl hover:bg-red-600 font-medium transition-all">
+                <button onClick={() => setShowPasswordForm(true)} className="inline-flex items-center gap-2 px-6 py-3 bg-red-500/80 text-paper hover:bg-red-600 font-medium transition-all">
                   <Lock className="w-5 h-5" />Cambia Password
                 </button>
               ) : (
-                <div className="bg-white/5 rounded-xl p-4 mt-2 text-left">
-                  {passwordError && <div className="bg-red-500/20 text-red-400 p-3 rounded-xl mb-3">{passwordError}</div>}
+                <div className="bg-card2 p-4 mt-2 text-left">
+                  {passwordError && <div className="bg-red-500/20 text-red-400 p-3 mb-3">{passwordError}</div>}
                   
                   <div className="space-y-3">
                     <div className="relative">
-                      <input type={showCurrentPwd ? "text" : "password"} value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="Password attuale" className="w-full p-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 pr-10" />
-                      <button type="button" onClick={() => setShowCurrentPwd(!showCurrentPwd)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white">{showCurrentPwd ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button>
+                      <input type={showCurrentPwd ? "text" : "password"} value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="Password attuale" className="w-full p-3 bg-card border border-card2 text-paper placeholder-surface/50 focus:outline-none focus:border-brass pr-10" />
+                      <button type="button" onClick={() => setShowCurrentPwd(!showCurrentPwd)} className="absolute right-3 top-1/2 -translate-y-1/2 text-surface/80 hover:text-paper">{showCurrentPwd ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button>
                     </div>
                     
                     <div className="relative">
-                      <input type={showNewPwd ? "text" : "password"} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Nuova password" className="w-full p-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 pr-10" />
-                      <button type="button" onClick={() => setShowNewPwd(!showNewPwd)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white">{showNewPwd ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button>
+                      <input type={showNewPwd ? "text" : "password"} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Nuova password" className="w-full p-3 bg-card border border-card2 text-paper placeholder-surface/50 focus:outline-none focus:border-brass pr-10" />
+                      <button type="button" onClick={() => setShowNewPwd(!showNewPwd)} className="absolute right-3 top-1/2 -translate-y-1/2 text-surface/80 hover:text-paper">{showNewPwd ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button>
                     </div>
                     
-                    <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Conferma nuova password" className="w-full p-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-500" />
+                    <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Conferma nuova password" className="w-full p-3 bg-card border border-card2 text-paper placeholder-surface/50 focus:outline-none focus:border-brass" />
                   </div>
                   
                   <div className="flex gap-2 mt-4">
-                    <button onClick={handleChangePassword} className="flex-1 py-2 bg-amber-500 text-white rounded-xl hover:bg-amber-600 flex items-center justify-center gap-2">
+                    <button onClick={handleChangePassword} className="flex-1 py-2 bg-brass text-ink hover:opacity-90 flex items-center justify-center gap-2">
                       <Lock className="w-4 h-4" />Salva Password
                     </button>
-                    <button onClick={() => { setShowPasswordForm(false); setPasswordError(""); setCurrentPassword(""); setNewPassword(""); setConfirmPassword(""); }} className="px-4 py-2 bg-white/10 text-white rounded-xl hover:bg-white/20">Annulla</button>
+                    <button onClick={() => { setShowPasswordForm(false); setPasswordError(""); setCurrentPassword(""); setNewPassword(""); setConfirmPassword(""); }} className="px-4 py-2 bg-card text-paper hover:bg-card2">Annulla</button>
                   </div>
                 </div>
               )}
             </div>
           )}
 
-          <div className="grid grid-cols-3 gap-4 mb-6 py-4 border-y border-white/10">
-            <div className="text-center"><BookOpen className="w-6 h-6 text-amber-400 mx-auto mb-1" /><div className="text-xl font-bold text-white">0</div><div className="text-slate-400 text-sm">Post</div></div>
-            <div className="text-center"><MessageCircle className="w-6 h-6 text-amber-400 mx-auto mb-1" /><div className="text-xl font-bold text-white">0</div><div className="text-slate-400 text-sm">Commenti</div></div>
-            <div className="text-center"><Calendar className="w-6 h-6 text-amber-400 mx-auto mb-1" /><div className="text-xl font-bold text-white">{utente.createdAt ? new Date(utente.createdAt).toLocaleDateString('it-IT', { year: 'numeric', month: 'short' }) : '-'}</div><div className="text-slate-400 text-sm">Iscritto</div></div>
+          <div className="grid grid-cols-3 gap-4 mb-6 py-4 border-y border-card2">
+            <div className="text-center"><BookOpen className="w-6 h-6 text-brass mx-auto mb-1" /><div className="text-xl font-bold text-paper">0</div><div className="text-surface/80 text-sm">Post</div></div>
+            <div className="text-center"><MessageCircle className="w-6 h-6 text-brass mx-auto mb-1" /><div className="text-xl font-bold text-paper">0</div><div className="text-surface/80 text-sm">Commenti</div></div>
+            <div className="text-center"><Calendar className="w-6 h-6 text-brass mx-auto mb-1" /><div className="text-xl font-bold text-paper">{utente.createdAt ? new Date(utente.createdAt).toLocaleDateString('it-IT', { year: 'numeric', month: 'short' }) : '-'}</div><div className="text-surface/80 text-sm">Iscritto</div></div>
           </div>
 
           {utente.bio ? (
             <div className="mt-6 text-left">
-              <h3 className="text-slate-400 mb-2">Descrizione</h3>
-              <p className="text-slate-300 bg-white/5 rounded-xl p-4">{utente.bio}</p>
+              <h3 className="text-surface/80 mb-2">Descrizione</h3>
+              <p className="text-newsprint bg-card2 p-4">{utente.bio}</p>
             </div>
           ) : (
-            <p className="text-slate-500 italic mt-6">Nessuna descrizione</p>
+            <p className="text-surface/80 italic mt-6">Nessuna descrizione</p>
           )}
 
-          <div className="mt-6 pt-6 border-t border-white/10">
-            <div className="flex items-center gap-3 text-slate-300 justify-center">
-              <Mail className="w-5 h-5 text-slate-500" />
+          <div className="mt-6 pt-6 border-t border-card2">
+            <div className="flex items-center gap-3 text-newsprint justify-center">
+              <Mail className="w-5 h-5 text-surface/80" />
               <span>{utente.email}</span>
             </div>
           </div>
         </div>
 
-        <a href="/community" className="block text-center text-amber-400 hover:text-amber-300 mt-6">← Torna alla Community</a>
+        <a href="/community" className="block text-center text-brass hover:text-brass mt-6">← Torna alla Community</a>
       </main>
     </div>
   );

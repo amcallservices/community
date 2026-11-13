@@ -124,21 +124,21 @@ export default function SyncPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white p-8">
+    <div className="min-h-screen bg-card text-paper p-8">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">Sincronizzazione Database</h1>
-        <p className="text-slate-400 mb-6">Copia tutti i dati dal browser al database condiviso</p>
+        <p className="text-surface/80 mb-6">Copia tutti i dati dal browser al database condiviso</p>
         
-        <div className="bg-slate-800 rounded-2xl p-6 font-mono text-sm space-y-1">
+        <div className="bg-card p-6 font-mono text-sm space-y-1">
           {status === "loading" && (
             <div className="flex items-center gap-3 mb-4">
-              <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
+              <Loader2 className="w-6 h-6 animate-spin text-brass" />
               <span>Elaborazione in corso...</span>
             </div>
           )}
           
           {logs.map((line, i) => (
-            <div key={i} className={line.startsWith('Errore') ? 'text-red-400' : 'text-slate-300'}>{line}</div>
+            <div key={i} className={line.startsWith('Errore') ? 'text-red-400' : 'text-newsprint'}>{line}</div>
           ))}
           
           {status === "success" && (
@@ -158,7 +158,7 @@ export default function SyncPage() {
         
         <a 
           href="/"
-          className="mt-6 inline-block px-6 py-3 bg-amber-500 text-white rounded-xl font-medium hover:bg-amber-600"
+          className="mt-6 inline-block px-6 py-3 bg-brass text-ink font-medium hover:opacity-90"
         >
           Torna alla Home
         </a>
