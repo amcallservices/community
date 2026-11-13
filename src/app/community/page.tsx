@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { renderRich } from "@/lib/sanitize";
 import { Heart, MessageCircle, Trash2, X, Plus, Send, Image, Link as LinkIcon, Upload } from "lucide-react";
 
 type Post = { id: number; title: string; content: string; authorId?: number; authorNome: string; authorCogen: string; authorRole: string; authorAvatar: string | null; likes: number; comments: number; category: string; createdAt: string };
@@ -31,18 +32,16 @@ export default function CommunityPage() {
     if (stored) {
       const u = JSON.parse(stored);
       setUser(u);
-      setIsAdmin(u.email === 'admin@scrittore.site' || u.role === 'admin');
+      setIsAdmin(u.role === 'admin');
     }
     loadPosts();
   }, []);
 
   const loadPosts = async () => {
-    setLoading(true);
     try {
       const res = await fetch("/api/posts");
       if (res.ok) {
         const data = await res.json();
-        console.log("Posts loaded:", data);
         setPosts(data);
       }
     } catch (err) {
@@ -123,8 +122,19 @@ export default function CommunityPage() {
 
   const handleLike = async (postId: number) => {
     if (!user) return;
-    await fetch("/api/posts/like", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ postId, userId: user.id }) });
-    loadPosts();
+    // aggiornamento immediato, poi conferma dal server
+    const before = posts;
+    const likedKey = `liked_${user.id}_${postId}`;
+    const wasLiked = localStorage.getItem(likedKey) === "1";
+    setPosts(ps => ps.map(p => p.id === postId ? { ...p, likes: Math.max(0, (p.likes || 0) + (wasLiked ? -1 : 1)) } : p));
+    try {
+      const res = await fetch("/api/posts/like", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ postId }) });
+      if (!res.ok) throw new Error();
+      const { liked } = await res.json();
+      if (liked) localStorage.setItem(likedKey, "1"); else localStorage.removeItem(likedKey);
+    } catch {
+      setPosts(before);
+    }
   };
 
   const openComments = async (post: Post) => {
@@ -149,12 +159,13 @@ export default function CommunityPage() {
     setNewComment("");
     setCommentImage("");
     openComments(selectedPost);
+    setPosts(ps => ps.map(p => p.id === selectedPost.id ? { ...p, comments: (p.comments || 0) + 1 } : p));
   };
 
   const deletePost = async (id: number, authorId: number, admin: boolean) => {
     if (!confirm("Sei sicuro di voler eliminare questo post?")) return;
     try {
-      const res = await fetch(`/api/posts?id=${id}&userId=${authorId}&isAdmin=${admin}`, { method: "DELETE" });
+      const res = await fetch(`/api/posts?id=${id}`, { method: "DELETE" });
       if (res.ok) {
         loadPosts();
         setSelectedPost(null);
@@ -169,7 +180,7 @@ export default function CommunityPage() {
 
   const deleteComment = async (commentId: number, postId: number, authorId: number, admin: boolean) => {
     try {
-      const res = await fetch(`/api/posts-comments?id=${commentId}&userId=${authorId}&isAdmin=${admin}`, { method: "DELETE" });
+      const res = await fetch(`/api/posts-comments?id=${commentId}`, { method: "DELETE" });
       if (res.ok && selectedPost) {
         openComments(selectedPost);
       }
@@ -238,7 +249,7 @@ export default function CommunityPage() {
                 )}
               </div>
               <h3 className="text-xl font-bold text-white mb-2">{post.title}</h3>
-              <div className="text-slate-300 whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: post.content.replace(/<a href="([^"]+)"[^>]*>([^<]+)<\/a>/g, '<a href="$1" target="_blank" class="text-amber-400 hover:underline">$2</a>').replace(/<img src="([^"]+)"[^>]*\/>/g, '<img src="$1" class="max-w-full rounded-lg my-2" />') }} />
+              <div className="text-slate-300 whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: renderRich(post.content) }} />
               <div className="flex items-center gap-4 mt-4 pt-4 border-t border-white/10">
                 <button onClick={() => handleLike(post.id)} className="flex items-center gap-1 text-slate-400 hover:text-red-400"><Heart className="w-5 h-5" /><span>{post.likes || 0}</span></button>
                 <button onClick={() => openComments(post)} className="flex items-center gap-1 text-slate-400 hover:text-amber-400"><MessageCircle className="w-5 h-5" /><span>{post.comments || 0}</span></button>
@@ -255,7 +266,7 @@ export default function CommunityPage() {
               <h2 className="text-xl font-bold text-white">{selectedPost.title}</h2>
               <button onClick={() => setSelectedPost(null)} className="text-slate-400 hover:text-white"><X className="w-6 h-6" /></button>
             </div>
-            <div className="text-slate-300 mb-6 whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: selectedPost.content }} />
+            <div className="text-slate-300 mb-6 whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: renderRich(selectedPost.content) }} />
             
             <div className="space-y-3 mb-6">
               {comments.map(comment => (
@@ -270,7 +281,7 @@ export default function CommunityPage() {
                       <button onClick={() => deleteComment(comment.id, selectedPost.id, user?.id, isAdmin)} className="text-red-400 hover:text-red-300 text-sm ml-auto"><Trash2 className="w-3 h-3" /></button>
                     )}
                   </div>
-                  <div className="text-slate-300 text-sm" dangerouslySetInnerHTML={{ __html: comment.text }} />
+                  <div className="text-slate-300 text-sm" dangerouslySetInnerHTML={{ __html: renderRich(comment.text) }} />
                 </div>
               ))}
             </div>

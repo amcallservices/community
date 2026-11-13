@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
+import { requireAdmin, requireUser } from '@/lib/auth'
 
 // GET /api/utenti - list all users
 export async function GET() {
+  const { error: authError } = await requireUser()
+  if (authError) return authError
   try {
     const users = await prisma.user.findMany({
       select: { id: true, nome: true, cognome: true, email: true, avatar: true, role: true },
@@ -16,13 +19,15 @@ export async function GET() {
 
 // DELETE /api/utenti - delete users (and related data)
 export async function DELETE(request: NextRequest) {
+  const { user: me, error: authError } = await requireAdmin()
+  if (authError) return authError
   try {
     const { searchParams } = new URL(request.url)
     const ids = searchParams.get('ids')
     
     if (!ids) return NextResponse.json({ error: 'IDs richiesti' }, { status: 400 })
     
-    const idsArray = ids.split(',').map(Number)
+    const idsArray = ids.split(',').map(Number).filter(n => Number.isInteger(n) && n !== me!.id)
     
     // Get posts by these users first
     const userPosts = await prisma.post.findMany({ where: { authorId: { in: idsArray } }, select: { id: true } })

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
+import { requireUser, verifyPassword, hashPassword, validatePassword } from '@/lib/auth'
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -26,32 +27,20 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { user, error } = await requireUser()
+  if (error) return error
   try {
     const { id } = await params
-    const userId = parseInt(id)
-    const body = await request.json()
-    const { currentPassword, newPassword } = body
-
-    if (currentPassword && newPassword) {
-      const user = await prisma.user.findUnique({ where: { id: userId } })
-      if (!user) {
-        return NextResponse.json({ error: 'Utente non trovato' }, { status: 404 })
-      }
-      
-      if (user.password !== currentPassword) {
-        return NextResponse.json({ error: 'Password attuale non corretta' }, { status: 400 })
-      }
-
-      const updated = await prisma.user.update({
-        where: { id: userId },
-        data: { password: newPassword }
-      })
-
-      return NextResponse.json({ success: true, message: 'Password cambiata con successo' })
+    if (parseInt(id) !== user!.id) return NextResponse.json({ error: 'Non autorizzato' }, { status: 403 })
+    const { currentPassword, newPassword } = await request.json()
+    const pwError = validatePassword(newPassword)
+    if (pwError) return NextResponse.json({ error: pwError }, { status: 400 })
+    if (!currentPassword || !verifyPassword(currentPassword, user!.password)) {
+      return NextResponse.json({ error: 'Password attuale non corretta' }, { status: 400 })
     }
-
-    return NextResponse.json({ error: 'Parametri mancanti' }, { status: 400 })
-  } catch (error) {
+    await prisma.user.update({ where: { id: user!.id }, data: { password: hashPassword(newPassword) } })
+    return NextResponse.json({ success: true, message: 'Password cambiata con successo' })
+  } catch (e) {
     return NextResponse.json({ error: 'Errore' }, { status: 500 })
   }
 }

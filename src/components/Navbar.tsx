@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { PenLine, LogOut, LogIn, UserPlus } from "lucide-react";
+import { PenLine, LogOut, LogIn, UserPlus, Menu, X } from "lucide-react";
 
 type UserData = { id: number; nome: string; cognome: string; email: string; role?: string };
 
@@ -10,6 +10,7 @@ export default function Navbar() {
   const [user, setUser] = useState<UserData | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -22,44 +23,39 @@ export default function Navbar() {
     if (stored) {
       const u = JSON.parse(stored);
       setUser(u);
-      // Check role - also check localStorage for role after login
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        const parsed = JSON.parse(storedUser);
-        setIsAdmin(parsed.role === 'admin');
-      }
+      setIsAdmin(u.role === 'admin');
     }
   }, []);
 
-  // Poll for new messages every 3 seconds
+  // Controlla i messaggi non letti: solo il conteggio, ogni 30s e solo con la scheda visibile
   useEffect(() => {
     if (!user) return;
-    
-    const checkMessages = async () => {
+    const check = async () => {
+      if (document.hidden) return;
       try {
-        const res = await fetch(`/api/messages?userId=${user.id}`);
-        if (res.ok) {
-          const messages = await res.json();
-          const unread = messages.filter((m: any) => !m.read && m.receiverId === user.id).length;
-          setUnreadCount(unread);
-        }
-      } catch (e) { console.error(e); }
+        const res = await fetch("/api/messages?count=1");
+        if (res.ok) setUnreadCount((await res.json()).unread || 0);
+        else if (res.status === 401) { localStorage.removeItem("user"); setUser(null); setIsAdmin(false); }
+      } catch {}
     };
-
-    checkMessages();
-    const interval = setInterval(checkMessages, 3000);
-    return () => clearInterval(interval);
+    check();
+    const interval = setInterval(check, 30000);
+    document.addEventListener("visibilitychange", check);
+    return () => { clearInterval(interval); document.removeEventListener("visibilitychange", check); };
   }, [user]);
 
-  const handleLogout = () => {
-    
+  useEffect(() => { setOpen(false); }, [pathname]);
+
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+    localStorage.removeItem("user");
     setUser(null);
     setIsAdmin(false);
-    router.push('/');
+    window.location.href = "/";
   };
 
   return (
-    <nav className="bg-slate-800 text-white">
+    <nav className="bg-slate-800 text-white sticky top-0 z-50 relative">
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex items-center justify-between h-14">
           <Link href="/" className="flex items-center gap-2">
@@ -69,7 +65,8 @@ export default function Navbar() {
             <span className="font-bold text-amber-400 hidden sm:block">Self Publishing Italia</span>
           </Link>
           
-          <div className="flex items-center gap-3 md:gap-5">
+          <button className="md:hidden p-2" aria-label="Menu" onClick={() => setOpen(o => !o)}>{open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}</button>
+          <div className={`${open ? "flex" : "hidden"} md:flex absolute md:static top-14 left-0 right-0 z-40 bg-slate-800 md:bg-transparent flex-col md:flex-row items-start md:items-center gap-4 md:gap-5 p-4 md:p-0 border-b border-white/10 md:border-0`}>
             <Link href="/community" className={`hover:text-amber-400 text-sm ${pathname === '/community' ? 'text-amber-400' : ''}`}>Community</Link>
             <Link href="/video" className={`hover:text-amber-400 text-sm ${pathname === '/video' ? 'text-amber-400' : ''}`}>Video</Link>
             <Link href="/eventi" className={`hover:text-amber-400 text-sm ${pathname === '/eventi' ? 'text-amber-400' : ''}`}>Eventi</Link>

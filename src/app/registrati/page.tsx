@@ -18,7 +18,7 @@ export default function RegistratiPage() {
     setIsLoading(true);
     setError("");
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nome, cognome, email, password })
@@ -28,7 +28,7 @@ export default function RegistratiPage() {
         alert('Registrazione completata! Ora puoi effettuare il login.');
         router.push('/login');
       } else {
-        setError('Registrazione fallita');
+        const d = await res.json().catch(() => ({})); setError(d.error || 'Registrazione fallita');
       }
     } catch { setError('Errore di connessione'); }
     setIsLoading(false);
@@ -50,7 +50,7 @@ export default function RegistratiPage() {
               <input type="text" placeholder="Cognome" value={cognome} onChange={e => setCognome(e.target.value)} className="p-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500" required />
             </div>
             <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500" required />
-            <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500" required />
+            <input type="password" minLength={8} placeholder="Password (min. 8 caratteri)" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500" required />
             <button type="submit" disabled={isLoading} className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-semibold disabled:opacity-50">
               {isLoading ? "Registrazione..." : "Registrati"}
             </button>

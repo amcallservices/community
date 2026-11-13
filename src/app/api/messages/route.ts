@@ -1,110 +1,64 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
+import { requireUser } from '@/lib/auth'
 
-// GET /api/messages - get messages for user
+const personSelect = { id: true, nome: true, cognome: true, email: true, avatar: true }
+
+// GET /api/messages            -> tutti i messaggi dell'utente loggato
+// GET /api/messages?count=1    -> solo il numero di non letti (leggero, per la Navbar)
 export async function GET(request: NextRequest) {
+  const { user, error } = await requireUser()
+  if (error) return error
   try {
     const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
-    
-    if (!userId) return NextResponse.json({ error: 'userId richiesto' }, { status: 400 })
-    
-    const uid = parseInt(userId)
-    
+    if (searchParams.get('count')) {
+      const unread = await prisma.message.count({ where: { receiverId: user!.id, read: false } })
+      return NextResponse.json({ unread })
+    }
     const messages = await prisma.message.findMany({
-      where: {
-        OR: [
-          { receiverId: uid },
-          { senderId: uid }
-        ]
-      },
+      where: { OR: [{ receiverId: user!.id }, { senderId: user!.id }] },
       orderBy: { createdAt: 'asc' },
-      include: {
-        sender: { select: { id: true, nome: true, cognome: true, email: true } },
-        receiver: { select: { id: true, nome: true, cognome: true, email: true } }
-      }
+      take: 500,
+      include: { sender: { select: personSelect }, receiver: { select: personSelect } },
     })
-    
     return NextResponse.json(messages)
   } catch (error) {
     console.error('Error fetching messages:', error)
-    return NextResponse.json({ error: String(error) }, { status: 500 })
+    return NextResponse.json({ error: 'Errore' }, { status: 500 })
   }
 }
 
-// POST /api/messages - send a message
+// POST /api/messages - il mittente è sempre l'utente loggato
 export async function POST(request: NextRequest) {
+  const { user, error } = await requireUser()
+  if (error) return error
   try {
-    const body = await request.json()
-    const { senderId, receiverId, content, senderEmail, senderNome, receiverEmail, receiverNome } = body
-    
-    if (!senderId || !receiverId || !content) {
+    const { receiverId, content } = await request.json()
+    const rid = parseInt(receiverId)
+    if (isNaN(rid) || !content || typeof content !== 'string') {
       return NextResponse.json({ error: 'Dati mancanti' }, { status: 400 })
     }
-    
-    const sid = parseInt(senderId)
-    const rid = parseInt(receiverId)
-    
-    if (isNaN(sid) || isNaN(rid)) {
-      return NextResponse.json({ error: 'ID non validi' }, { status: 400 })
-    }
-    
-    // Find or create sender
-    let sender = await prisma.user.findUnique({ where: { id: sid } })
-    if (!sender && senderEmail) {
-      sender = await prisma.user.findFirst({ where: { email: senderEmail } })
-    }
-    if (!sender) {
-      sender = await prisma.user.create({
-        data: {
-          email: senderEmail || `user${sid}@temp.com`,
-          name: senderNome || 'Utente',
-          nome: senderNome || 'Utente',
-          cognome: '',
-          password: 'temp123'
-        }
-      })
-    }
-    
-    // Find or create receiver
-    let receiver = await prisma.user.findUnique({ where: { id: rid } })
-    if (!receiver && receiverEmail) {
-      receiver = await prisma.user.findFirst({ where: { email: receiverEmail } })
-    }
-    if (!receiver) {
-      return NextResponse.json({ error: 'Destinatario non trovato' }, { status: 404 })
-    }
-    
-    const message = await prisma.message.create({
-      data: {
-        content,
-        senderId: sender.id,
-        receiverId: receiver.id
-      }
-    })
-    
+    const receiver = await prisma.user.findUnique({ where: { id: rid } })
+    if (!receiver) return NextResponse.json({ error: 'Destinatario non trovato' }, { status: 404 })
+
+    const message = await prisma.message.create({ data: { content, senderId: user!.id, receiverId: receiver.id } })
     return NextResponse.json({ id: message.id, success: true })
   } catch (error) {
     console.error('Error creating message:', error)
-    return NextResponse.json({ error: 'Errore nel database', details: String(error) }, { status: 500 })
+    return NextResponse.json({ error: 'Errore nel database' }, { status: 500 })
   }
 }
 
-// PUT /api/messages - mark as read
+// PUT /api/messages?id=X - segna come letto (solo i propri messaggi ricevuti)
 export async function PUT(request: NextRequest) {
+  const { user, error } = await requireUser()
+  if (error) return error
   try {
-    const { searchParams } = new URL(request.url)
-    const id = searchParams.get('id')
-    
+    const id = new URL(request.url).searchParams.get('id')
     if (!id) return NextResponse.json({ error: 'ID richiesto' }, { status: 400 })
-    
-    const message = await prisma.message.update({
-      where: { id: parseInt(id) },
-      data: { read: true }
-    })
-    
-    return NextResponse.json(message)
+    const result = await prisma.message.updateMany({ where: { id: parseInt(id), receiverId: user!.id }, data: { read: true } })
+    return NextResponse.json({ success: result.count > 0 })
   } catch (error) {
-    return NextResponse.json({ error: String(error) }, { status: 500 })
+    return NextResponse.json({ error: 'Errore' }, { status: 500 })
   }
 }
