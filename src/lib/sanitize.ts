@@ -13,7 +13,7 @@ export function renderRich(raw: string): string {
     if (m[1] !== undefined) {
       const url = m[1]
       out += /^https?:\/\//i.test(url)
-        ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer nofollow" class="text-amber-400 hover:underline">${esc(m[2] || url)}</a>`
+        ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer nofollow" class="text-brass hover:underline">${esc(m[2] || url)}</a>`
         : esc(m[0])
     } else {
       const src = m[3]

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Self Publishing Italia">
+  <rect width="64" height="64" rx="14" fill="#5b3df5"/>
+  <path d="M32 24C25 20 16 20.500 11 23V47C16 44.500 25 44 32 48Z" fill="#fffaf0"/>
+  <path d="M32 24C39 20 48 20.500 53 23V47C48 44.500 39 44 32 48Z" fill="#f1ecff"/>
+  <path d="M32 24V48" stroke="#5b3df5" stroke-width="2"/>
+  <path d="M32 6L34.200 11.800L40 14L34.200 16.200L32 22L29.800 16.200L24 14L29.800 11.800Z" fill="#ffc83d"/>
+</svg>

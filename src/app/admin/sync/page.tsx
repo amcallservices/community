@@ -16,14 +16,12 @@ export default function SyncPage() {
         const localPosts = JSON.parse(localStorage.getItem('posts') || '[]')
         const localComments = JSON.parse(localStorage.getItem('comments') || '{}')
         const localVideos = JSON.parse(localStorage.getItem('videos') || '[]')
-        const localLetture = JSON.parse(localStorage.getItem('letture') || '[]')
         const localEvents = JSON.parse(localStorage.getItem('events') || '[]')
         
         log.push(`Trovati in locale:`)
         log.push(`  - ${localPosts.length} post`)
         log.push(`  - ${Object.keys(localComments).length} commenti`)
         log.push(`  - ${localVideos.length} video`)
-        log.push(`  - ${localLetture.length} PDF/letture`)
         log.push(`  - ${localEvents.length} eventi`)
         setLogs([...log, '', 'Sincronizzazione in corso...'])
         
@@ -68,24 +66,6 @@ export default function SyncPage() {
         log.push(`  - ${syncVideos} video sincronizzati`)
         setLogs([...log])
         
-        // PDF/Letture sincronizzati
-        let syncLetture = 0
-        for (const l of localLetture) {
-          if (!l.id) continue
-          try {
-            const res = await fetch('/api/letture', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                title: l.title,
-                description: l.description,
-                dataUrl: l.dataUrl || l.pdfUrl
-              })
-            })
-            if (res.ok) syncLetture++
-          } catch (e) {}
-        }
-        log.push(`  - ${syncLetture} PDF sincronizzati`)
         setLogs([...log])
         
         // Eventi sincronizzati
@@ -124,21 +104,21 @@ export default function SyncPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white p-8">
+    <div className="min-h-screen bg-white rounded-2xl shadow-sm text-navy p-8">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">Sincronizzazione Database</h1>
-        <p className="text-slate-400 mb-6">Copia tutti i dati dal browser al database condiviso</p>
+        <p className="text-navy/60 mb-6">Copia tutti i dati dal browser al database condiviso</p>
         
-        <div className="bg-slate-800 rounded-2xl p-6 font-mono text-sm space-y-1">
+        <div className="bg-white rounded-2xl shadow-sm p-6 font-mono text-sm space-y-1">
           {status === "loading" && (
             <div className="flex items-center gap-3 mb-4">
-              <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
+              <Loader2 className="w-6 h-6 animate-spin text-golddark" />
               <span>Elaborazione in corso...</span>
             </div>
           )}
           
           {logs.map((line, i) => (
-            <div key={i} className={line.startsWith('Errore') ? 'text-red-400' : 'text-slate-300'}>{line}</div>
+            <div key={i} className={line.startsWith('Errore') ? 'text-red-400' : 'text-newsprint'}>{line}</div>
           ))}
           
           {status === "success" && (
@@ -158,7 +138,7 @@ export default function SyncPage() {
         
         <a 
           href="/"
-          className="mt-6 inline-block px-6 py-3 bg-amber-500 text-white rounded-xl font-medium hover:bg-amber-600"
+          className="mt-6 inline-block px-6 py-3 bg-wine text-white rounded-lg font-semibold font-medium hover:brightness-95"
         >
           Torna alla Home
         </a>

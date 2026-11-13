@@ -50,71 +50,71 @@ export default function UtentiPage() {
 
   if (!checkDone) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <p className="text-slate-400">Verifica accesso...</p>
+      <div className="min-h-screen bg-white rounded-2xl shadow-sm flex items-center justify-center">
+        <p className="text-navy/60">Verifica accesso...</p>
       </div>
     );
   }
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-white rounded-2xl shadow-sm flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-400 text-xl mb-2">Accesso negato</p>
-          <p className="text-slate-400">Solo gli admin possono visualizzare questa pagina</p>
+          <p className="text-navy/60">Solo gli admin possono visualizzare questa pagina</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-white rounded-2xl shadow-sm">
       <main className="max-w-4xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <Users className="w-8 h-8 text-amber-400" />
-            <h1 className="text-3xl font-bold text-white">Utenti Registrati</h1>
+            <Users className="w-8 h-8 text-golddark" />
+            <h1 className="text-3xl font-bold text-navy">Utenti Registrati</h1>
           </div>
           {utenti.length > 0 && (
-            <button onClick={() => deleteUsers(utenti.map(u => u.id))} className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 flex items-center gap-2">
+            <button onClick={() => deleteUsers(utenti.map(u => u.id))} className="px-4 py-2 bg-red-500/20 text-red-400 hover:bg-red-500/30 flex items-center gap-2">
               <Trash2 className="w-4 h-4" /> Elimina tutti
             </button>
           )}
         </div>
 
         {loading ? (
-          <p className="text-slate-400">Caricamento...</p>
+          <p className="text-navy/60">Caricamento...</p>
         ) : utenti.length === 0 ? (
-          <div className="bg-white/10 rounded-2xl p-8 text-center border border-white/10">
-            <p className="text-slate-400">Nessun utente registrato</p>
+          <div className="bg-white rounded-2xl shadow-sm p-8 text-center border border-line">
+            <p className="text-navy/60">Nessun utente registrato</p>
           </div>
         ) : (
-          <div className="bg-white/10 rounded-2xl border border-white/10 overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-sm border border-line overflow-hidden">
             <div className="overflow-x-auto"><table className="w-full">
-              <thead className="bg-slate-800">
+              <thead className="bg-white rounded-2xl shadow-sm">
                 <tr>
-                  <th className="text-left px-6 py-3 text-slate-300 font-medium">ID</th>
-                  <th className="text-left px-6 py-3 text-slate-300 font-medium">Nome</th>
-                  <th className="text-left px-6 py-3 text-slate-300 font-medium">Cognome</th>
-                  <th className="text-left px-6 py-3 text-slate-300 font-medium">Email</th>
-                  <th className="text-left px-6 py-3 text-slate-300 font-medium">Ruolo</th>
-                  <th className="text-left px-6 py-3 text-slate-300 font-medium">Azioni</th>
+                  <th className="text-left px-6 py-3 text-navy/80 font-medium">ID</th>
+                  <th className="text-left px-6 py-3 text-navy/80 font-medium">Nome</th>
+                  <th className="text-left px-6 py-3 text-navy/80 font-medium">Cognome</th>
+                  <th className="text-left px-6 py-3 text-navy/80 font-medium">Email</th>
+                  <th className="text-left px-6 py-3 text-navy/80 font-medium">Ruolo</th>
+                  <th className="text-left px-6 py-3 text-navy/80 font-medium">Azioni</th>
                 </tr>
               </thead>
               <tbody>
                 {utenti.map((u, i) => (
-                  <tr key={u.id} className={i % 2 === 0 ? "bg-slate-800/50" : "bg-slate-800/30"}>
-                    <td className="px-6 py-3 text-slate-400">{u.id}</td>
-                    <td className="px-6 py-3 text-white">{u.nome || "-"}</td>
-                    <td className="px-6 py-3 text-white">{u.cognome || "-"}</td>
-                    <td className="px-6 py-3 text-slate-300">{u.email}</td>
+                  <tr key={u.id} className={i % 2 === 0 ? "bg-white rounded-2xl shadow-sm" : "bg-ivory2/40"}>
+                    <td className="px-6 py-3 text-navy/60">{u.id}</td>
+                    <td className="px-6 py-3 text-navy">{u.nome || "-"}</td>
+                    <td className="px-6 py-3 text-navy">{u.cognome || "-"}</td>
+                    <td className="px-6 py-3 text-navy/80">{u.email}</td>
                     <td className="px-6 py-3">
-                      <span className={`px-2 py-1 rounded text-xs ${u.role === 'admin' ? 'bg-amber-500/20 text-amber-400' : 'bg-slate-700 text-slate-300'}`}>
+                      <span className={`px-2 py-1 rounded text-xs ${u.role === 'admin' ? 'bg-gold/25 text-golddark' : 'bg-ivory2 text-navy/80'}`}>
                         {u.role}
                       </span>
                     </td>
                     <td className="px-6 py-3">
-                      <button onClick={() => resetLink(u)} className="text-amber-400 hover:text-amber-300 text-xs mr-3 underline">Link recupero</button>
+                      <button onClick={() => resetLink(u)} className="text-golddark hover:text-navy text-xs mr-3 underline">Link recupero</button>
                       <button onClick={() => deleteUsers([u.id])} className="text-red-400 hover:text-red-300">
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -126,7 +126,7 @@ export default function UtentiPage() {
           </div>
         )}
 
-        <p className="text-slate-500 text-sm mt-4">Totale: {utenti.length} utenti</p>
+        <p className="text-navy/60 text-sm mt-4">Totale: {utenti.length} utenti</p>
       </main>
     </div>
   );

@@ -31,30 +31,30 @@ export default function NotifichePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
+    <div className="min-h-screen bg-ivory p-4">
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center gap-3 mb-6">
-          <Link href="/" className="text-slate-400 hover:text-white"><Home className="w-6 h-6" /></Link>
-          <h1 className="text-2xl font-bold text-white">Notifiche</h1>
+          <Link href="/" className="text-navy/60 hover:text-navy"><Home className="w-6 h-6" /></Link>
+          <h1 className="text-2xl font-bold text-navy">Notifiche</h1>
         </div>
 
         {loading ? (
-          <div className="text-slate-400 text-center py-8">Caricamento...</div>
+          <div className="text-navy/60 text-center py-8">Caricamento...</div>
         ) : notifications.length === 0 ? (
-          <div className="text-slate-400 text-center py-8">Nessuna notifica</div>
+          <div className="text-navy/60 text-center py-8">Nessuna notifica</div>
         ) : (
           <div className="space-y-3">
             {notifications.map((notif) => (
               <Link 
                 key={notif.id} 
                 href={notif.postId ? `/community#post-${notif.postId}` : '/community'}
-                className="block bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10 hover:bg-white/20"
+                className="block bg-white rounded-2xl shadow-sm p-4 border border-line hover:bg-ivory2"
               >
                 <div className="flex items-start gap-3">
-                  <Bell className="w-5 h-5 text-amber-400 mt-1" />
+                  <Bell className="w-5 h-5 text-golddark mt-1" />
                   <div>
-                    <p className="text-white">{notif.message}</p>
-                    <p className="text-slate-500 text-sm mt-1">
+                    <p className="text-navy">{notif.message}</p>
+                    <p className="text-navy/60 text-sm mt-1">
                       {notif.createdAt ? new Date(notif.createdAt).toLocaleDateString('it-IT') : ''}
                     </p>
                   </div>

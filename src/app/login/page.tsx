@@ -35,26 +35,26 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-ivory flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <Link href="/" className="flex items-center gap-3 justify-center mb-8">
-          <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center"><PenLine className="w-6 h-6 text-white" /></div>
-          <span className="text-white font-bold text-2xl">Self Publishing<span className="text-amber-400">Italia</span></span>
+          <div className="w-12 h-12 bg-wine text-white rounded-lg font-semibold flex items-center justify-center"><PenLine className="w-6 h-6 text-navy" /></div>
+          <span className="text-navy font-bold text-2xl">Self Publishing<span className="text-golddark">Italia</span></span>
         </Link>
-        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
-          <h1 className="text-2xl font-bold text-white text-center mb-6">Accedi</h1>
-          {error && <div className="bg-red-500/20 text-red-400 p-3 rounded-xl mb-4 text-center">{error}</div>}
+        <div className="bg-white rounded-2xl shadow-sm p-6 border border-line">
+          <h1 className="text-2xl font-bold text-navy text-center mb-6">Accedi</h1>
+          {error && <div className="bg-red-500/20 text-red-400 p-3 mb-4 text-center">{error}</div>}
           <form onSubmit={handleLogin} className="space-y-4">
-            <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500" required />
-            <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500" required />
-            <button type="submit" disabled={isLoading} className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-semibold disabled:opacity-50">
+            <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-3 bg-ivory2 border border-line text-navy placeholder-navy/40" required />
+            <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-3 bg-ivory2 border border-line text-navy placeholder-navy/40" required />
+            <button type="submit" disabled={isLoading} className="w-full py-3 bg-wine text-white rounded-lg font-semibold font-semibold disabled:opacity-50">
               {isLoading ? "Accesso..." : "Accedi"}
             </button>
           </form>
-          <p className="text-center text-slate-400 mt-4"><Link href="/recupera-password" className="text-amber-400 hover:underline">Password dimenticata?</Link></p>
-          <p className="text-center text-slate-400 mt-2">Non hai un account? <Link href="/registrati" className="text-amber-400 hover:underline">Registrati gratis</Link></p>
+          <p className="text-center text-navy/60 mt-4"><Link href="/recupera-password" className="text-golddark hover:underline">Password dimenticata?</Link></p>
+          <p className="text-center text-navy/60 mt-2">Non hai un account? <Link href="/registrati" className="text-golddark hover:underline">Registrati gratis</Link></p>
         </div>
-        <Link href="/" className="block text-center text-slate-500 mt-4 hover:text-white">Torna alla Home</Link>
+        <Link href="/" className="block text-center text-navy/60 mt-4 hover:text-navy">Torna alla Home</Link>
       </div>
     </div>
   );

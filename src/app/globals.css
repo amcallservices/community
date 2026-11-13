@@ -3,34 +3,58 @@
 @tailwind utilities;
 
 :root {
-  --navy: #0f172a;
-  --gold: #f59e0b;
+  --ink: #1b1464;
+  --paper: #fffaf0;
+  --newsprint: #f1ecff;
+  --surface: #e4defa;
+  --brass: #ffc83d;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: #f8fafc;
-  color: #1e293b;
+  font-family: 'Literata Variable', Georgia, serif;
+  background-color: #fffaf0;
+  color: #1b1464;
+  line-height: 1.6;
 }
 
+h1, h2, h3 { letter-spacing: -0.02em; line-height: 1.1; }
+
+::selection { background: var(--brass); color: var(--ink); }
+
+:focus-visible { outline: 3px solid var(--brass); outline-offset: 2px; }
+
+/* Entrata morbida delle sezioni (solo transform/opacity) */
+@keyframes rise { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise .7s cubic-bezier(.2,.7,.2,1) both; }
+.rise-2 { animation-delay: .08s; }
+.rise-3 { animation-delay: .16s; }
+.rise-4 { animation-delay: .24s; }
+@media (prefers-reduced-motion: reduce) { .rise { animation: none; } }
+
+/* Feedback sui controlli */
+a, button { transition: opacity .15s, background-color .15s, transform .15s; }
+button:active, .btn:active { transform: translateY(1px); }
+
 @layer components {
-  .btn-primary {
-    @apply bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 py-3 rounded-xl font-semibold transition-all hover:shadow-lg hover:shadow-amber-500/30 hover:scale-105;
-  }
-  
-  .card {
-    @apply bg-white rounded-2xl shadow-lg shadow-slate-200/50 border border-slate-100;
-  }
-  
-  .sidebar-link {
-    @apply flex items-center gap-3 px-4 py-3 rounded-xl transition-all;
-  }
-  
-  .input-field {
-    @apply w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-xl focus:outline-none focus:border-amber-400 focus:bg-white transition-all;
-  }
+  .btn { @apply inline-block bg-ink text-paper px-6 py-3 font-semibold hover:opacity-90; }
+  .btn-brass { @apply inline-block bg-brass text-ink px-6 py-3 font-semibold hover:opacity-90; }
 }
+
+/* rifiniture */
+input, textarea, select, button { border-radius: 6px; }
+main a, main button { transition: opacity .15s, background-color .15s, color .15s; }
+::selection { background: #ffc83d; color: #1b1464; }
+
+/* interattivita */
+main .shadow-sm { transition: transform .2s, box-shadow .2s; }
+main .shadow-sm:hover { transform: translateY(-2px); box-shadow: 0 10px 24px -8px rgba(91,61,245,.25); }
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.marquee { animation: marquee 28s linear infinite; }
+.marquee:hover { animation-play-state: paused; }
+@keyframes floaty { 0%,100% { transform: translateY(0) rotate(var(--r,0deg)); } 50% { transform: translateY(-10px) rotate(var(--r,0deg)); } }
+.floaty { animation: floaty 5s ease-in-out infinite; }
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity .6s, transform .6s; }
+.reveal.in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .marquee, .floaty { animation: none; } .reveal { opacity: 1; transform: none; transition: none; } }
