@@ -77,7 +77,7 @@ export default function Page() {
       <main className="max-w-4xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold text-navy">Letture</h1>
-          {isAdmin && <button onClick={() => setShowForm(true)} className="px-4 py-2 bg-gold rounded-lg font-semibold text-navy hover:brightness-95 flex items-center gap-2"><Plus className="w-4 h-4" /> Aggiungi Libro</button>}
+          {isAdmin && <button onClick={() => setShowForm(true)} className="px-4 py-2 bg-wine text-white rounded-lg font-semibold hover:brightness-95 flex items-center gap-2"><Plus className="w-4 h-4" /> Aggiungi Libro</button>}
         </div>
         
         {!isAdmin && user && <p className="text-sm text-navy/60 mb-4">L'inserimento libri è riservato agli admin</p>}
@@ -96,14 +96,14 @@ export default function Page() {
               </label>
             </div>
             <div className="flex gap-2">
-              <button onClick={saveBook} disabled={!title || !selectedFile || isUploading} className="px-4 py-2 bg-gold rounded-lg font-semibold text-navy disabled:opacity-50">{isUploading ? "Caricamento..." : "Salva"}</button>
+              <button onClick={saveBook} disabled={!title || !selectedFile || isUploading} className="px-4 py-2 bg-wine text-white rounded-lg font-semibold disabled:opacity-50">{isUploading ? "Caricamento..." : "Salva"}</button>
               <button onClick={() => { setShowForm(false); setSelectedFile(null); setTitle(""); setDesc(""); }} className="px-4 py-2 bg-white rounded-2xl shadow-sm text-navy">Annulla</button>
             </div>
           </div>
         )}
 
         {loading ? (
-          <div className="text-center py-8"><div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin mx-auto" /></div>
+          <div className="text-center py-8"><div className="w-8 h-8 border-2 border-wine border-t-transparent rounded-full animate-spin mx-auto" /></div>
         ) : books.length === 0 ? (
           <div className="text-center py-8 text-navy/60">Nessun libro aggiunto</div>
         ) : (
@@ -117,7 +117,7 @@ export default function Page() {
                       <h3 className="font-bold text-navy text-lg">{book.title}</h3>
                       <p className="text-xs text-navy/60">{new Date(book.createdAt).toLocaleDateString("it-IT")}</p>
                       <p className="text-navy/60 text-sm mt-2">{book.description}</p>
-                      {book.dataUrl && <button onClick={() => openPdf(book)} className="inline-flex items-center gap-2 px-4 py-2 bg-gold rounded-lg font-semibold text-navy mt-3 hover:brightness-95"><Eye className="w-4 h-4" /> Leggi PDF</button>}
+                      {book.dataUrl && <button onClick={() => openPdf(book)} className="inline-flex items-center gap-2 px-4 py-2 bg-wine text-white rounded-lg font-semibold mt-3 hover:brightness-95"><Eye className="w-4 h-4" /> Leggi PDF</button>}
                     </div>
                   </div>
                   {isAdmin && <button onClick={() => deleteBook(book.id)} className="text-red-400 hover:text-red-300 p-2"><Trash2 className="w-4 h-4" /></button>}

@@ -158,7 +158,7 @@ export default function SyncPage() {
         
         <a 
           href="/"
-          className="mt-6 inline-block px-6 py-3 bg-gold rounded-lg font-semibold text-navy font-medium hover:brightness-95"
+          className="mt-6 inline-block px-6 py-3 bg-wine text-white rounded-lg font-semibold font-medium hover:brightness-95"
         >
           Torna alla Home
         </a>

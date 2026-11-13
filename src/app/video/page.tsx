@@ -54,7 +54,7 @@ export default function Page() {
       <main className="max-w-4xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold text-navy">Video Corsi</h1>
-          {isAdmin && <button onClick={() => setShowForm(true)} className="px-4 py-2 bg-gold rounded-lg font-semibold text-navy hover:brightness-95 flex items-center gap-2"><Plus className="w-4 h-4" /> Aggiungi Video</button>}
+          {isAdmin && <button onClick={() => setShowForm(true)} className="px-4 py-2 bg-wine text-white rounded-lg font-semibold hover:brightness-95 flex items-center gap-2"><Plus className="w-4 h-4" /> Aggiungi Video</button>}
         </div>
         
         {!isAdmin && user && <p className="text-sm text-navy/60 mb-4">Solo l'admin puo aggiungere video</p>}
@@ -67,14 +67,14 @@ export default function Page() {
             <input type="text" placeholder="URL YouTube" value={url} onChange={e => setUrl(e.target.value)} className="w-full p-3 bg-ivory2 border border-line text-navy placeholder-navy/40 mb-3" />
             <textarea placeholder="Descrizione" value={desc} onChange={e => setDesc(e.target.value)} className="w-full p-3 bg-ivory2 border border-line text-navy placeholder-navy/40 mb-3" />
             <div className="flex gap-2">
-              <button onClick={saveVideo} disabled={!title || !url} className="px-4 py-2 bg-gold rounded-lg font-semibold text-navy disabled:opacity-50">Salva</button>
+              <button onClick={saveVideo} disabled={!title || !url} className="px-4 py-2 bg-wine text-white rounded-lg font-semibold disabled:opacity-50">Salva</button>
               <button onClick={() => setShowForm(false)} className="px-4 py-2 bg-white rounded-2xl shadow-sm text-navy">Annulla</button>
             </div>
           </div>
         )}
 
         {loading ? (
-          <div className="text-center py-8"><div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin mx-auto" /></div>
+          <div className="text-center py-8"><div className="w-8 h-8 border-2 border-wine border-t-transparent rounded-full animate-spin mx-auto" /></div>
         ) : videos.length === 0 ? (
           <div className="text-center py-8 text-navy/60">Nessun video ancora</div>
         ) : (

@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { GraduationCap, CalendarDays, MessagesSquare, BookOpen, Mail, Sparkles, PenLine, Wand2, Rocket, ChevronDown, ArrowRight } from "lucide-react";
+import { GraduationCap, CalendarDays, MessagesSquare, BookOpen, Mail, Store, Sparkles, PenLine, Wand2, Rocket, ChevronDown, ArrowRight } from "lucide-react";
 
 type PostPreview = { id: number; title: string; content: string; authorNome: string; authorCogen?: string; likes?: number };
 const plain = (html: string) => (html || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
@@ -15,6 +15,7 @@ const TABS = {
     { href: "/community", icon: MessagesSquare, title: "Community", text: "Pubblica, commenta e metti like ai post degli altri autori." },
     { href: "/letture", icon: BookOpen, title: "Letture", text: "Scopri e leggi i libri scritti dai membri." },
     { href: "/messaggi", icon: Mail, title: "Messaggi", text: "Scrivi in privato a chi vuoi conoscere meglio." },
+    { href: "https://liberamente.site", icon: Store, title: "Liberamente", text: "Lo store di ebook degli autori indipendenti: scopri e pubblica i tuoi libri.", external: true },
   ]},
   scrivi: { label: "Scrivi", items: [
     { href: "https://scrittoresite.streamlit.app/", icon: Sparkles, title: "Scrittore Site", text: "Il software con chat guidata che ti accompagna dall'idea al libro finito.", external: true },
@@ -41,13 +42,14 @@ export default function Home() {
   }, []);
 
   const join = user ? "/community" : "/registrati";
-  const btnGold = "inline-flex items-center justify-center gap-2 bg-gold text-navy font-semibold px-6 py-3.5 rounded-xl shadow-md hover:-translate-y-0.5 hover:shadow-lg transition";
+  const btnGold = "inline-flex items-center justify-center gap-2 bg-wine text-white font-semibold px-6 py-3.5 rounded-xl shadow-md hover:-translate-y-0.5 hover:shadow-lg transition";
+  const btnRose = "inline-flex items-center justify-center gap-2 bg-gold text-navy font-semibold px-6 py-3.5 rounded-xl shadow-md hover:-translate-y-0.5 hover:shadow-lg transition";
   const btnLine = "inline-flex items-center justify-center gap-2 bg-white text-navy font-semibold px-6 py-3.5 rounded-xl border border-line hover:-translate-y-0.5 hover:shadow-md transition";
 
   return (
     <div className="text-navy">
       {/* HERO */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-[#fff8e6] to-ivory">
+      <section className="relative overflow-hidden bg-gradient-to-b from-[#f7e8df] to-ivory">
         <div className="max-w-6xl mx-auto px-4 md:px-8 py-14 md:py-24 grid md:grid-cols-2 gap-12 items-center">
           <div>
             <span className="inline-flex items-center gap-2 text-sm font-semibold bg-white border border-line rounded-full px-4 py-1.5 mb-6"><span className="w-2 h-2 rounded-full bg-gold" />La community degli scrittori italiani</span>
@@ -61,9 +63,9 @@ export default function Home() {
           <div className="relative mx-auto w-full max-w-md" aria-hidden="true">
             <div className="absolute -inset-4 bg-gold/20 rounded-[2.5rem] rotate-3" />
             <svg viewBox="0 0 520 520" className="relative w-full drop-shadow-xl">
-              <g transform="rotate(-7 170 330)"><rect x="50" y="110" width="230" height="340" rx="10" fill="#0b1630" /><rect x="50" y="110" width="24" height="340" rx="6" fill="#d4a437" /><text x="96" y="200" fontFamily="Literata Variable, serif" fontStyle="italic" fontSize="32" fill="#f7f3e8">Il mio</text><text x="96" y="240" fontFamily="Literata Variable, serif" fontStyle="italic" fontSize="32" fill="#f7f3e8">primo libro</text><circle cx="165" cy="360" r="32" fill="#d4a437" /></g>
-              <g transform="rotate(6 350 280)"><rect x="240" y="60" width="220" height="330" rx="10" fill="#ffffff" stroke="#e0dccf" strokeWidth="3" /><text x="266" y="140" fontFamily="Literata Variable, serif" fontStyle="italic" fontSize="30" fill="#0b1630">Storie</text><text x="266" y="176" fontFamily="Literata Variable, serif" fontStyle="italic" fontSize="30" fill="#0b1630">di mare</text><rect x="266" y="320" width="168" height="44" rx="6" fill="#0b1630" /></g>
-              <g transform="rotate(-2 330 440)"><rect x="290" y="330" width="190" height="170" rx="10" fill="#d4a437" /><text x="312" y="395" fontFamily="Literata Variable, serif" fontWeight="700" fontSize="26" fill="#0b1630">Guida KDP</text><text x="312" y="428" fontFamily="Literata Variable, serif" fontSize="17" fill="#0b1630">per principianti</text></g>
+              <g transform="rotate(-7 170 330)"><rect x="50" y="110" width="230" height="340" rx="10" fill="#3a1420" /><rect x="50" y="110" width="24" height="340" rx="6" fill="#8c2f39" /><text x="96" y="200" fontFamily="Literata Variable, serif" fontStyle="italic" fontSize="32" fill="#fbf5ee">Il mio</text><text x="96" y="240" fontFamily="Literata Variable, serif" fontStyle="italic" fontSize="32" fill="#fbf5ee">primo libro</text><circle cx="165" cy="360" r="32" fill="#8c2f39" /></g>
+              <g transform="rotate(6 350 280)"><rect x="240" y="60" width="220" height="330" rx="10" fill="#ffffff" stroke="#e6d9cc" strokeWidth="3" /><text x="266" y="140" fontFamily="Literata Variable, serif" fontStyle="italic" fontSize="30" fill="#3a1420">Storie</text><text x="266" y="176" fontFamily="Literata Variable, serif" fontStyle="italic" fontSize="30" fill="#3a1420">di mare</text><rect x="266" y="320" width="168" height="44" rx="6" fill="#3a1420" /></g>
+              <g transform="rotate(-2 330 440)"><rect x="290" y="330" width="190" height="170" rx="10" fill="#8c2f39" /><text x="312" y="395" fontFamily="Literata Variable, serif" fontWeight="700" fontSize="26" fill="#3a1420">Guida KDP</text><text x="312" y="428" fontFamily="Literata Variable, serif" fontSize="17" fill="#3a1420">per principianti</text></g>
             </svg>
           </div>
         </div>
@@ -103,7 +105,7 @@ export default function Home() {
           <div className="relative">
             <h2 className="text-3xl md:text-4xl font-bold">Scrittore Site</h2>
             <p className="mt-4 text-lg text-ivory/80">Il nostro software di scrittura: una chat guidata ti porta dall&rsquo;idea al libro finito, capitolo dopo capitolo.</p>
-            <a href="https://scrittoresite.streamlit.app/" target="_blank" rel="noopener noreferrer" className={`${btnGold} mt-8`}>Prova il software<ArrowRight className="w-5 h-5" /></a>
+            <a href="https://scrittoresite.streamlit.app/" target="_blank" rel="noopener noreferrer" className={`${btnRose} mt-8`}>Prova il software<ArrowRight className="w-5 h-5" /></a>
           </div>
           <ol className="relative grid gap-3">
             {[[PenLine, "Scrivi", "Racconti l'idea, la chat ti guida."], [Wand2, "Rivedi", "Migliori il testo capitolo per capitolo."], [Rocket, "Pubblica", "Arrivi al libro pronto da pubblicare."]].map(([I, t, d]: any, i) => (
@@ -173,9 +175,9 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4 md:px-8 py-16 text-center">
           <h2 className="text-3xl md:text-4xl font-bold">{user ? "Bentornato!" : "Pronto a unirti?"}</h2>
           <p className="mt-3 text-ivory/80 max-w-xl mx-auto">{user ? "Pubblica un post o scrivi a un altro autore." : "Registrati, presentati e pubblica il tuo primo post. Ci vuole un minuto."}</p>
-          <Link href={join} className={`${btnGold} mt-8`}>{user ? "Vai alla community" : "Registrati"}<ArrowRight className="w-5 h-5" /></Link>
+          <Link href={join} className={`${btnRose} mt-8`}>{user ? "Vai alla community" : "Registrati"}<ArrowRight className="w-5 h-5" /></Link>
           <nav className="mt-12 flex flex-wrap justify-center gap-x-6 gap-y-2 text-ivory/70">
-            <Link href="/community" className="hover:text-gold">Community</Link><Link href="/video" className="hover:text-gold">Video corsi</Link><Link href="/eventi" className="hover:text-gold">Eventi</Link><Link href="/letture" className="hover:text-gold">Letture</Link><Link href="/login" className="hover:text-gold">Accedi</Link>
+            <Link href="/community" className="hover:text-gold">Community</Link><Link href="/video" className="hover:text-gold">Video corsi</Link><Link href="/eventi" className="hover:text-gold">Eventi</Link><Link href="/letture" className="hover:text-gold">Letture</Link><a href="https://liberamente.site" target="_blank" rel="noopener noreferrer" className="hover:text-gold">Liberamente</a><Link href="/login" className="hover:text-gold">Accedi</Link>
           </nav>
           <p className="mt-6 text-sm text-ivory/50">&copy; 2026 Self Publishing Italia. Tutti i diritti riservati.</p>
         </div>

@@ -147,9 +147,9 @@ export default function UtentePage({ params }: { params: Promise<{ id: string }>
           
           <div className="mb-6">
             {utente.avatar ? (
-              <img src={utente.avatar} alt={utente.nome} className="w-32 h-32 rounded-full object-cover border-4 border-gold mx-auto" />
+              <img src={utente.avatar} alt={utente.nome} className="w-32 h-32 rounded-full object-cover border-4 border-wine mx-auto" />
             ) : (
-              <div className="w-32 h-32 bg-gold rounded-lg font-semibold rounded-full flex items-center justify-center text-navy font-bold text-5xl mx-auto border-4 border-gold">
+              <div className="w-32 h-32 bg-wine text-white rounded-lg font-semibold rounded-full flex items-center justify-center font-bold text-5xl mx-auto border-4 border-wine">
                 {(utente.nome || utente.name)?.[0]?.toUpperCase() || "?"}
               </div>
             )}
@@ -164,15 +164,15 @@ export default function UtentePage({ params }: { params: Promise<{ id: string }>
           {currentUser && !isOwnProfile && (
             <div className="mb-6">
               {!showMessageForm ? (
-                <button onClick={() => setShowMessageForm(true)} className="inline-flex items-center gap-2 px-6 py-3 bg-gold rounded-lg font-semibold text-navy hover:brightness-95 font-medium transition-all">
+                <button onClick={() => setShowMessageForm(true)} className="inline-flex items-center gap-2 px-6 py-3 bg-wine text-white rounded-lg font-semibold hover:brightness-95 font-medium transition-all">
                   <Send className="w-5 h-5" />Invia Messaggio
                 </button>
               ) : (
                 <div className="bg-ivory2 p-4 mt-2 text-left">
                   {sent && <div className="bg-green-500/20 text-green-400 p-3 mb-3">✓ Messaggio inviato!</div>}
-                  <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Scrivi il tuo messaggio..." className="w-full p-3 bg-white rounded-2xl shadow-sm border border-line text-navy placeholder-navy/40 focus:outline-none focus:border-gold resize-none" rows={4} />
+                  <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Scrivi il tuo messaggio..." className="w-full p-3 bg-white rounded-2xl shadow-sm border border-line text-navy placeholder-navy/40 focus:outline-none focus:border-wine resize-none" rows={4} />
                   <div className="flex gap-2 mt-3">
-                    <button onClick={handleSendMessage} disabled={sending || !message.trim()} className="flex-1 py-2 bg-gold rounded-lg font-semibold text-navy hover:brightness-95 disabled:opacity-50 flex items-center justify-center gap-2">
+                    <button onClick={handleSendMessage} disabled={sending || !message.trim()} className="flex-1 py-2 bg-wine text-white rounded-lg font-semibold hover:brightness-95 disabled:opacity-50 flex items-center justify-center gap-2">
                       <Send className="w-4 h-4" />{sending ? "Invio..." : "Invia"}
                     </button>
                     <button onClick={() => { setShowMessageForm(false); setMessage(""); }} className="px-4 py-2 bg-white rounded-2xl shadow-sm text-navy hover:bg-ivory2">Annulla</button>
@@ -194,20 +194,20 @@ export default function UtentePage({ params }: { params: Promise<{ id: string }>
                   
                   <div className="space-y-3">
                     <div className="relative">
-                      <input type={showCurrentPwd ? "text" : "password"} value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="Password attuale" className="w-full p-3 bg-white rounded-2xl shadow-sm border border-line text-navy placeholder-navy/40 focus:outline-none focus:border-gold pr-10" />
+                      <input type={showCurrentPwd ? "text" : "password"} value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="Password attuale" className="w-full p-3 bg-white rounded-2xl shadow-sm border border-line text-navy placeholder-navy/40 focus:outline-none focus:border-wine pr-10" />
                       <button type="button" onClick={() => setShowCurrentPwd(!showCurrentPwd)} className="absolute right-3 top-1/2 -translate-y-1/2 text-navy/60 hover:text-navy">{showCurrentPwd ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button>
                     </div>
                     
                     <div className="relative">
-                      <input type={showNewPwd ? "text" : "password"} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Nuova password" className="w-full p-3 bg-white rounded-2xl shadow-sm border border-line text-navy placeholder-navy/40 focus:outline-none focus:border-gold pr-10" />
+                      <input type={showNewPwd ? "text" : "password"} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Nuova password" className="w-full p-3 bg-white rounded-2xl shadow-sm border border-line text-navy placeholder-navy/40 focus:outline-none focus:border-wine pr-10" />
                       <button type="button" onClick={() => setShowNewPwd(!showNewPwd)} className="absolute right-3 top-1/2 -translate-y-1/2 text-navy/60 hover:text-navy">{showNewPwd ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button>
                     </div>
                     
-                    <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Conferma nuova password" className="w-full p-3 bg-white rounded-2xl shadow-sm border border-line text-navy placeholder-navy/40 focus:outline-none focus:border-gold" />
+                    <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Conferma nuova password" className="w-full p-3 bg-white rounded-2xl shadow-sm border border-line text-navy placeholder-navy/40 focus:outline-none focus:border-wine" />
                   </div>
                   
                   <div className="flex gap-2 mt-4">
-                    <button onClick={handleChangePassword} className="flex-1 py-2 bg-gold rounded-lg font-semibold text-navy hover:brightness-95 flex items-center justify-center gap-2">
+                    <button onClick={handleChangePassword} className="flex-1 py-2 bg-wine text-white rounded-lg font-semibold hover:brightness-95 flex items-center justify-center gap-2">
                       <Lock className="w-4 h-4" />Salva Password
                     </button>
                     <button onClick={() => { setShowPasswordForm(false); setPasswordError(""); setCurrentPassword(""); setNewPassword(""); setConfirmPassword(""); }} className="px-4 py-2 bg-white rounded-2xl shadow-sm text-navy hover:bg-ivory2">Annulla</button>

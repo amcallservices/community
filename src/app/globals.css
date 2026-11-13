@@ -3,19 +3,19 @@
 @tailwind utilities;
 
 :root {
-  --ink: #0b1630;
-  --paper: #f7f3e8;
-  --newsprint: #eceff6;
-  --surface: #d6dce9;
-  --brass: #d4a437;
+  --ink: #3a1420;
+  --paper: #fbf5ee;
+  --newsprint: #f3e6dc;
+  --surface: #e6d9cc;
+  --brass: #e8b4a0;
 }
 
 * { box-sizing: border-box; }
 
 body {
   font-family: 'Literata Variable', Georgia, serif;
-  background-color: #f6f4ee;
-  color: #0b1630;
+  background-color: #fbf5ee;
+  color: #3a1420;
   line-height: 1.6;
 }
 
@@ -45,4 +45,4 @@ button:active, .btn:active { transform: translateY(1px); }
 /* rifiniture */
 input, textarea, select, button { border-radius: 6px; }
 main a, main button { transition: opacity .15s, background-color .15s, color .15s; }
-::selection { background: #d4a437; color: #0b1630; }
+::selection { background: #e8b4a0; color: #3a1420; }

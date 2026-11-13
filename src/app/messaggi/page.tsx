@@ -172,7 +172,7 @@ export default function MessaggiPage() {
                       }`}
                     >
                       <div className="relative">
-                        <div className="w-10 h-10 bg-gold rounded-lg font-semibold rounded-full flex items-center justify-center text-navy font-bold">
+                        <div className="w-10 h-10 bg-wine text-white rounded-lg font-semibold rounded-full flex items-center justify-center font-bold">
                           {u.nome?.[0] || u.email?.[0]}
                         </div>
                         {hasUnread && <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full" />}
@@ -180,7 +180,7 @@ export default function MessaggiPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
                           <div className="text-navy font-medium">{u.nome} {u.cognome}</div>
-                          {hasUnread && <div className="w-2 h-2 bg-gold rounded-lg font-semibold rounded-full animate-pulse" />}
+                          {hasUnread && <div className="w-2 h-2 bg-wine text-white rounded-lg font-semibold rounded-full animate-pulse" />}
                         </div>
                         {lastMsg && (
                           <div className="text-navy/60 text-xs truncate">{lastMsg.content}</div>
@@ -200,7 +200,7 @@ export default function MessaggiPage() {
             <>
               <div className="p-4 border-b border-line flex items-center gap-3">
                 <button onClick={() => setSelectedUtente(null)} className="md:hidden text-navy/60"><ArrowLeft /></button>
-                <div className="w-10 h-10 bg-gold rounded-lg font-semibold rounded-full flex items-center justify-center text-navy font-bold">
+                <div className="w-10 h-10 bg-wine text-white rounded-lg font-semibold rounded-full flex items-center justify-center font-bold">
                   {selectedUtente.nome?.[0] || selectedUtente.email?.[0]}
                 </div>
                 <div className="flex-1">
@@ -230,10 +230,10 @@ export default function MessaggiPage() {
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     placeholder="Scrivi un messaggio..."
-                    className="flex-1 bg-white rounded-2xl shadow-sm border border-line rounded-full px-4 py-2 text-navy placeholder-navy/40 focus:outline-none focus:border-gold"
+                    className="flex-1 bg-white rounded-2xl shadow-sm border border-line rounded-full px-4 py-2 text-navy placeholder-navy/40 focus:outline-none focus:border-wine"
                     onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
                   />
-                  <button onClick={sendMessage} className="p-2 bg-gold rounded-lg font-semibold rounded-full text-navy hover:brightness-95">
+                  <button onClick={sendMessage} className="p-2 bg-wine text-white rounded-lg font-semibold rounded-full hover:brightness-95">
                     <Send className="w-5 h-5" />
                   </button>
                 </div>

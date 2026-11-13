@@ -49,7 +49,7 @@ export default function Page() {
       <main className="max-w-4xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold text-navy">Eventi</h1>
-          {isAdmin && <button onClick={() => setShowForm(true)} className="px-4 py-2 bg-gold rounded-lg font-semibold text-navy hover:brightness-95 flex items-center gap-2"><Plus className="w-4 h-4" /> Aggiungi Evento</button>}
+          {isAdmin && <button onClick={() => setShowForm(true)} className="px-4 py-2 bg-wine text-white rounded-lg font-semibold hover:brightness-95 flex items-center gap-2"><Plus className="w-4 h-4" /> Aggiungi Evento</button>}
         </div>
         
         {!isAdmin && user && <p className="text-sm text-navy/60 mb-4">Solo l'admin puo aggiungere eventi</p>}
@@ -66,14 +66,14 @@ export default function Page() {
             <input type="text" placeholder="Link Google Meet" value={link} onChange={e => setLink(e.target.value)} className="w-full p-3 bg-ivory2 border border-line text-navy placeholder-navy/40 mb-3" />
             <textarea placeholder="Descrizione" value={desc} onChange={e => setDesc(e.target.value)} className="w-full p-3 bg-ivory2 border border-line text-navy placeholder-navy/40 mb-3" />
             <div className="flex gap-2">
-              <button onClick={saveEvent} disabled={!title || !date || !time} className="px-4 py-2 bg-gold rounded-lg font-semibold text-navy disabled:opacity-50">Salva</button>
+              <button onClick={saveEvent} disabled={!title || !date || !time} className="px-4 py-2 bg-wine text-white rounded-lg font-semibold disabled:opacity-50">Salva</button>
               <button onClick={() => setShowForm(false)} className="px-4 py-2 bg-white rounded-2xl shadow-sm text-navy">Annulla</button>
             </div>
           </div>
         )}
 
         {loading ? (
-          <div className="text-center py-8"><div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin mx-auto" /></div>
+          <div className="text-center py-8"><div className="w-8 h-8 border-2 border-wine border-t-transparent rounded-full animate-spin mx-auto" /></div>
         ) : events.length === 0 ? (
           <div className="text-center py-8 text-navy/60">Nessun evento programmato</div>
         ) : (
@@ -82,7 +82,7 @@ export default function Page() {
               <div key={event.id} className="bg-white rounded-2xl shadow-sm p-5 border border-line">
                 <div className="flex items-start justify-between">
                   <div className="flex gap-4">
-                    <div className="w-14 h-14 bg-gold rounded-lg font-semibold flex flex-col items-center justify-center text-navy">
+                    <div className="w-14 h-14 bg-wine text-white rounded-lg font-semibold flex flex-col items-center justify-center">
                       <span className="text-xs font-medium">{new Date(event.date.replace(' ', 'T')).toLocaleDateString("it-IT", { month: "short" })}</span>
                       <span className="text-xl font-bold">{new Date(event.date).getDate()}</span>
                     </div>

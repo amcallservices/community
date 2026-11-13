@@ -38,7 +38,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-ivory flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <Link href="/" className="flex items-center gap-3 justify-center mb-8">
-          <div className="w-12 h-12 bg-gold rounded-lg font-semibold flex items-center justify-center"><PenLine className="w-6 h-6 text-navy" /></div>
+          <div className="w-12 h-12 bg-wine text-white rounded-lg font-semibold flex items-center justify-center"><PenLine className="w-6 h-6 text-navy" /></div>
           <span className="text-navy font-bold text-2xl">Self Publishing<span className="text-golddark">Italia</span></span>
         </Link>
         <div className="bg-white rounded-2xl shadow-sm p-6 border border-line">
@@ -47,7 +47,7 @@ export default function LoginPage() {
           <form onSubmit={handleLogin} className="space-y-4">
             <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-3 bg-ivory2 border border-line text-navy placeholder-navy/40" required />
             <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-3 bg-ivory2 border border-line text-navy placeholder-navy/40" required />
-            <button type="submit" disabled={isLoading} className="w-full py-3 bg-gold rounded-lg font-semibold text-navy font-semibold disabled:opacity-50">
+            <button type="submit" disabled={isLoading} className="w-full py-3 bg-wine text-white rounded-lg font-semibold font-semibold disabled:opacity-50">
               {isLoading ? "Accesso..." : "Accedi"}
             </button>
           </form>

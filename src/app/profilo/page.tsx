@@ -143,14 +143,14 @@ export default function Page() {
           <div className="flex flex-col items-center mb-6">
             <div className="relative">
               {avatar ? (
-                <img src={avatar} alt="Avatar" className="w-24 h-24 rounded-full object-cover border-4 border-gold" />
+                <img src={avatar} alt="Avatar" className="w-24 h-24 rounded-full object-cover border-4 border-wine" />
               ) : (
-                <div className="w-24 h-24 bg-gold rounded-lg font-semibold rounded-full flex items-center justify-center text-navy text-4xl font-bold border-4 border-gold">
+                <div className="w-24 h-24 bg-wine text-white rounded-lg font-semibold rounded-full flex items-center justify-center text-4xl font-bold border-4 border-wine">
                   {nome?.[0] || user.nome?.[0] || "?"}
                 </div>
               )}
               {editing && (
-                <label className="absolute bottom-0 right-0 w-8 h-8 bg-gold rounded-lg font-semibold rounded-full flex items-center justify-center cursor-pointer hover:brightness-95">
+                <label className="absolute bottom-0 right-0 w-8 h-8 bg-wine text-white rounded-lg font-semibold rounded-full flex items-center justify-center cursor-pointer hover:brightness-95">
                   <Camera className="w-4 h-4 text-navy" />
                   <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
                 </label>
@@ -164,7 +164,7 @@ export default function Page() {
               <input type="text" placeholder="Cognome" value={cognome} onChange={e => setCognome(e.target.value)} className="w-full p-3 bg-ivory2 border border-line text-navy placeholder-navy/40" />
               <textarea placeholder="Bio" value={bio} onChange={e => setBio(e.target.value)} className="w-full p-3 bg-ivory2 border border-line text-navy placeholder-navy/40 h-24" />
               <div className="flex gap-2">
-                <button onClick={handleSave} disabled={saving} className="flex-1 py-3 bg-gold rounded-lg font-semibold text-navy flex items-center justify-center gap-2">
+                <button onClick={handleSave} disabled={saving} className="flex-1 py-3 bg-wine text-white rounded-lg font-semibold flex items-center justify-center gap-2">
                   <Save className="w-4 h-4" />{saving ? "Salvataggio..." : "Salva"}
                 </button>
                 <button onClick={() => setEditing(false)} className="px-4 py-3 bg-white rounded-2xl shadow-sm text-navy"><X className="w-4 h-4" /></button>
@@ -195,24 +195,24 @@ export default function Page() {
               
               <div className="space-y-3">
                 <div className="relative">
-                  <input type={showCurrentPwd ? "text" : "password"} value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="Password attuale" className="w-full p-3 bg-white rounded-2xl shadow-sm border border-line text-navy placeholder-navy/40 focus:outline-none focus:border-gold pr-10" />
+                  <input type={showCurrentPwd ? "text" : "password"} value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="Password attuale" className="w-full p-3 bg-white rounded-2xl shadow-sm border border-line text-navy placeholder-navy/40 focus:outline-none focus:border-wine pr-10" />
                   <button type="button" onClick={() => setShowCurrentPwd(!showCurrentPwd)} className="absolute right-3 top-1/2 -translate-y-1/2 text-navy/60 hover:text-navy">
                     {showCurrentPwd ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
                 
                 <div className="relative">
-                  <input type={showNewPwd ? "text" : "password"} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Nuova password" className="w-full p-3 bg-white rounded-2xl shadow-sm border border-line text-navy placeholder-navy/40 focus:outline-none focus:border-gold pr-10" />
+                  <input type={showNewPwd ? "text" : "password"} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Nuova password" className="w-full p-3 bg-white rounded-2xl shadow-sm border border-line text-navy placeholder-navy/40 focus:outline-none focus:border-wine pr-10" />
                   <button type="button" onClick={() => setShowNewPwd(!showNewPwd)} className="absolute right-3 top-1/2 -translate-y-1/2 text-navy/60 hover:text-navy">
                     {showNewPwd ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
                 
-                <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Conferma nuova password" className="w-full p-3 bg-white rounded-2xl shadow-sm border border-line text-navy placeholder-navy/40 focus:outline-none focus:border-gold" />
+                <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Conferma nuova password" className="w-full p-3 bg-white rounded-2xl shadow-sm border border-line text-navy placeholder-navy/40 focus:outline-none focus:border-wine" />
               </div>
               
               <div className="flex gap-2 mt-4">
-                <button onClick={handleChangePassword} className="flex-1 py-2 bg-gold rounded-lg font-semibold text-navy hover:brightness-95 flex items-center justify-center gap-2">
+                <button onClick={handleChangePassword} className="flex-1 py-2 bg-wine text-white rounded-lg font-semibold hover:brightness-95 flex items-center justify-center gap-2">
                   <Lock className="w-4 h-4" />Salva Password
                 </button>
                 <button onClick={() => { setShowPasswordForm(false); setPasswordError(""); setCurrentPassword(""); setNewPassword(""); setConfirmPassword(""); }} className="px-4 py-2 bg-white rounded-2xl shadow-sm text-navy">Annulla</button>

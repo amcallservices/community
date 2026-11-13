@@ -197,7 +197,7 @@ export default function CommunityPage() {
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-navy">Community</h1>
           {user && (
-            <button onClick={() => setShowNewPost(true)} className="flex items-center gap-2 px-4 py-2 bg-gold rounded-lg font-semibold text-navy hover:brightness-95">
+            <button onClick={() => setShowNewPost(true)} className="flex items-center gap-2 px-4 py-2 bg-wine text-white rounded-lg font-semibold hover:brightness-95">
               <Plus className="w-5 h-5" />Nuovo Post
             </button>
           )}
@@ -222,12 +222,12 @@ export default function CommunityPage() {
               <div className="mt-2 space-y-2">
                 <input type="text" placeholder="Etichetta link (es: Guarda su Amazon)" value={linkLabel} onChange={e => setLinkLabel(e.target.value)} className="w-full p-2 bg-ivory2 border border-line text-navy placeholder-navy/40 text-sm" />
                 <input type="text" placeholder="URL (es: https://amazon.it/...)" value={linkUrl} onChange={e => setLinkUrl(e.target.value)} className="w-full p-2 bg-ivory2 border border-line text-navy placeholder-navy/40 text-sm" />
-                <button onClick={insertLink} className="px-3 py-2 bg-gold rounded-lg font-semibold text-navy text-sm">Aggiungi</button>
+                <button onClick={insertLink} className="px-3 py-2 bg-wine text-white rounded-lg font-semibold text-sm">Aggiungi</button>
               </div>
             )}
             
             <div className="flex gap-2 mt-4">
-              <button onClick={handleCreatePost} disabled={!newTitle.trim() || !newContent.trim()} className="px-6 py-2 bg-gold rounded-lg font-semibold text-navy hover:brightness-95 disabled:opacity-50">Pubblica</button>
+              <button onClick={handleCreatePost} disabled={!newTitle.trim() || !newContent.trim()} className="px-6 py-2 bg-wine text-white rounded-lg font-semibold hover:brightness-95 disabled:opacity-50">Pubblica</button>
               <button onClick={() => { setShowNewPost(false); setUploadedImage(""); }} className="px-6 py-2 bg-ivory2 text-navy hover:bg-ivory2">Annulla</button>
             </div>
           </div>
@@ -238,7 +238,7 @@ export default function CommunityPage() {
             <div key={post.id} className="bg-white rounded-2xl shadow-sm p-6 border border-line">
               <div className="flex items-start gap-3 mb-3">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center text-navy font-bold overflow-hidden">
-                  {post.authorAvatar ? <img src={post.authorAvatar} alt="Avatar" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gold rounded-lg font-semibold flex items-center justify-center">{(post.authorNome || post.authorCogen)?.[0] || "?"}</div>}
+                  {post.authorAvatar ? <img src={post.authorAvatar} alt="Avatar" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-wine text-white rounded-lg font-semibold flex items-center justify-center">{(post.authorNome || post.authorCogen)?.[0] || "?"}</div>}
                 </div>
                 <div className="flex-1">
                   <Link href={`/utente/${post.authorId}`} className="font-semibold text-navy hover:text-navy">{post.authorNome} {post.authorCogen}</Link>
@@ -273,7 +273,7 @@ export default function CommunityPage() {
                 <div key={comment.id} className="bg-ivory2 p-3">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-6 h-6 rounded-full flex items-center justify-center text-navy text-xs font-bold overflow-hidden">
-                      {comment.authorAvatar ? <img src={comment.authorAvatar} alt="Avatar" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gold rounded-lg font-semibold flex items-center justify-center">{(comment.authorNome || comment.authorCogen)?.[0] || "?"}</div>}
+                      {comment.authorAvatar ? <img src={comment.authorAvatar} alt="Avatar" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-wine text-white rounded-lg font-semibold flex items-center justify-center">{(comment.authorNome || comment.authorCogen)?.[0] || "?"}</div>}
                     </div>
                     <Link href={`/utente/${comment.authorId}`} className="font-semibold text-navy text-sm hover:text-navy">{comment.authorNome} {comment.authorCogen}</Link>
                     <span className="text-navy/60 text-xs">{comment.time}</span>
@@ -297,12 +297,12 @@ export default function CommunityPage() {
                   <div className="mb-2 space-y-1">
                     <input type="text" placeholder="Etichetta" value={linkLabel} onChange={e => setLinkLabel(e.target.value)} className="w-full p-2 bg-ivory2 border border-line rounded text-navy text-sm" />
                     <input type="text" placeholder="URL" value={linkUrl} onChange={e => setLinkUrl(e.target.value)} className="w-full p-2 bg-ivory2 border border-line rounded text-navy text-sm" />
-                    <button onClick={insertCommentLink} className="px-3 py-1 bg-gold rounded-lg font-semibold text-navy rounded text-sm">Inserisci</button>
+                    <button onClick={insertCommentLink} className="px-3 py-1 bg-wine text-white rounded-lg font-semibold rounded text-sm">Inserisci</button>
                   </div>
                 )}
                 <div className="flex gap-2">
                   <input type="text" placeholder="Commento..." value={newComment} onChange={e => setNewComment(e.target.value)} className="flex-1 p-3 bg-ivory2 border border-line text-navy placeholder-navy/40" />
-                  <button onClick={handleAddComment} disabled={!newComment.trim()} className="px-4 bg-gold rounded-lg font-semibold text-navy disabled:opacity-50"><Send className="w-5 h-5" /></button>
+                  <button onClick={handleAddComment} disabled={!newComment.trim()} className="px-4 bg-wine text-white rounded-lg font-semibold disabled:opacity-50"><Send className="w-5 h-5" /></button>
                 </div>
               </div>
             )}

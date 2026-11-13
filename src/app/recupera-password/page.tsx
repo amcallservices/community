@@ -26,7 +26,7 @@ export default function RecuperaPassword() {
             <p className="text-navy/60 text-center mb-6 text-sm">Inserisci l&apos;email con cui ti sei registrato.</p>
             <form onSubmit={submit} className="space-y-4">
               <input type="email" required placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-3 bg-ivory2 border border-line text-navy placeholder-navy/40" />
-              <button disabled={loading} className="w-full py-3 bg-gold rounded-lg font-semibold text-navy font-semibold disabled:opacity-50">{loading ? "Invio..." : "Invia link"}</button>
+              <button disabled={loading} className="w-full py-3 bg-wine text-white rounded-lg font-semibold font-semibold disabled:opacity-50">{loading ? "Invio..." : "Invia link"}</button>
             </form>
           </>
         )}
