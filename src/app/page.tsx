@@ -191,7 +191,7 @@ export default function Home() {
       <section id="video" className="max-w-4xl mx-auto px-4 md:px-8 py-16 md:py-20 scroll-mt-20">
         <Reveal>
           <h2 className="text-3xl md:text-4xl font-extrabold text-center">Guarda il video</h2>
-          <p className="text-center text-navy/70 mt-3">Due minuti per capire come funziona la community.</p>
+          <p className="text-center text-navy/70 mt-3">In trenta secondi scopri cosa trovi nella community.</p>
           <div className="mt-8 relative w-full rounded-3xl overflow-hidden shadow-2xl border-4 border-white ring-2 ring-wine/20" style={{ aspectRatio: "16 / 9" }}>
             <video src="/video-community.mp4" poster="/video-community-poster.jpg" title="Video Self Publishing Italia" controls playsInline preload="metadata" className="absolute inset-0 w-full h-full bg-navy" />
           </div>
