@@ -16,7 +16,7 @@ module.exports = {
         ivory2: '#ebe7dc',
         line: '#e0dccf',
         golddark: '#8a5d00',
-        gold: '#f59e0b',
+        gold: '#d9a92f',
       },
       fontFamily: {
         sans: ['"Literata Variable"', 'Georgia', 'serif'],
