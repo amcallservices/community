@@ -3,19 +3,19 @@
 @tailwind utilities;
 
 :root {
-  --ink: #3a1420;
-  --paper: #fbf5ee;
-  --newsprint: #f3e6dc;
-  --surface: #e6d9cc;
-  --brass: #e8b4a0;
+  --ink: #1b1464;
+  --paper: #fffaf0;
+  --newsprint: #f1ecff;
+  --surface: #e4defa;
+  --brass: #ffc83d;
 }
 
 * { box-sizing: border-box; }
 
 body {
   font-family: 'Literata Variable', Georgia, serif;
-  background-color: #fbf5ee;
-  color: #3a1420;
+  background-color: #fffaf0;
+  color: #1b1464;
   line-height: 1.6;
 }
 
@@ -45,4 +45,16 @@ button:active, .btn:active { transform: translateY(1px); }
 /* rifiniture */
 input, textarea, select, button { border-radius: 6px; }
 main a, main button { transition: opacity .15s, background-color .15s, color .15s; }
-::selection { background: #e8b4a0; color: #3a1420; }
+::selection { background: #ffc83d; color: #1b1464; }
+
+/* interattivita */
+main .shadow-sm { transition: transform .2s, box-shadow .2s; }
+main .shadow-sm:hover { transform: translateY(-2px); box-shadow: 0 10px 24px -8px rgba(91,61,245,.25); }
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.marquee { animation: marquee 28s linear infinite; }
+.marquee:hover { animation-play-state: paused; }
+@keyframes floaty { 0%,100% { transform: translateY(0) rotate(var(--r,0deg)); } 50% { transform: translateY(-10px) rotate(var(--r,0deg)); } }
+.floaty { animation: floaty 5s ease-in-out infinite; }
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity .6s, transform .6s; }
+.reveal.in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .marquee, .floaty { animation: none; } .reveal { opacity: 1; transform: none; transition: none; } }
