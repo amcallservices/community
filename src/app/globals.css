@@ -3,11 +3,11 @@
 @tailwind utilities;
 
 :root {
-  --ink: #181715;
-  --paper: #f3f2ec;
-  --newsprint: #e8e8e3;
-  --surface: #dcdcd6;
-  --brass: #bfb21a;
+  --ink: #0b1630;
+  --paper: #f7f3e8;
+  --newsprint: #eceff6;
+  --surface: #d6dce9;
+  --brass: #d4a437;
 }
 
 * { box-sizing: border-box; }
@@ -41,3 +41,8 @@ button:active, .btn:active { transform: translateY(1px); }
   .btn { @apply inline-block bg-ink text-paper px-6 py-3 font-semibold hover:opacity-90; }
   .btn-brass { @apply inline-block bg-brass text-ink px-6 py-3 font-semibold hover:opacity-90; }
 }
+
+/* rifiniture */
+input, textarea, select, button { border-radius: 6px; }
+main a, main button { transition: opacity .15s, background-color .15s, color .15s; }
+::selection { background: #d4a437; color: #0b1630; }
