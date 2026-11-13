@@ -81,7 +81,6 @@ export default function Navbar() {
             {link("/messaggi", "Messaggi", unreadCount > 0 && <span className="bg-brass text-ink text-xs font-semibold rounded-full w-5 h-5 grid place-items-center">{unreadCount}</span>)}
             {isAdmin && link("/utenti", "Utenti")}
             {link("/profilo", "Profilo")}
-            <a href="https://liberamente.site" target="_blank" rel="noopener noreferrer" className="text-[15px] text-paper hover:text-brass">Liberamente</a>
             {!user ? (
               <div className="flex gap-3">
                 <Link href="/login" className="flex items-center gap-1 text-[15px] bg-paper text-ink px-4 py-2 rounded-lg font-semibold hover:opacity-90"><LogIn className="w-4 h-4" />Accedi</Link>

@@ -15,7 +15,6 @@ const TABS = {
     { href: "/community", icon: MessagesSquare, title: "Community", text: "Pubblica, commenta e metti like ai post degli altri autori." },
     { href: "/letture", icon: BookOpen, title: "Letture", text: "Scopri e leggi i libri scritti dai membri." },
     { href: "/messaggi", icon: Mail, title: "Messaggi", text: "Scrivi in privato a chi vuoi conoscere meglio." },
-    { href: "https://liberamente.site", icon: Store, title: "Liberamente", text: "Lo store di ebook degli autori indipendenti: scopri e pubblica i tuoi libri.", external: true },
   ]},
   scrivi: { label: "Scrivi", items: [
     { href: "https://scrittoresite.streamlit.app/", icon: Sparkles, title: "Scrittore Site", text: "Il software con chat guidata che ti accompagna dall'idea al libro finito.", external: true },
@@ -118,6 +117,25 @@ export default function Home() {
         </div>
       </section>
 
+      {/* LIBERAMENTE */}
+      <section className="max-w-6xl mx-auto px-4 md:px-8 mt-8">
+        <div className="bg-white border border-line rounded-3xl p-8 md:p-12 grid md:grid-cols-2 gap-10 items-center shadow-sm">
+          <ol className="grid gap-3 order-2 md:order-1">
+            {[[PenLine, "Scrivi il libro", "Con Scrittore Site o a modo tuo."], [Store, "Pubblicalo su Liberamente", "Il tuo ebook entra nello store."], [Rocket, "Fatti trovare", "Nuovi lettori scoprono i tuoi libri."]].map(([I, t, d]: any, i) => (
+              <li key={t} className="flex items-center gap-4 bg-ivory rounded-2xl p-4 border border-line">
+                <span className="w-11 h-11 rounded-xl bg-wine text-white grid place-items-center shrink-0"><I className="w-5 h-5" /></span>
+                <span><b className="block">{i + 1}. {t}</b><span className="text-navy/70 text-sm">{d}</span></span>
+              </li>
+            ))}
+          </ol>
+          <div className="order-1 md:order-2">
+            <h2 className="text-3xl md:text-4xl font-bold">Liberamente</h2>
+            <p className="mt-4 text-lg text-navy/75">Lo store di ebook degli autori indipendenti. Quando il tuo libro è pronto, puoi pubblicarlo su Liberamente e farlo scoprire a nuovi lettori.</p>
+            <a href="https://liberamente.site" target="_blank" rel="noopener noreferrer" className={`${btnGold} mt-8`}>Pubblica su Liberamente<ArrowRight className="w-5 h-5" /></a>
+          </div>
+        </div>
+      </section>
+
       {/* VIDEO (mantenuto) */}
       <section id="video" className="max-w-4xl mx-auto px-4 md:px-8 py-16 md:py-20 scroll-mt-20">
         <h2 className="text-3xl md:text-4xl font-bold text-center">Guarda il video</h2>
@@ -177,7 +195,7 @@ export default function Home() {
           <p className="mt-3 text-ivory/80 max-w-xl mx-auto">{user ? "Pubblica un post o scrivi a un altro autore." : "Registrati, presentati e pubblica il tuo primo post. Ci vuole un minuto."}</p>
           <Link href={join} className={`${btnRose} mt-8`}>{user ? "Vai alla community" : "Registrati"}<ArrowRight className="w-5 h-5" /></Link>
           <nav className="mt-12 flex flex-wrap justify-center gap-x-6 gap-y-2 text-ivory/70">
-            <Link href="/community" className="hover:text-gold">Community</Link><Link href="/video" className="hover:text-gold">Video corsi</Link><Link href="/eventi" className="hover:text-gold">Eventi</Link><Link href="/letture" className="hover:text-gold">Letture</Link><a href="https://liberamente.site" target="_blank" rel="noopener noreferrer" className="hover:text-gold">Liberamente</a><Link href="/login" className="hover:text-gold">Accedi</Link>
+            <Link href="/community" className="hover:text-gold">Community</Link><Link href="/video" className="hover:text-gold">Video corsi</Link><Link href="/eventi" className="hover:text-gold">Eventi</Link><Link href="/letture" className="hover:text-gold">Letture</Link><Link href="/login" className="hover:text-gold">Accedi</Link>
           </nav>
           <p className="mt-6 text-sm text-ivory/50">&copy; 2026 Self Publishing Italia. Tutti i diritti riservati.</p>
         </div>
