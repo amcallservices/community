@@ -1,150 +1,185 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import "./home.css";
+import { GraduationCap, CalendarDays, MessagesSquare, BookOpen, Mail, Sparkles, PenLine, Wand2, Rocket, ChevronDown, ArrowRight } from "lucide-react";
 
-type PostPreview = { id: number; title: string; content: string; authorNome: string; authorCogen: string };
+type PostPreview = { id: number; title: string; content: string; authorNome: string; authorCogen?: string; likes?: number };
+const plain = (html: string) => (html || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 
-const plain = (html: string) => html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+const TABS = {
+  impara: { label: "Impara", items: [
+    { href: "/video", icon: GraduationCap, title: "Video corsi", text: "Il self publishing spiegato passo dopo passo." },
+    { href: "/eventi", icon: CalendarDays, title: "Eventi e webinar", text: "Incontri dal vivo con altri autori, con link diretto." },
+  ]},
+  condividi: { label: "Condividi", items: [
+    { href: "/community", icon: MessagesSquare, title: "Community", text: "Pubblica, commenta e metti like ai post degli altri autori." },
+    { href: "/letture", icon: BookOpen, title: "Letture", text: "Scopri e leggi i libri scritti dai membri." },
+    { href: "/messaggi", icon: Mail, title: "Messaggi", text: "Scrivi in privato a chi vuoi conoscere meglio." },
+  ]},
+  scrivi: { label: "Scrivi", items: [
+    { href: "https://scrittoresite.streamlit.app/", icon: Sparkles, title: "Scrittore Site", text: "Il software con chat guidata che ti accompagna dall'idea al libro finito.", external: true },
+  ]},
+} as const;
+type TabKey = keyof typeof TABS;
+
+const FAQ = [
+  { q: "Come mi iscrivo?", a: "Clicca su Registrati, inserisci nome, email e una password di almeno 8 caratteri. Dopo l'iscrizione puoi subito pubblicare e commentare." },
+  { q: "Ho perso la password, cosa faccio?", a: "Dalla pagina di accesso scegli \"Password dimenticata?\": ti prepariamo un link per sceglierne una nuova." },
+  { q: "Cos'è Scrittore Site?", a: "È il nostro software di scrittura: una chat guidata ti aiuta a costruire il libro capitolo dopo capitolo." },
+  { q: "Posso scrivere agli altri autori?", a: "Sì, dalla sezione Messaggi puoi scrivere in privato a qualsiasi membro della community." },
+];
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);
   const [posts, setPosts] = useState<PostPreview[]>([]);
+  const [tab, setTab] = useState<TabKey>("impara");
+  const [faq, setFaq] = useState<number | null>(0);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("user");
-      if (stored) setUser(JSON.parse(stored));
-    } catch {}
-    fetch("/api/posts")
-      .then(r => (r.ok ? r.json() : []))
-      .then(d => Array.isArray(d) && setPosts(d.slice(0, 3)))
-      .catch(() => {});
+    try { const s = localStorage.getItem("user"); if (s) setUser(JSON.parse(s)); } catch {}
+    fetch("/api/posts").then(r => (r.ok ? r.json() : [])).then(d => Array.isArray(d) && setPosts(d.slice(0, 3))).catch(() => {});
   }, []);
 
   const join = user ? "/community" : "/registrati";
-  const joinLabel = user ? "Vai alla community" : "Entra nella community";
+  const btnGold = "inline-flex items-center justify-center gap-2 bg-gold text-navy font-semibold px-6 py-3.5 rounded-xl shadow-md hover:-translate-y-0.5 hover:shadow-lg transition";
+  const btnLine = "inline-flex items-center justify-center gap-2 bg-white text-navy font-semibold px-6 py-3.5 rounded-xl border border-line hover:-translate-y-0.5 hover:shadow-md transition";
 
   return (
-    <div className="home">
-      {/* Frontespizio */}
-      <header className="hero">
-        <div className="card">
-          <i className="c" /><i className="c" /><i className="c" /><i className="c" />
-          <div className="crest" aria-hidden="true">S</div>
-          <h1 className="rise"><span>Self Publishing</span><span>Italia</span></h1>
-          <p className="lead rise rise-2">La community degli scrittori italiani: confrontati, impara e cresci insieme.</p>
-          <p className="det rise rise-3">Forum<span className="dia" />Video corsi<span className="dia" />Eventi<span className="dia" />Letture</p>
-          <Link className="btn brass rise rise-4" href={join}>{joinLabel}</Link>
-        </div>
-      </header>
-
-      {/* Indice */}
-      <section className="sec indice" aria-labelledby="indice-t">
-        <div className="sheet">
-          <h2 id="indice-t">Indice</h2>
-          <h3>Impara</h3>
-          <Link className="row" href="/video"><b>Video corsi</b><s /><em>gratuiti</em></Link>
-          <small>Self publishing spiegato passo dopo passo.</small>
-          <Link className="row" href="/eventi"><b>Eventi e webinar</b><s /><em>dal vivo</em></Link>
-          <small>Incontri con altri autori, con link diretto.</small>
-          <h3>Condividi</h3>
-          <Link className="row" href="/community"><b>Community</b><s /><em>sempre aperta</em></Link>
-          <small>Pubblica, commenta, metti like ai post.</small>
-          <Link className="row" href="/letture"><b>Letture</b><s /><em>libri degli autori</em></Link>
-          <Link className="row" href="/messaggi"><b>Messaggi</b><s /><em>diretti</em></Link>
-          <h3>Scrivi</h3>
-          <a className="row" href="https://scrittoresite.streamlit.app/" target="_blank" rel="noopener noreferrer"><b>Scrittore Site</b><s /><em>il software</em></a>
-          <small>Scrivi il tuo libro con una chat guidata.</small>
-        </div>
-        <div className="shelf">
-          <svg viewBox="0 0 520 620" role="img" aria-label="Copertine di libri">
-            <g transform="rotate(-6 150 420)"><rect x="40" y="170" width="250" height="360" fill="#0b1630" /><rect x="40" y="170" width="26" height="360" fill="#d4a437" /><text x="92" y="270" fontFamily="Literata Variable, serif" fontStyle="italic" fontSize="34" fill="#eceff6">Il mio</text><text x="92" y="312" fontFamily="Literata Variable, serif" fontStyle="italic" fontSize="34" fill="#eceff6">primo libro</text><circle cx="165" cy="440" r="34" fill="#d4a437" /></g>
-            <g transform="rotate(5 340 360)"><rect x="250" y="90" width="230" height="340" fill="#f7f3e8" /><text x="276" y="170" fontFamily="Literata Variable, serif" fontStyle="italic" fontSize="30" fill="#0b1630">Storie</text><text x="276" y="206" fontFamily="Literata Variable, serif" fontStyle="italic" fontSize="30" fill="#0b1630">di mare</text><rect x="276" y="350" width="178" height="48" fill="#0b1630" /></g>
-            <g transform="rotate(-2 330 520)"><rect x="300" y="360" width="190" height="230" fill="#d4a437" /><text x="322" y="430" fontFamily="Literata Variable, serif" fontWeight="600" fontSize="26" fill="#0b1630">Guida KDP</text><text x="322" y="462" fontFamily="Literata Variable, serif" fontSize="18" fill="#0b1630">per principianti</text></g>
-          </svg>
-          <p>Dentro trovi tutto quello che serve a chi scrive e pubblica da solo.</p>
-        </div>
-      </section>
-
-      {/* Scrittore Site */}
-      <section className="show" aria-labelledby="ss-t">
-        <div className="plate"><div><b aria-hidden="true">S</b><i /></div></div>
-        <div className="sright">
-          <div className="tabs"><span>Scrivi</span><span>Rivedi</span><span>Pubblica</span></div>
+    <div className="text-navy">
+      {/* HERO */}
+      <section className="relative overflow-hidden bg-gradient-to-b from-[#fff8e6] to-ivory">
+        <div className="max-w-6xl mx-auto px-4 md:px-8 py-14 md:py-24 grid md:grid-cols-2 gap-12 items-center">
           <div>
-            <h2 id="ss-t">Scrittore Site</h2>
-            <p>Il nostro software di scrittura: una chat guidata ti porta dall&rsquo;idea al libro finito, capitolo dopo capitolo.</p>
+            <span className="inline-flex items-center gap-2 text-sm font-semibold bg-white border border-line rounded-full px-4 py-1.5 mb-6"><span className="w-2 h-2 rounded-full bg-gold" />La community degli scrittori italiani</span>
+            <h1 className="rise text-4xl md:text-6xl font-bold leading-[1.05]">Scrivi, pubblica e cresci insieme ad altri autori.</h1>
+            <p className="rise rise-2 mt-6 text-lg md:text-xl text-navy/75 max-w-xl">Confrontati, impara il self publishing e condividi il tuo percorso con chi scrive come te.</p>
+            <div className="rise rise-3 mt-8 flex flex-col sm:flex-row gap-3">
+              <Link href={join} className={btnGold}>{user ? "Vai alla community" : "Entra nella community"}<ArrowRight className="w-5 h-5" /></Link>
+              <a href="#video" className={btnLine}>Guarda il video</a>
+            </div>
           </div>
-          <div className="cells">
-            <a href="https://scrittoresite.streamlit.app/" target="_blank" rel="noopener noreferrer">Prova il software</a>
-            <a href="#video">Guarda come funziona</a>
+          <div className="relative mx-auto w-full max-w-md" aria-hidden="true">
+            <div className="absolute -inset-4 bg-gold/20 rounded-[2.5rem] rotate-3" />
+            <svg viewBox="0 0 520 520" className="relative w-full drop-shadow-xl">
+              <g transform="rotate(-7 170 330)"><rect x="50" y="110" width="230" height="340" rx="10" fill="#0b1630" /><rect x="50" y="110" width="24" height="340" rx="6" fill="#d4a437" /><text x="96" y="200" fontFamily="Literata Variable, serif" fontStyle="italic" fontSize="32" fill="#f7f3e8">Il mio</text><text x="96" y="240" fontFamily="Literata Variable, serif" fontStyle="italic" fontSize="32" fill="#f7f3e8">primo libro</text><circle cx="165" cy="360" r="32" fill="#d4a437" /></g>
+              <g transform="rotate(6 350 280)"><rect x="240" y="60" width="220" height="330" rx="10" fill="#ffffff" stroke="#e0dccf" strokeWidth="3" /><text x="266" y="140" fontFamily="Literata Variable, serif" fontStyle="italic" fontSize="30" fill="#0b1630">Storie</text><text x="266" y="176" fontFamily="Literata Variable, serif" fontStyle="italic" fontSize="30" fill="#0b1630">di mare</text><rect x="266" y="320" width="168" height="44" rx="6" fill="#0b1630" /></g>
+              <g transform="rotate(-2 330 440)"><rect x="290" y="330" width="190" height="170" rx="10" fill="#d4a437" /><text x="312" y="395" fontFamily="Literata Variable, serif" fontWeight="700" fontSize="26" fill="#0b1630">Guida KDP</text><text x="312" y="428" fontFamily="Literata Variable, serif" fontSize="17" fill="#0b1630">per principianti</text></g>
+            </svg>
           </div>
         </div>
       </section>
 
-      {/* Video (mantenuto) */}
-      <section className="sec vid" id="video" aria-labelledby="vid-t">
-        <div><h2 id="vid-t">Guarda il video</h2><p>Due minuti per capire come funziona la community.</p></div>
-        <div className="frame">
-          <iframe
-            src="https://www.youtube.com/embed/A53E5DZ00sU"
-            title="Video Self Publishing Italia"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            loading="lazy"
-            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: 0 }}
-          />
+      {/* COSA TROVI: tab interattive */}
+      <section className="max-w-6xl mx-auto px-4 md:px-8 py-16 md:py-20">
+        <h2 className="text-3xl md:text-4xl font-bold text-center">Tutto quello che serve a chi scrive</h2>
+        <p className="text-center text-navy/70 mt-3">Scegli da dove iniziare.</p>
+        <div role="tablist" className="mt-8 flex justify-center gap-2 flex-wrap">
+          {(Object.keys(TABS) as TabKey[]).map(k => (
+            <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
+              className={`px-6 py-2.5 rounded-full font-semibold border transition ${tab === k ? "bg-navy text-ivory border-navy shadow-md" : "bg-white border-line hover:border-gold"}`}>{TABS[k].label}</button>
+          ))}
+        </div>
+        <div key={tab} className="rise mt-8 grid gap-5 md:grid-cols-3 justify-center">
+          {TABS[tab].items.map((it: any) => {
+            const Icon = it.icon;
+            const inner = (<>
+              <span className="w-12 h-12 rounded-xl bg-gold/25 text-golddark grid place-items-center group-hover:bg-gold group-hover:text-navy transition"><Icon className="w-6 h-6" /></span>
+              <h3 className="mt-4 text-xl font-bold">{it.title}</h3>
+              <p className="mt-2 text-navy/70">{it.text}</p>
+              <span className="mt-4 inline-flex items-center gap-1 text-golddark font-semibold">Apri <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" /></span>
+            </>);
+            const cls = "group block bg-white rounded-2xl p-6 border border-line shadow-sm hover:shadow-lg hover:-translate-y-1 transition";
+            return it.external
+              ? <a key={it.title} href={it.href} target="_blank" rel="noopener noreferrer" className={cls}>{inner}</a>
+              : <Link key={it.title} href={it.href} className={cls}>{inner}</Link>;
+          })}
         </div>
       </section>
 
-      {/* Dalla community */}
-      <section className="sec feed" aria-labelledby="feed-t">
-        <h2 id="feed-t">Dalla community</h2>
+      {/* SCRITTORE SITE */}
+      <section className="max-w-6xl mx-auto px-4 md:px-8">
+        <div className="bg-navy text-ivory rounded-3xl p-8 md:p-12 grid md:grid-cols-2 gap-10 items-center overflow-hidden relative">
+          <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-gold/20" aria-hidden="true" />
+          <div className="relative">
+            <h2 className="text-3xl md:text-4xl font-bold">Scrittore Site</h2>
+            <p className="mt-4 text-lg text-ivory/80">Il nostro software di scrittura: una chat guidata ti porta dall&rsquo;idea al libro finito, capitolo dopo capitolo.</p>
+            <a href="https://scrittoresite.streamlit.app/" target="_blank" rel="noopener noreferrer" className={`${btnGold} mt-8`}>Prova il software<ArrowRight className="w-5 h-5" /></a>
+          </div>
+          <ol className="relative grid gap-3">
+            {[[PenLine, "Scrivi", "Racconti l'idea, la chat ti guida."], [Wand2, "Rivedi", "Migliori il testo capitolo per capitolo."], [Rocket, "Pubblica", "Arrivi al libro pronto da pubblicare."]].map(([I, t, d]: any, i) => (
+              <li key={t} className="flex items-center gap-4 bg-white/10 rounded-2xl p-4">
+                <span className="w-11 h-11 rounded-xl bg-gold text-navy grid place-items-center shrink-0"><I className="w-5 h-5" /></span>
+                <span><b className="block">{i + 1}. {t}</b><span className="text-ivory/75 text-sm">{d}</span></span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      {/* VIDEO (mantenuto) */}
+      <section id="video" className="max-w-4xl mx-auto px-4 md:px-8 py-16 md:py-20 scroll-mt-20">
+        <h2 className="text-3xl md:text-4xl font-bold text-center">Guarda il video</h2>
+        <p className="text-center text-navy/70 mt-3">Due minuti per capire come funziona la community.</p>
+        <div className="mt-8 relative w-full rounded-2xl overflow-hidden shadow-xl border border-line" style={{ aspectRatio: "16 / 9" }}>
+          <iframe src="https://www.youtube.com/embed/A53E5DZ00sU" title="Video Self Publishing Italia" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen loading="lazy" className="absolute inset-0 w-full h-full border-0" />
+        </div>
+      </section>
+
+      {/* DALLA COMMUNITY */}
+      <section className="max-w-6xl mx-auto px-4 md:px-8 pb-16 md:pb-20">
+        <div className="flex items-end justify-between gap-4">
+          <h2 className="text-3xl md:text-4xl font-bold">Dalla community</h2>
+          <Link href="/community" className="text-golddark font-semibold inline-flex items-center gap-1 hover:underline">Vedi tutti <ArrowRight className="w-4 h-4" /></Link>
+        </div>
         {posts.length === 0 ? (
-          <article className="post big" style={{ gridColumn: "1 / -1" }}>
-            <h3>Qui compariranno i primi post</h3>
-            <p>La community è appena ripartita: scrivi tu il primo, presentati e racconta a cosa stai lavorando.</p>
-            <Link className="btn" href={join} style={{ marginTop: 28, alignSelf: "flex-start" }}>{user ? "Scrivi un post" : "Registrati e scrivi"}</Link>
-          </article>
+          <div className="mt-8 bg-white border border-line rounded-2xl p-8 text-center shadow-sm">
+            <h3 className="text-xl font-bold">Qui compariranno i primi post</h3>
+            <p className="mt-2 text-navy/70">La community è appena ripartita: scrivi tu il primo, presentati e racconta a cosa stai lavorando.</p>
+            <Link href={join} className={`${btnGold} mt-6`}>{user ? "Scrivi un post" : "Registrati e scrivi"}</Link>
+          </div>
         ) : (
-          <>
-            <article className="post big">
-              <h3>{posts[0].title}</h3>
-              <p>{plain(posts[0].content).slice(0, 220)}</p>
-              <div className="who"><span className="av">{(posts[0].authorNome || "?")[0]}</span>{posts[0].authorNome} {posts[0].authorCogen}</div>
-            </article>
-            {posts[1] && (
-              <div className="col">
-                <article className="post"><h3>{posts[1].title}</h3><p>{plain(posts[1].content).slice(0, 120)}</p><div className="who"><span className="av">{(posts[1].authorNome || "?")[0]}</span>{posts[1].authorNome}</div></article>
-                {posts[2] && <article className="post ink"><h3>{posts[2].title}</h3><p>{plain(posts[2].content).slice(0, 120)}</p></article>}
-              </div>
-            )}
-          </>
+          <div className="mt-8 grid gap-5 md:grid-cols-3">
+            {posts.map(p => (
+              <article key={p.id} className="bg-white border border-line rounded-2xl p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition flex flex-col">
+                <h3 className="text-xl font-bold">{p.title}</h3>
+                <p className="mt-2 text-navy/70 flex-1">{plain(p.content).slice(0, 140)}{plain(p.content).length > 140 ? "…" : ""}</p>
+                <div className="mt-5 flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-sm font-semibold"><span className="w-8 h-8 rounded-full bg-gold text-navy grid place-items-center">{(p.authorNome || "?")[0]}</span>{p.authorNome}</span>
+                  <Link href="/community" className="text-golddark font-semibold text-sm inline-flex items-center gap-1 hover:underline">Leggi <ArrowRight className="w-4 h-4" /></Link>
+                </div>
+              </article>
+            ))}
+          </div>
         )}
       </section>
 
-      {/* Cartolina di iscrizione */}
-      <section className="cta" aria-labelledby="cta-t">
-        <p>Unisciti agli scrittori che si aiutano a vicenda ogni giorno.</p>
-        <div className="reply">
-          <h2 id="cta-t">{user ? "Bentornato" : "Entra nella community"}</h2>
-          <p>{user ? "Pubblica un post o scrivi a un altro autore." : "Registrati gratis, presentati e pubblica il tuo primo post. Ci vuole un minuto."}</p>
-          <Link className="btn" href={join}>{user ? "Vai alla community" : "Registrati gratis"}</Link>
+      {/* FAQ */}
+      <section className="max-w-3xl mx-auto px-4 md:px-8 pb-16 md:pb-20">
+        <h2 className="text-3xl md:text-4xl font-bold text-center">Domande frequenti</h2>
+        <div className="mt-8 space-y-3">
+          {FAQ.map((f, i) => (
+            <div key={f.q} className="bg-white border border-line rounded-2xl shadow-sm">
+              <button onClick={() => setFaq(faq === i ? null : i)} aria-expanded={faq === i} className="w-full flex items-center justify-between gap-4 text-left p-5 font-semibold">
+                {f.q}<ChevronDown className={`w-5 h-5 shrink-0 transition ${faq === i ? "rotate-180 text-golddark" : ""}`} />
+              </button>
+              {faq === i && <p className="px-5 pb-5 text-navy/75 -mt-1">{f.a}</p>}
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* Retro della cartolina */}
-      <footer>
-        <div className="back">
-          <div className="stamp" aria-hidden="true">S</div>
-          <div><h2>A presto sulla pagina.</h2><p>Scrivi, condividi, chiedi. Qui nessuno pubblica da solo.</p></div>
-          <nav className="addr" style={{ paddingTop: 40 }}>
-            <Link href="/community">Community</Link><Link href="/video">Video corsi</Link><Link href="/eventi">Eventi</Link><Link href="/letture">Letture</Link><Link href="/login">Accedi</Link>
+      {/* CTA + FOOTER */}
+      <section className="bg-navy text-ivory">
+        <div className="max-w-6xl mx-auto px-4 md:px-8 py-16 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold">{user ? "Bentornato!" : "Pronto a unirti?"}</h2>
+          <p className="mt-3 text-ivory/80 max-w-xl mx-auto">{user ? "Pubblica un post o scrivi a un altro autore." : "Registrati, presentati e pubblica il tuo primo post. Ci vuole un minuto."}</p>
+          <Link href={join} className={`${btnGold} mt-8`}>{user ? "Vai alla community" : "Registrati"}<ArrowRight className="w-5 h-5" /></Link>
+          <nav className="mt-12 flex flex-wrap justify-center gap-x-6 gap-y-2 text-ivory/70">
+            <Link href="/community" className="hover:text-gold">Community</Link><Link href="/video" className="hover:text-gold">Video corsi</Link><Link href="/eventi" className="hover:text-gold">Eventi</Link><Link href="/letture" className="hover:text-gold">Letture</Link><Link href="/login" className="hover:text-gold">Accedi</Link>
           </nav>
-          <div className="imp">&copy; 2026 Self Publishing Italia. Tutti i diritti riservati.</div>
+          <p className="mt-6 text-sm text-ivory/50">&copy; 2026 Self Publishing Italia. Tutti i diritti riservati.</p>
         </div>
-      </footer>
+      </section>
     </div>
   );
 }

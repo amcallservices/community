@@ -124,15 +124,15 @@ export default function SyncPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-card text-paper p-8">
+    <div className="min-h-screen bg-white rounded-2xl shadow-sm text-navy p-8">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">Sincronizzazione Database</h1>
-        <p className="text-surface/80 mb-6">Copia tutti i dati dal browser al database condiviso</p>
+        <p className="text-navy/60 mb-6">Copia tutti i dati dal browser al database condiviso</p>
         
-        <div className="bg-card p-6 font-mono text-sm space-y-1">
+        <div className="bg-white rounded-2xl shadow-sm p-6 font-mono text-sm space-y-1">
           {status === "loading" && (
             <div className="flex items-center gap-3 mb-4">
-              <Loader2 className="w-6 h-6 animate-spin text-brass" />
+              <Loader2 className="w-6 h-6 animate-spin text-golddark" />
               <span>Elaborazione in corso...</span>
             </div>
           )}
@@ -158,7 +158,7 @@ export default function SyncPage() {
         
         <a 
           href="/"
-          className="mt-6 inline-block px-6 py-3 bg-brass text-ink font-medium hover:opacity-90"
+          className="mt-6 inline-block px-6 py-3 bg-gold rounded-lg font-semibold text-navy font-medium hover:brightness-95"
         >
           Torna alla Home
         </a>

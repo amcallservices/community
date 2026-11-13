@@ -123,9 +123,9 @@ export default function Page() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-ink">
+    <div className="min-h-screen bg-ivory">
       <main className="max-w-2xl mx-auto px-4 py-8">
-        <div className="bg-card p-6 border border-card2">
+        <div className="bg-white rounded-2xl shadow-sm p-6 border border-line">
           {saved && (
             <div className="bg-green-500/20 text-green-400 p-3 mb-4 flex items-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
@@ -143,15 +143,15 @@ export default function Page() {
           <div className="flex flex-col items-center mb-6">
             <div className="relative">
               {avatar ? (
-                <img src={avatar} alt="Avatar" className="w-24 h-24 rounded-full object-cover border-4 border-brass" />
+                <img src={avatar} alt="Avatar" className="w-24 h-24 rounded-full object-cover border-4 border-gold" />
               ) : (
-                <div className="w-24 h-24 bg-brass rounded-full flex items-center justify-center text-ink text-4xl font-bold border-4 border-brass">
+                <div className="w-24 h-24 bg-gold rounded-lg font-semibold rounded-full flex items-center justify-center text-navy text-4xl font-bold border-4 border-gold">
                   {nome?.[0] || user.nome?.[0] || "?"}
                 </div>
               )}
               {editing && (
-                <label className="absolute bottom-0 right-0 w-8 h-8 bg-brass rounded-full flex items-center justify-center cursor-pointer hover:opacity-90">
-                  <Camera className="w-4 h-4 text-paper" />
+                <label className="absolute bottom-0 right-0 w-8 h-8 bg-gold rounded-lg font-semibold rounded-full flex items-center justify-center cursor-pointer hover:brightness-95">
+                  <Camera className="w-4 h-4 text-navy" />
                   <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
                 </label>
               )}
@@ -160,72 +160,72 @@ export default function Page() {
 
           {editing ? (
             <div className="space-y-4 mb-6">
-              <input type="text" placeholder="Nome" value={nome} onChange={e => setNome(e.target.value)} className="w-full p-3 bg-card2 border border-card2 text-paper placeholder-surface/50" />
-              <input type="text" placeholder="Cognome" value={cognome} onChange={e => setCognome(e.target.value)} className="w-full p-3 bg-card2 border border-card2 text-paper placeholder-surface/50" />
-              <textarea placeholder="Bio" value={bio} onChange={e => setBio(e.target.value)} className="w-full p-3 bg-card2 border border-card2 text-paper placeholder-surface/50 h-24" />
+              <input type="text" placeholder="Nome" value={nome} onChange={e => setNome(e.target.value)} className="w-full p-3 bg-ivory2 border border-line text-navy placeholder-navy/40" />
+              <input type="text" placeholder="Cognome" value={cognome} onChange={e => setCognome(e.target.value)} className="w-full p-3 bg-ivory2 border border-line text-navy placeholder-navy/40" />
+              <textarea placeholder="Bio" value={bio} onChange={e => setBio(e.target.value)} className="w-full p-3 bg-ivory2 border border-line text-navy placeholder-navy/40 h-24" />
               <div className="flex gap-2">
-                <button onClick={handleSave} disabled={saving} className="flex-1 py-3 bg-brass text-ink flex items-center justify-center gap-2">
+                <button onClick={handleSave} disabled={saving} className="flex-1 py-3 bg-gold rounded-lg font-semibold text-navy flex items-center justify-center gap-2">
                   <Save className="w-4 h-4" />{saving ? "Salvataggio..." : "Salva"}
                 </button>
-                <button onClick={() => setEditing(false)} className="px-4 py-3 bg-card text-paper"><X className="w-4 h-4" /></button>
+                <button onClick={() => setEditing(false)} className="px-4 py-3 bg-white rounded-2xl shadow-sm text-navy"><X className="w-4 h-4" /></button>
               </div>
             </div>
           ) : (
             <div className="text-center mb-6">
-              <h1 className="text-2xl font-bold text-paper">{user.nome} {user.cognome}</h1>
-              <p className="text-surface/80">{user.email}</p>
-              {user.bio && <p className="text-newsprint mt-2">{user.bio}</p>}
-              <span className="inline-block px-3 py-1 bg-brass/20 text-brass rounded-full text-sm mt-2">{user.role || "scrittore"}</span>
+              <h1 className="text-2xl font-bold text-navy">{user.nome} {user.cognome}</h1>
+              <p className="text-navy/60">{user.email}</p>
+              {user.bio && <p className="text-navy/80 mt-2">{user.bio}</p>}
+              <span className="inline-block px-3 py-1 bg-gold/25 text-golddark rounded-full text-sm mt-2">{user.role || "scrittore"}</span>
             </div>
           )}
 
           {!editing && !showPasswordForm && (
             <div className="flex gap-2 mb-6">
-              <button onClick={() => setEditing(true)} className="flex-1 py-2 bg-card text-paper text-sm">Modifica profilo</button>
-              <button onClick={() => setShowPasswordForm(true)} className="flex-1 py-2 bg-red-500/80 text-paper text-sm flex items-center justify-center gap-2">
+              <button onClick={() => setEditing(true)} className="flex-1 py-2 bg-white rounded-2xl shadow-sm text-navy text-sm">Modifica profilo</button>
+              <button onClick={() => setShowPasswordForm(true)} className="flex-1 py-2 bg-red-500/80 text-navy text-sm flex items-center justify-center gap-2">
                 <Lock className="w-4 h-4" />Cambia Password
               </button>
             </div>
           )}
 
           {showPasswordForm && (
-            <div className="bg-card2 p-4 mb-6 text-left">
-              <h3 className="text-paper font-semibold mb-3">Cambia Password</h3>
+            <div className="bg-ivory2 p-4 mb-6 text-left">
+              <h3 className="text-navy font-semibold mb-3">Cambia Password</h3>
               {passwordError && <div className="bg-red-500/20 text-red-400 p-3 mb-3">{passwordError}</div>}
               
               <div className="space-y-3">
                 <div className="relative">
-                  <input type={showCurrentPwd ? "text" : "password"} value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="Password attuale" className="w-full p-3 bg-card border border-card2 text-paper placeholder-surface/50 focus:outline-none focus:border-brass pr-10" />
-                  <button type="button" onClick={() => setShowCurrentPwd(!showCurrentPwd)} className="absolute right-3 top-1/2 -translate-y-1/2 text-surface/80 hover:text-paper">
+                  <input type={showCurrentPwd ? "text" : "password"} value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="Password attuale" className="w-full p-3 bg-white rounded-2xl shadow-sm border border-line text-navy placeholder-navy/40 focus:outline-none focus:border-gold pr-10" />
+                  <button type="button" onClick={() => setShowCurrentPwd(!showCurrentPwd)} className="absolute right-3 top-1/2 -translate-y-1/2 text-navy/60 hover:text-navy">
                     {showCurrentPwd ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
                 
                 <div className="relative">
-                  <input type={showNewPwd ? "text" : "password"} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Nuova password" className="w-full p-3 bg-card border border-card2 text-paper placeholder-surface/50 focus:outline-none focus:border-brass pr-10" />
-                  <button type="button" onClick={() => setShowNewPwd(!showNewPwd)} className="absolute right-3 top-1/2 -translate-y-1/2 text-surface/80 hover:text-paper">
+                  <input type={showNewPwd ? "text" : "password"} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Nuova password" className="w-full p-3 bg-white rounded-2xl shadow-sm border border-line text-navy placeholder-navy/40 focus:outline-none focus:border-gold pr-10" />
+                  <button type="button" onClick={() => setShowNewPwd(!showNewPwd)} className="absolute right-3 top-1/2 -translate-y-1/2 text-navy/60 hover:text-navy">
                     {showNewPwd ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
                 
-                <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Conferma nuova password" className="w-full p-3 bg-card border border-card2 text-paper placeholder-surface/50 focus:outline-none focus:border-brass" />
+                <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Conferma nuova password" className="w-full p-3 bg-white rounded-2xl shadow-sm border border-line text-navy placeholder-navy/40 focus:outline-none focus:border-gold" />
               </div>
               
               <div className="flex gap-2 mt-4">
-                <button onClick={handleChangePassword} className="flex-1 py-2 bg-brass text-ink hover:opacity-90 flex items-center justify-center gap-2">
+                <button onClick={handleChangePassword} className="flex-1 py-2 bg-gold rounded-lg font-semibold text-navy hover:brightness-95 flex items-center justify-center gap-2">
                   <Lock className="w-4 h-4" />Salva Password
                 </button>
-                <button onClick={() => { setShowPasswordForm(false); setPasswordError(""); setCurrentPassword(""); setNewPassword(""); setConfirmPassword(""); }} className="px-4 py-2 bg-card text-paper">Annulla</button>
+                <button onClick={() => { setShowPasswordForm(false); setPasswordError(""); setCurrentPassword(""); setNewPassword(""); setConfirmPassword(""); }} className="px-4 py-2 bg-white rounded-2xl shadow-sm text-navy">Annulla</button>
               </div>
             </div>
           )}
 
           <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-card2 p-4 text-center"><Award className="w-6 h-6 text-brass mx-auto mb-2" /><div className="text-xl font-bold text-paper">0</div><div className="text-surface/80 text-sm">Post</div></div>
-            <div className="bg-card2 p-4 text-center"><BookOpen className="w-6 h-6 text-brass mx-auto mb-2" /><div className="text-xl font-bold text-paper">0</div><div className="text-surface/80 text-sm">Libri</div></div>
+            <div className="bg-ivory2 p-4 text-center"><Award className="w-6 h-6 text-golddark mx-auto mb-2" /><div className="text-xl font-bold text-navy">0</div><div className="text-navy/60 text-sm">Post</div></div>
+            <div className="bg-ivory2 p-4 text-center"><BookOpen className="w-6 h-6 text-golddark mx-auto mb-2" /><div className="text-xl font-bold text-navy">0</div><div className="text-navy/60 text-sm">Libri</div></div>
           </div>
           
-          <button onClick={handleLogout} className="w-full py-3 bg-card2 text-paper hover:bg-card2 flex items-center justify-center gap-2">
+          <button onClick={handleLogout} className="w-full py-3 bg-ivory2 text-navy hover:bg-ivory2 flex items-center justify-center gap-2">
             <LogOut className="w-5 h-5" />Torna alla Home
           </button>
         </div>

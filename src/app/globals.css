@@ -14,8 +14,8 @@
 
 body {
   font-family: 'Literata Variable', Georgia, serif;
-  background-color: var(--ink);
-  color: var(--paper);
+  background-color: #f6f4ee;
+  color: #0b1630;
   line-height: 1.6;
 }
 

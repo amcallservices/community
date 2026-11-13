@@ -83,11 +83,11 @@ export default function Navbar() {
             {link("/profilo", "Profilo")}
             {!user ? (
               <div className="flex gap-3">
-                <Link href="/login" className="flex items-center gap-1 text-[15px] bg-paper text-ink px-4 py-2 font-semibold hover:opacity-90"><LogIn className="w-4 h-4" />Accedi</Link>
-                <Link href="/registrati" className="flex items-center gap-1 text-[15px] bg-brass text-ink px-4 py-2 font-semibold hover:opacity-90"><UserPlus className="w-4 h-4" />Registrati</Link>
+                <Link href="/login" className="flex items-center gap-1 text-[15px] bg-paper text-ink px-4 py-2 rounded-lg font-semibold hover:opacity-90"><LogIn className="w-4 h-4" />Accedi</Link>
+                <Link href="/registrati" className="flex items-center gap-1 text-[15px] bg-brass text-ink px-4 py-2 rounded-lg font-semibold hover:opacity-90"><UserPlus className="w-4 h-4" />Registrati</Link>
               </div>
             ) : (
-              <button onClick={handleLogout} className="flex items-center gap-1 text-[15px] bg-card text-paper px-4 py-2 font-semibold hover:bg-card2"><LogOut className="w-4 h-4" />Esci</button>
+              <button onClick={handleLogout} className="flex items-center gap-1 text-[15px] bg-card text-paper px-4 py-2 rounded-lg font-semibold hover:bg-card2"><LogOut className="w-4 h-4" />Esci</button>
             )}
           </div>
         </div>

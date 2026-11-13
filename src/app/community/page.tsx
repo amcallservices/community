@@ -81,7 +81,7 @@ export default function CommunityPage() {
   const insertLink = () => {
     if (linkUrl.trim()) {
       const label = linkLabel.trim() || linkUrl;
-      setNewContent(prev => prev + `\n<a href="${linkUrl}" target="_blank" rel="noopener noreferrer" class="text-brass hover:underline flex items-center gap-1 my-2">${label}</a>\n`);
+      setNewContent(prev => prev + `\n<a href="${linkUrl}" target="_blank" rel="noopener noreferrer" class="text-golddark hover:underline flex items-center gap-1 my-2">${label}</a>\n`);
       setLinkUrl("");
       setLinkLabel("");
       setShowLinkInput(false);
@@ -91,7 +91,7 @@ export default function CommunityPage() {
   const insertCommentLink = () => {
     if (linkUrl.trim()) {
       const label = linkLabel.trim() || linkUrl;
-      setNewComment(prev => prev + `\n<a href="${linkUrl}" target="_blank" rel="noopener noreferrer" class="text-brass hover:underline flex items-center gap-1">${label}</a>\n`);
+      setNewComment(prev => prev + `\n<a href="${linkUrl}" target="_blank" rel="noopener noreferrer" class="text-golddark hover:underline flex items-center gap-1">${label}</a>\n`);
       setLinkUrl("");
       setLinkLabel("");
       setShowLinkInput(false);
@@ -189,70 +189,70 @@ export default function CommunityPage() {
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-ink flex items-center justify-center"><div className="text-paper">Caricamento...</div></div>;
+  if (loading) return <div className="min-h-screen bg-ivory flex items-center justify-center"><div className="text-navy">Caricamento...</div></div>;
 
   return (
-    <div className="min-h-screen bg-ink">
+    <div className="min-h-screen bg-ivory">
       <main className="max-w-3xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-paper">Community</h1>
+          <h1 className="text-2xl font-bold text-navy">Community</h1>
           {user && (
-            <button onClick={() => setShowNewPost(true)} className="flex items-center gap-2 px-4 py-2 bg-brass text-ink hover:opacity-90">
+            <button onClick={() => setShowNewPost(true)} className="flex items-center gap-2 px-4 py-2 bg-gold rounded-lg font-semibold text-navy hover:brightness-95">
               <Plus className="w-5 h-5" />Nuovo Post
             </button>
           )}
         </div>
 
         {showNewPost && (
-          <div className="bg-card p-6 border border-card2 mb-6">
+          <div className="bg-white rounded-2xl shadow-sm p-6 border border-line mb-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-paper">Nuovo Post</h2>
-              <button onClick={() => setShowNewPost(false)} className="text-surface/80 hover:text-paper"><X className="w-5 h-5" /></button>
+              <h2 className="text-xl font-bold text-navy">Nuovo Post</h2>
+              <button onClick={() => setShowNewPost(false)} className="text-navy/60 hover:text-navy"><X className="w-5 h-5" /></button>
             </div>
-            <input type="text" placeholder="Titolo" value={newTitle} onChange={e => setNewTitle(e.target.value)} className="w-full p-3 bg-card2 border border-card2 text-paper placeholder-surface/50 mb-3" />
-            <textarea placeholder="Contenuto..." value={newContent} onChange={e => setNewContent(e.target.value)} className="w-full p-3 bg-card2 border border-card2 text-paper placeholder-surface/50 h-32" />
+            <input type="text" placeholder="Titolo" value={newTitle} onChange={e => setNewTitle(e.target.value)} className="w-full p-3 bg-ivory2 border border-line text-navy placeholder-navy/40 mb-3" />
+            <textarea placeholder="Contenuto..." value={newContent} onChange={e => setNewContent(e.target.value)} className="w-full p-3 bg-ivory2 border border-line text-navy placeholder-navy/40 h-32" />
             
             <div className="flex gap-2 mt-2">
               <input type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" onChange={handleImageUpload} ref={fileInputRef} className="hidden" />
-              <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-1 px-3 py-1 bg-card text-paper text-sm hover:bg-card2"><Image className="w-4 h-4" />Carica Foto</button>
-              <button onClick={() => { setShowLinkInput(true); setShowImageUpload(false); }} className="flex items-center gap-1 px-3 py-1 bg-card text-paper text-sm hover:bg-card2"><LinkIcon className="w-4 h-4" />Link</button>
+              <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-1 px-3 py-1 bg-white rounded-2xl shadow-sm text-navy text-sm hover:bg-ivory2"><Image className="w-4 h-4" />Carica Foto</button>
+              <button onClick={() => { setShowLinkInput(true); setShowImageUpload(false); }} className="flex items-center gap-1 px-3 py-1 bg-white rounded-2xl shadow-sm text-navy text-sm hover:bg-ivory2"><LinkIcon className="w-4 h-4" />Link</button>
             </div>
             
             {showLinkInput && (
               <div className="mt-2 space-y-2">
-                <input type="text" placeholder="Etichetta link (es: Guarda su Amazon)" value={linkLabel} onChange={e => setLinkLabel(e.target.value)} className="w-full p-2 bg-card2 border border-card2 text-paper placeholder-surface/50 text-sm" />
-                <input type="text" placeholder="URL (es: https://amazon.it/...)" value={linkUrl} onChange={e => setLinkUrl(e.target.value)} className="w-full p-2 bg-card2 border border-card2 text-paper placeholder-surface/50 text-sm" />
-                <button onClick={insertLink} className="px-3 py-2 bg-brass text-ink text-sm">Aggiungi</button>
+                <input type="text" placeholder="Etichetta link (es: Guarda su Amazon)" value={linkLabel} onChange={e => setLinkLabel(e.target.value)} className="w-full p-2 bg-ivory2 border border-line text-navy placeholder-navy/40 text-sm" />
+                <input type="text" placeholder="URL (es: https://amazon.it/...)" value={linkUrl} onChange={e => setLinkUrl(e.target.value)} className="w-full p-2 bg-ivory2 border border-line text-navy placeholder-navy/40 text-sm" />
+                <button onClick={insertLink} className="px-3 py-2 bg-gold rounded-lg font-semibold text-navy text-sm">Aggiungi</button>
               </div>
             )}
             
             <div className="flex gap-2 mt-4">
-              <button onClick={handleCreatePost} disabled={!newTitle.trim() || !newContent.trim()} className="px-6 py-2 bg-brass text-ink hover:opacity-90 disabled:opacity-50">Pubblica</button>
-              <button onClick={() => { setShowNewPost(false); setUploadedImage(""); }} className="px-6 py-2 bg-card2 text-paper hover:bg-card2">Annulla</button>
+              <button onClick={handleCreatePost} disabled={!newTitle.trim() || !newContent.trim()} className="px-6 py-2 bg-gold rounded-lg font-semibold text-navy hover:brightness-95 disabled:opacity-50">Pubblica</button>
+              <button onClick={() => { setShowNewPost(false); setUploadedImage(""); }} className="px-6 py-2 bg-ivory2 text-navy hover:bg-ivory2">Annulla</button>
             </div>
           </div>
         )}
 
         <div className="space-y-4">
           {posts.map(post => (
-            <div key={post.id} className="bg-card p-6 border border-card2">
+            <div key={post.id} className="bg-white rounded-2xl shadow-sm p-6 border border-line">
               <div className="flex items-start gap-3 mb-3">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center text-paper font-bold overflow-hidden">
-                  {post.authorAvatar ? <img src={post.authorAvatar} alt="Avatar" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-brass flex items-center justify-center">{(post.authorNome || post.authorCogen)?.[0] || "?"}</div>}
+                <div className="w-10 h-10 rounded-full flex items-center justify-center text-navy font-bold overflow-hidden">
+                  {post.authorAvatar ? <img src={post.authorAvatar} alt="Avatar" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gold rounded-lg font-semibold flex items-center justify-center">{(post.authorNome || post.authorCogen)?.[0] || "?"}</div>}
                 </div>
                 <div className="flex-1">
-                  <Link href={`/utente/${post.authorId}`} className="font-semibold text-paper hover:text-brass">{post.authorNome} {post.authorCogen}</Link>
-                  <span className="text-surface/80 text-sm ml-2">{post.createdAt ? new Date(post.createdAt).toLocaleDateString('it-IT') : ''}</span>
+                  <Link href={`/utente/${post.authorId}`} className="font-semibold text-navy hover:text-navy">{post.authorNome} {post.authorCogen}</Link>
+                  <span className="text-navy/60 text-sm ml-2">{post.createdAt ? new Date(post.createdAt).toLocaleDateString('it-IT') : ''}</span>
                 </div>
                 {(isAdmin || (user && user.id === post.authorId)) && (
                   <button onClick={() => deletePost(post.id, user?.id, isAdmin)} className="flex items-center gap-1 text-red-400 hover:text-red-300 text-sm ml-auto"><Trash2 className="w-4 h-4" /></button>
                 )}
               </div>
-              <h3 className="text-xl font-bold text-paper mb-2">{post.title}</h3>
-              <div className="text-newsprint whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: renderRich(post.content) }} />
-              <div className="flex items-center gap-4 mt-4 pt-4 border-t border-card2">
-                <button onClick={() => handleLike(post.id)} className="flex items-center gap-1 text-surface/80 hover:text-red-400"><Heart className="w-5 h-5" /><span>{post.likes || 0}</span></button>
-                <button onClick={() => openComments(post)} className="flex items-center gap-1 text-surface/80 hover:text-brass"><MessageCircle className="w-5 h-5" /><span>{post.comments || 0}</span></button>
+              <h3 className="text-xl font-bold text-navy mb-2">{post.title}</h3>
+              <div className="text-navy/80 whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: renderRich(post.content) }} />
+              <div className="flex items-center gap-4 mt-4 pt-4 border-t border-line">
+                <button onClick={() => handleLike(post.id)} className="flex items-center gap-1 text-navy/60 hover:text-red-400"><Heart className="w-5 h-5" /><span>{post.likes || 0}</span></button>
+                <button onClick={() => openComments(post)} className="flex items-center gap-1 text-navy/60 hover:text-navy"><MessageCircle className="w-5 h-5" /><span>{post.comments || 0}</span></button>
               </div>
             </div>
           ))}
@@ -261,27 +261,27 @@ export default function CommunityPage() {
 
       {selectedPost && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-card p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-sm p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-paper">{selectedPost.title}</h2>
-              <button onClick={() => setSelectedPost(null)} className="text-surface/80 hover:text-paper"><X className="w-6 h-6" /></button>
+              <h2 className="text-xl font-bold text-navy">{selectedPost.title}</h2>
+              <button onClick={() => setSelectedPost(null)} className="text-navy/60 hover:text-navy"><X className="w-6 h-6" /></button>
             </div>
-            <div className="text-newsprint mb-6 whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: renderRich(selectedPost.content) }} />
+            <div className="text-navy/80 mb-6 whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: renderRich(selectedPost.content) }} />
             
             <div className="space-y-3 mb-6">
               {comments.map(comment => (
-                <div key={comment.id} className="bg-card2 p-3">
+                <div key={comment.id} className="bg-ivory2 p-3">
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-paper text-xs font-bold overflow-hidden">
-                      {comment.authorAvatar ? <img src={comment.authorAvatar} alt="Avatar" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-brass flex items-center justify-center">{(comment.authorNome || comment.authorCogen)?.[0] || "?"}</div>}
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-navy text-xs font-bold overflow-hidden">
+                      {comment.authorAvatar ? <img src={comment.authorAvatar} alt="Avatar" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gold rounded-lg font-semibold flex items-center justify-center">{(comment.authorNome || comment.authorCogen)?.[0] || "?"}</div>}
                     </div>
-                    <Link href={`/utente/${comment.authorId}`} className="font-semibold text-paper text-sm hover:text-brass">{comment.authorNome} {comment.authorCogen}</Link>
-                    <span className="text-surface/80 text-xs">{comment.time}</span>
+                    <Link href={`/utente/${comment.authorId}`} className="font-semibold text-navy text-sm hover:text-navy">{comment.authorNome} {comment.authorCogen}</Link>
+                    <span className="text-navy/60 text-xs">{comment.time}</span>
                     {(isAdmin || (user && user.id === comment.authorId)) && (
                       <button onClick={() => deleteComment(comment.id, selectedPost.id, user?.id, isAdmin)} className="text-red-400 hover:text-red-300 text-sm ml-auto"><Trash2 className="w-3 h-3" /></button>
                     )}
                   </div>
-                  <div className="text-newsprint text-sm" dangerouslySetInnerHTML={{ __html: renderRich(comment.text) }} />
+                  <div className="text-navy/80 text-sm" dangerouslySetInnerHTML={{ __html: renderRich(comment.text) }} />
                 </div>
               ))}
             </div>
@@ -290,19 +290,19 @@ export default function CommunityPage() {
               <div>
                 <div className="flex flex-wrap gap-2 mb-2">
                   <input type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" onChange={handleCommentImageUpload} ref={commentFileInputRef} className="hidden" />
-                  <button onClick={() => commentFileInputRef.current?.click()} className="flex items-center gap-1 px-2 py-1 bg-card text-paper rounded text-xs hover:bg-card2"><Image className="w-3 h-3" />Foto</button>
-                  <button onClick={() => { setShowLinkInput(!showLinkInput); }} className="flex items-center gap-1 px-2 py-1 bg-card text-paper rounded text-xs hover:bg-card2"><LinkIcon className="w-3 h-3" />Link</button>
+                  <button onClick={() => commentFileInputRef.current?.click()} className="flex items-center gap-1 px-2 py-1 bg-white rounded-2xl shadow-sm text-navy rounded text-xs hover:bg-ivory2"><Image className="w-3 h-3" />Foto</button>
+                  <button onClick={() => { setShowLinkInput(!showLinkInput); }} className="flex items-center gap-1 px-2 py-1 bg-white rounded-2xl shadow-sm text-navy rounded text-xs hover:bg-ivory2"><LinkIcon className="w-3 h-3" />Link</button>
                 </div>
                 {showLinkInput && (
                   <div className="mb-2 space-y-1">
-                    <input type="text" placeholder="Etichetta" value={linkLabel} onChange={e => setLinkLabel(e.target.value)} className="w-full p-2 bg-card2 border border-card2 rounded text-paper text-sm" />
-                    <input type="text" placeholder="URL" value={linkUrl} onChange={e => setLinkUrl(e.target.value)} className="w-full p-2 bg-card2 border border-card2 rounded text-paper text-sm" />
-                    <button onClick={insertCommentLink} className="px-3 py-1 bg-brass text-ink rounded text-sm">Inserisci</button>
+                    <input type="text" placeholder="Etichetta" value={linkLabel} onChange={e => setLinkLabel(e.target.value)} className="w-full p-2 bg-ivory2 border border-line rounded text-navy text-sm" />
+                    <input type="text" placeholder="URL" value={linkUrl} onChange={e => setLinkUrl(e.target.value)} className="w-full p-2 bg-ivory2 border border-line rounded text-navy text-sm" />
+                    <button onClick={insertCommentLink} className="px-3 py-1 bg-gold rounded-lg font-semibold text-navy rounded text-sm">Inserisci</button>
                   </div>
                 )}
                 <div className="flex gap-2">
-                  <input type="text" placeholder="Commento..." value={newComment} onChange={e => setNewComment(e.target.value)} className="flex-1 p-3 bg-card2 border border-card2 text-paper placeholder-surface/50" />
-                  <button onClick={handleAddComment} disabled={!newComment.trim()} className="px-4 bg-brass text-ink disabled:opacity-50"><Send className="w-5 h-5" /></button>
+                  <input type="text" placeholder="Commento..." value={newComment} onChange={e => setNewComment(e.target.value)} className="flex-1 p-3 bg-ivory2 border border-line text-navy placeholder-navy/40" />
+                  <button onClick={handleAddComment} disabled={!newComment.trim()} className="px-4 bg-gold rounded-lg font-semibold text-navy disabled:opacity-50"><Send className="w-5 h-5" /></button>
                 </div>
               </div>
             )}
