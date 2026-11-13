@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { FAQ } from "@/lib/site";
 import { GraduationCap, CalendarDays, MessagesSquare, Mail, Sparkles, PenLine, Wand2, Rocket, Store, ChevronDown, ArrowRight } from "lucide-react";
 
 type PostPreview = { id: number; title: string; content: string; authorNome: string };
@@ -41,12 +42,6 @@ const QUICK = [
   { href: "/messaggi", icon: Mail, title: "Messaggi", text: "Scrivi in privato agli autori.", bg: "bg-wine text-white" },
 ];
 
-const FAQ = [
-  { q: "Come mi iscrivo?", a: "Clicca su Registrati, inserisci nome, email e una password di almeno 8 caratteri. Dopo l'iscrizione puoi subito pubblicare e commentare." },
-  { q: "Ho perso la password, cosa faccio?", a: "Dalla pagina di accesso scegli \"Password dimenticata?\": ti prepariamo un link per sceglierne una nuova." },
-  { q: "Cos'è Scrittore Site?", a: "È il nostro software di scrittura: una chat guidata ti aiuta a costruire il libro capitolo dopo capitolo." },
-  { q: "Posso scrivere agli altri autori?", a: "Sì, dalla sezione Messaggi puoi scrivere in privato a qualsiasi membro della community." },
-];
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);
@@ -71,7 +66,7 @@ export default function Home() {
   const cur = STARTS.find(s => s.key === start)!;
 
   return (
-    <div className="text-navy overflow-x-hidden">
+    <main className="text-navy overflow-x-hidden">
       {/* HERO */}
       <section className="relative bg-gradient-to-br from-[#efe9ff] via-ivory to-[#fff1c9]">
         <div className="absolute -left-20 top-24 w-56 h-56 rounded-full bg-coral/20 blur-2xl" aria-hidden="true" />
@@ -264,6 +259,6 @@ export default function Home() {
           <p className="mt-6 text-sm text-ivory/50">&copy; 2026 Self Publishing Italia. Tutti i diritti riservati.</p>
         </div>
       </section>
-    </div>
+    </main>
   );
 }
