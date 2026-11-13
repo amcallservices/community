@@ -193,7 +193,7 @@ export default function Home() {
           <h2 className="text-3xl md:text-4xl font-extrabold text-center">Guarda il video</h2>
           <p className="text-center text-navy/70 mt-3">Due minuti per capire come funziona la community.</p>
           <div className="mt-8 relative w-full rounded-3xl overflow-hidden shadow-2xl border-4 border-white ring-2 ring-wine/20" style={{ aspectRatio: "16 / 9" }}>
-            <iframe src="https://www.youtube.com/embed/A53E5DZ00sU" title="Video Self Publishing Italia" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen loading="lazy" className="absolute inset-0 w-full h-full border-0" />
+            <video src="/video-community.mp4" poster="/video-community-poster.jpg" title="Video Self Publishing Italia" controls playsInline preload="metadata" className="absolute inset-0 w-full h-full bg-navy" />
           </div>
         </Reveal>
       </section>
