@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { GraduationCap, CalendarDays, MessagesSquare, BookOpen, Mail, Store, Sparkles, PenLine, Wand2, Rocket, ChevronDown, ArrowRight } from "lucide-react";
+import { GraduationCap, CalendarDays, MessagesSquare, Mail, Store, Sparkles, PenLine, Wand2, Rocket, ChevronDown, ArrowRight } from "lucide-react";
 
 type PostPreview = { id: number; title: string; content: string; authorNome: string; authorCogen?: string; likes?: number };
 const plain = (html: string) => (html || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
@@ -13,7 +13,6 @@ const TABS = {
   ]},
   condividi: { label: "Condividi", items: [
     { href: "/community", icon: MessagesSquare, title: "Community", text: "Pubblica, commenta e metti like ai post degli altri autori." },
-    { href: "/letture", icon: BookOpen, title: "Letture", text: "Scopri e leggi i libri scritti dai membri." },
     { href: "/messaggi", icon: Mail, title: "Messaggi", text: "Scrivi in privato a chi vuoi conoscere meglio." },
   ]},
   scrivi: { label: "Scrivi", items: [
@@ -195,7 +194,7 @@ export default function Home() {
           <p className="mt-3 text-ivory/80 max-w-xl mx-auto">{user ? "Pubblica un post o scrivi a un altro autore." : "Registrati, presentati e pubblica il tuo primo post. Ci vuole un minuto."}</p>
           <Link href={join} className={`${btnRose} mt-8`}>{user ? "Vai alla community" : "Registrati"}<ArrowRight className="w-5 h-5" /></Link>
           <nav className="mt-12 flex flex-wrap justify-center gap-x-6 gap-y-2 text-ivory/70">
-            <Link href="/community" className="hover:text-gold">Community</Link><Link href="/video" className="hover:text-gold">Video corsi</Link><Link href="/eventi" className="hover:text-gold">Eventi</Link><Link href="/letture" className="hover:text-gold">Letture</Link><Link href="/login" className="hover:text-gold">Accedi</Link>
+            <Link href="/community" className="hover:text-gold">Community</Link><Link href="/video" className="hover:text-gold">Video corsi</Link><Link href="/eventi" className="hover:text-gold">Eventi</Link><Link href="/login" className="hover:text-gold">Accedi</Link>
           </nav>
           <p className="mt-6 text-sm text-ivory/50">&copy; 2026 Self Publishing Italia. Tutti i diritti riservati.</p>
         </div>

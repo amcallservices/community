@@ -77,7 +77,6 @@ export default function Navbar() {
             {link("/community", "Community")}
             {link("/video", "Video")}
             {link("/eventi", "Eventi")}
-            {link("/letture", "Letture")}
             {link("/messaggi", "Messaggi", unreadCount > 0 && <span className="bg-brass text-ink text-xs font-semibold rounded-full w-5 h-5 grid place-items-center">{unreadCount}</span>)}
             {isAdmin && link("/utenti", "Utenti")}
             {link("/profilo", "Profilo")}

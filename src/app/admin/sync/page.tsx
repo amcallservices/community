@@ -16,14 +16,12 @@ export default function SyncPage() {
         const localPosts = JSON.parse(localStorage.getItem('posts') || '[]')
         const localComments = JSON.parse(localStorage.getItem('comments') || '{}')
         const localVideos = JSON.parse(localStorage.getItem('videos') || '[]')
-        const localLetture = JSON.parse(localStorage.getItem('letture') || '[]')
         const localEvents = JSON.parse(localStorage.getItem('events') || '[]')
         
         log.push(`Trovati in locale:`)
         log.push(`  - ${localPosts.length} post`)
         log.push(`  - ${Object.keys(localComments).length} commenti`)
         log.push(`  - ${localVideos.length} video`)
-        log.push(`  - ${localLetture.length} PDF/letture`)
         log.push(`  - ${localEvents.length} eventi`)
         setLogs([...log, '', 'Sincronizzazione in corso...'])
         
@@ -68,24 +66,6 @@ export default function SyncPage() {
         log.push(`  - ${syncVideos} video sincronizzati`)
         setLogs([...log])
         
-        // PDF/Letture sincronizzati
-        let syncLetture = 0
-        for (const l of localLetture) {
-          if (!l.id) continue
-          try {
-            const res = await fetch('/api/letture', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                title: l.title,
-                description: l.description,
-                dataUrl: l.dataUrl || l.pdfUrl
-              })
-            })
-            if (res.ok) syncLetture++
-          } catch (e) {}
-        }
-        log.push(`  - ${syncLetture} PDF sincronizzati`)
         setLogs([...log])
         
         // Eventi sincronizzati
