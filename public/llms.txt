@@ -1,0 +1,19 @@
+# Self Publishing Italia
+
+> La community italiana degli scrittori che pubblicano da soli: forum tra autori, video corsi di self publishing, eventi e webinar dal vivo.
+
+Self Publishing Italia (https://selfpublishingitalia.site) aiuta chi scrive a portare un libro dall'idea alla pubblicazione. Gli iscritti possono pubblicare e commentare nel forum, mettere like, scriversi messaggi privati, guardare i video corsi e partecipare agli eventi.
+
+## Pagine principali
+- [Home](https://selfpublishingitalia.site/): presentazione della community, video e domande frequenti.
+- [Video corsi](https://selfpublishingitalia.site/video): il self publishing spiegato passo dopo passo.
+- [Eventi e webinar](https://selfpublishingitalia.site/eventi): incontri dal vivo con altri autori.
+- [Community](https://selfpublishingitalia.site/community): forum degli autori (serve l'iscrizione gratuita per partecipare).
+- [Registrazione](https://selfpublishingitalia.site/registrati): come iscriversi.
+
+## Servizi collegati
+- [Scrittore Site](https://scrittoresite.streamlit.app/): software di scrittura con chat guidata, dall'idea al libro finito, capitolo dopo capitolo.
+- [Liberamente](https://liberamente.site): store di ebook di autori indipendenti, dove pubblicare il proprio libro.
+
+## Lingua
+Italiano.
