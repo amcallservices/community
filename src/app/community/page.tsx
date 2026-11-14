@@ -91,19 +91,27 @@ export default function CommunityPage() {
         const small = await shrinkImage(f);
         const ext = small.type === "image/jpeg" ? "jpg" : (f.name.split(".").pop() || "png");
         const base = f.name.replace(/\.[^.]+$/, "").replace(/[^\w-]+/g, "-").slice(0, 40) || "foto";
-        const blob = await upload(`${base}.${ext}`, small, {
-          access: "public",
-          handleUploadUrl: "/api/upload",
-          contentType: small.type || "image/jpeg",
-          onUploadProgress: ({ percentage }) => setPdfProgress(Math.round((i * 100 + percentage) / files.length)),
-        });
-        html += `\n<img src="${blob.url}" alt="Immagine" />\n`;
+        let src = "";
+        try {
+          const blob = await upload(`${base}.${ext}`, small, {
+            access: "public",
+            handleUploadUrl: "/api/upload",
+            contentType: small.type || "image/jpeg",
+            onUploadProgress: ({ percentage }) => setPdfProgress(Math.round((i * 100 + percentage) / files.length)),
+          });
+          src = blob.url;
+        } catch {
+          // Archivio non disponibile: inserisco la foto (gia' ridotta) dentro al post
+          if (small.size > 1.5 * 1024 * 1024) throw new Error("Questa foto \u00e8 troppo pesante da inserire ora. Riprova pi\u00f9 tardi.");
+          src = await new Promise<string>((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result as string); r.onerror = () => rej(new Error("lettura non riuscita")); r.readAsDataURL(small); });
+        }
+        html += `\n<img src="${src}" alt="Immagine" />\n`;
       }
       if (target === "post") setNewContent(prev => prev + html);
       else setNewComment(prev => prev + html);
     } catch (err: any) {
       if (html) { if (target === "post") setNewContent(prev => prev + html); else setNewComment(prev => prev + html); }
-      setPdfError(err?.message?.startsWith("Ogni foto") ? err.message : "Caricamento delle foto non riuscito. Riprova.");
+      setPdfError((err?.message?.startsWith("Ogni foto") || err?.message?.startsWith("Questa foto")) ? err.message : "Caricamento delle foto non riuscito. Riprova.");
     }
     setPdfProgress(null);
   };
