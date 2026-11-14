@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
-import { requireUser, getSessionUser, verifyPassword, hashPassword, validatePassword } from '@/lib/auth'
+import { requireUser, getSessionUser, avatarUrl, verifyPassword, hashPassword, validatePassword } from '@/lib/auth'
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true, name: true, nome: true, cognome: true, role: true, avatar: true, bio: true, banned: true, createdAt: true }
+      select: { id: true, email: true, name: true, nome: true, cognome: true, role: true, avatar: true, bio: true, banned: true, createdAt: true, updatedAt: true }
     })
 
     if (!user) {
@@ -28,23 +28,23 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       prisma.post.count({ where: { authorId: userId } }),
       prisma.comment.count({ where: { userId } }),
       prisma.like.count({ where: { post: { authorId: userId } } }),
-      prisma.post.findMany({
-        where: { authorId: userId }, orderBy: { createdAt: 'desc' }, take: 8,
-        select: { id: true, title: true, content: true, likes: true, comments: true, createdAt: true },
-        // il contenuto intero può contenere foto: qui serve solo un'anteprima
-      }),
+      prisma.$queryRaw<any[]>`SELECT id, title, likes, comments, "createdAt",
+        LEFT(content, 600) AS head,
+        (LENGTH(content) - LENGTH(REPLACE(content, '<img', ''))) / 4 AS photos,
+        (LENGTH(content) - LENGTH(REPLACE(LOWER(content), '.pdf', ''))) / 4 AS pdfs
+        FROM "Post" WHERE "authorId" = ${userId} ORDER BY "createdAt" DESC LIMIT 8`,
     ])
-    const { email, banned, ...pub } = user
+    const { email, banned, updatedAt, ...pub } = user
     return NextResponse.json({
       ...pub,
+      avatar: avatarUrl(user),
       ...(canSeePrivate ? { email } : {}),
       ...(me?.role === 'admin' ? { banned } : {}),
       stats: { posts, comments, reactions },
       recentPosts: recent.map(p => ({
-        id: p.id, title: p.title, likes: p.likes, comments: p.comments, createdAt: p.createdAt,
-        excerpt: p.content.replace(/<[^>]*>?/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160),
-        photos: (p.content.match(/<img\b/gi) || []).length,
-        pdfs: (p.content.match(/\.pdf/gi) || []).length,
+        id: Number(p.id), title: p.title, likes: Number(p.likes), comments: Number(p.comments), createdAt: p.createdAt,
+        excerpt: String(p.head || '').replace(/<[^>]*>?/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160),
+        photos: Number(p.photos), pdfs: Number(p.pdfs),
       })),
     })
   } catch (error) {

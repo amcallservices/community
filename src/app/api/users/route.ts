@@ -15,7 +15,7 @@ export async function PUT(request: NextRequest) {
         cognome: cognome || '',
         name: `${nome || ''} ${cognome || ''}`.trim() || user!.name,
         bio: bio || null,
-        avatar: avatar || null,
+        ...(avatar === undefined ? {} : { avatar: typeof avatar === 'string' && avatar.startsWith('data:image/') && avatar.length < 700_000 ? avatar : null }),
       },
     })
     return NextResponse.json(publicUser(updated))
