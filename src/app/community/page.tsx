@@ -2,7 +2,8 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { renderRich } from "@/lib/sanitize";
-import { Heart, MessageCircle, Trash2, X, Plus, Send, Image, Link as LinkIcon, Upload } from "lucide-react";
+import { upload } from "@vercel/blob/client";
+import { Heart, FileText, MessageCircle, Trash2, X, Plus, Send, Image, Link as LinkIcon, Upload } from "lucide-react";
 
 type Post = { id: number; title: string; content: string; authorId?: number; authorNome: string; authorCogen: string; authorRole: string; authorAvatar: string | null; likes: number; comments: number; category: string; createdAt: string };
 type Comment = { id: number; text: string; authorId?: number; authorNome: string; authorCogen: string; authorAvatar: string | null; time: string };
@@ -24,6 +25,10 @@ export default function CommunityPage() {
   const [linkLabel, setLinkLabel] = useState("");
   const [uploadedImage, setUploadedImage] = useState<string>("");
   const [commentImage, setCommentImage] = useState<string>("");
+  const [pdfProgress, setPdfProgress] = useState<number | null>(null);
+  const [pdfError, setPdfError] = useState("");
+  const pdfInputRef = useRef<HTMLInputElement>(null);
+  const commentPdfInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const commentFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -76,6 +81,32 @@ export default function CommunityPage() {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const uploadPdf = async (e: React.ChangeEvent<HTMLInputElement>, target: "post" | "comment") => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setPdfError("");
+    if (file.type !== "application/pdf" && !/\.pdf$/i.test(file.name)) { setPdfError("Puoi caricare solo file PDF."); return; }
+    if (file.size > 500 * 1024 * 1024) { setPdfError("Il PDF supera il limite di 500 MB."); return; }
+    setPdfProgress(0);
+    try {
+      const blob = await upload(file.name, file, {
+        access: "public",
+        handleUploadUrl: "/api/upload",
+        multipart: true,
+        contentType: "application/pdf",
+        onUploadProgress: ({ percentage }) => setPdfProgress(Math.round(percentage)),
+      });
+      const label = "\u{1F4C4} " + file.name.replace(/[<>"]/g, "");
+      const html = `\n<a href="${blob.url}" target="_blank" rel="noopener noreferrer">${label}</a>\n`;
+      if (target === "post") setNewContent(prev => prev + html);
+      else setNewComment(prev => prev + html);
+    } catch (err: any) {
+      setPdfError(err?.message?.includes("token") || err?.message?.includes("BLOB") ? "Il caricamento dei PDF non \u00e8 ancora attivo." : "Caricamento non riuscito. Riprova.");
+    }
+    setPdfProgress(null);
   };
 
   const insertLink = () => {
@@ -216,7 +247,16 @@ export default function CommunityPage() {
               <input type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" onChange={handleImageUpload} ref={fileInputRef} className="hidden" />
               <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-1 px-3 py-1 bg-white rounded-2xl shadow-sm text-navy text-sm hover:bg-ivory2"><Image className="w-4 h-4" />Carica Foto</button>
               <button onClick={() => { setShowLinkInput(true); setShowImageUpload(false); }} className="flex items-center gap-1 px-3 py-1 bg-white rounded-2xl shadow-sm text-navy text-sm hover:bg-ivory2"><LinkIcon className="w-4 h-4" />Link</button>
+              <input type="file" accept="application/pdf,.pdf" onChange={e => uploadPdf(e, "post")} ref={pdfInputRef} className="hidden" />
+              <button onClick={() => pdfInputRef.current?.click()} disabled={pdfProgress !== null} className="flex items-center gap-1 px-3 py-1 bg-white rounded-2xl shadow-sm text-navy text-sm hover:bg-ivory2 disabled:opacity-60"><FileText className="w-4 h-4" />Carica PDF</button>
             </div>
+            {pdfProgress !== null && (
+              <div className="mt-3" role="status" aria-live="polite">
+                <div className="h-2 rounded-full bg-ivory2 overflow-hidden"><div className="h-full bg-wine transition-all" style={{ width: `${pdfProgress}%` }} /></div>
+                <p className="text-sm text-navy/70 mt-1">Caricamento PDF… {pdfProgress}%</p>
+              </div>
+            )}
+            {pdfError && <p className="mt-2 text-sm text-red-600">{pdfError}</p>}
             
             {showLinkInput && (
               <div className="mt-2 space-y-2">
@@ -292,7 +332,11 @@ export default function CommunityPage() {
                   <input type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" onChange={handleCommentImageUpload} ref={commentFileInputRef} className="hidden" />
                   <button onClick={() => commentFileInputRef.current?.click()} className="flex items-center gap-1 px-2 py-1 bg-white rounded-2xl shadow-sm text-navy rounded text-xs hover:bg-ivory2"><Image className="w-3 h-3" />Foto</button>
                   <button onClick={() => { setShowLinkInput(!showLinkInput); }} className="flex items-center gap-1 px-2 py-1 bg-white rounded-2xl shadow-sm text-navy rounded text-xs hover:bg-ivory2"><LinkIcon className="w-3 h-3" />Link</button>
+                  <input type="file" accept="application/pdf,.pdf" onChange={e => uploadPdf(e, "comment")} ref={commentPdfInputRef} className="hidden" />
+                  <button onClick={() => commentPdfInputRef.current?.click()} disabled={pdfProgress !== null} className="flex items-center gap-1 px-2 py-1 bg-white rounded-2xl shadow-sm text-navy text-xs hover:bg-ivory2 disabled:opacity-60"><FileText className="w-3 h-3" />PDF</button>
                 </div>
+                {pdfProgress !== null && <p className="text-xs text-navy/70 mb-2" role="status">Caricamento PDF… {pdfProgress}%</p>}
+                {pdfError && <p className="text-xs text-red-600 mb-2">{pdfError}</p>}
                 {showLinkInput && (
                   <div className="mb-2 space-y-1">
                     <input type="text" placeholder="Etichetta" value={linkLabel} onChange={e => setLinkLabel(e.target.value)} className="w-full p-2 bg-ivory2 border border-line rounded text-navy text-sm" />

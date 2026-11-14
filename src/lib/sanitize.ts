@@ -12,8 +12,11 @@ export function renderRich(raw: string): string {
     last = (m.index ?? 0) + m[0].length
     if (m[1] !== undefined) {
       const url = m[1]
+      const isPdf = /\.pdf(\?|#|$)/i.test(url)
       out += /^https?:\/\//i.test(url)
-        ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer nofollow" class="text-brass hover:underline">${esc(m[2] || url)}</a>`
+        ? (isPdf
+          ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer nofollow" class="inline-flex items-center gap-2 my-2 px-4 py-3 rounded-xl border border-line bg-ivory2 font-semibold text-navy hover:bg-white">${esc(m[2] || url)}</a>`
+          : `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer nofollow" class="text-golddark underline hover:no-underline">${esc(m[2] || url)}</a>`)
         : esc(m[0])
     } else {
       const src = m[3]
