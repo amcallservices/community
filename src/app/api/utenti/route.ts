@@ -45,6 +45,10 @@ export async function DELETE(request: NextRequest) {
     await prisma.post.deleteMany({ where: { authorId: { in: idsArray } } })
     // Delete comments by these users (on other posts)
     await prisma.comment.deleteMany({ where: { userId: { in: idsArray } } })
+    await prisma.passwordReset.deleteMany({ where: { userId: { in: idsArray } } })
+    await prisma.letturaComment.deleteMany({ where: { userId: { in: idsArray } } })
+    await prisma.eventRsvp.deleteMany({ where: { userId: { in: idsArray } } })
+    await prisma.report.deleteMany({ where: { reporterId: { in: idsArray } } })
     // Delete notifications
     await prisma.notification.deleteMany({ where: { userId: { in: idsArray } } })
     // Delete messages
