@@ -64,6 +64,11 @@ export default function ProfileView({ id }: { id: number | string }) {
       const r = await fetch(`/api/users/${id}`);
       if (!r.ok) { setState("missing"); return; }
       const d = await r.json();
+      // ripulisce la vecchia foto salvata per intero nel browser (pesante): ora basta il link
+      try {
+        const st = JSON.parse(localStorage.getItem("user") || "null");
+        if (st && st.id === d.id && typeof st.avatar === "string" && st.avatar.startsWith("data:")) { st.avatar = d.avatar || null; localStorage.setItem("user", JSON.stringify(st)); setMe(st); }
+      } catch {}
       setU(d); setNome(d.nome || ""); setCognome(d.cognome || ""); setBio(d.bio || ""); setAvatar(d.avatar || "");
       setState("ok");
     } catch { setState("missing"); }
@@ -91,7 +96,7 @@ export default function ProfileView({ id }: { id: number | string }) {
   const save = async () => {
     setSaving(true);
     try {
-      const r = await fetch("/api/users", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nome, cognome, bio, avatar }) });
+      const r = await fetch("/api/users", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nome, cognome, bio, ...(avatar !== (u.avatar || "") ? { avatar } : {}) }) });
       if (!r.ok) throw new Error();
       const upd = await r.json();
       const merged = { ...me, ...upd };

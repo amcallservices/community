@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
-import { requireAdmin, requireUser } from '@/lib/auth'
+import { requireAdmin, requireUser, avatarUrl } from '@/lib/auth'
 
 // GET /api/utenti - list all users
 export async function GET() {
@@ -8,7 +8,7 @@ export async function GET() {
   if (authError) return authError
   try {
     const users = await prisma.user.findMany({
-      select: { id: true, nome: true, cognome: true, email: true, avatar: true, role: true },
+      select: { id: true, nome: true, cognome: true, email: true, avatar: true, role: true, updatedAt: true },
       orderBy: { id: 'asc' }
     })
     // L'email degli iscritti la vedono solo gli admin

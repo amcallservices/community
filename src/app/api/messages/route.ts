@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { requireUser } from '@/lib/auth'
 
-const personSelect = { id: true, nome: true, cognome: true, email: true, avatar: true }
+const personSelect = { id: true, nome: true, cognome: true }
 
 // GET /api/messages            -> tutti i messaggi dell'utente loggato
 // GET /api/messages?count=1    -> solo il numero di non letti (leggero, per la Navbar)

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
-import { requireUser } from '@/lib/auth'
+import { requireUser, avatarUrl } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   const { user: sessionUser, error: authError } = await requireUser()
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       id: comment.id, text: comment.content, postId: comment.postId,
       authorId: user.id, authorNome: user.nome || '', authorCogen: user.cognome || '',
-      authorAvatar: user.avatar || null, time: comment.createdAt.toLocaleDateString('it-IT'),
+      authorAvatar: avatarUrl(user), time: comment.createdAt.toLocaleDateString('it-IT'),
       parentId: comment.parentId, createdAt: comment.createdAt.toISOString()
     })
   } catch (error) {
@@ -66,13 +66,13 @@ export async function GET(request: NextRequest) {
 
     const comments = await prisma.comment.findMany({
       where: { postId: parseInt(postId) },
-      include: { user: { select: { id: true, nome: true, cognome: true, avatar: true } } },
+      include: { user: { select: { id: true, nome: true, cognome: true, avatar: true, updatedAt: true } } },
       orderBy: { createdAt: 'asc' }
     })
     const formatted = comments.map(c => ({
       id: c.id, text: c.content, authorId: c.userId,
       authorNome: c.user.nome || '', authorCogen: c.user.cognome || '',
-      authorAvatar: c.user.avatar || null, time: c.createdAt.toLocaleDateString('it-IT'),
+      authorAvatar: avatarUrl(c.user), time: c.createdAt.toLocaleDateString('it-IT'),
       parentId: c.parentId, createdAt: c.createdAt.toISOString()
     }))
     return NextResponse.json(formatted)
