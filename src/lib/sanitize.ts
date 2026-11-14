@@ -27,3 +27,28 @@ export function renderRich(raw: string): string {
   }
   return out + esc(raw.slice(last))
 }
+
+
+// Come renderRich, ma separa foto e PDF dal testo, per mostrarli come galleria e riquadri.
+export function parseRich(raw: string): { html: string; images: string[]; pdfs: { url: string; label: string }[] } {
+  let html = ''
+  const images: string[] = []
+  const pdfs: { url: string; label: string }[] = []
+  let last = 0
+  for (const m of raw.matchAll(TOKEN)) {
+    html += esc(raw.slice(last, m.index))
+    last = (m.index ?? 0) + m[0].length
+    if (m[1] !== undefined) {
+      const url = m[1]
+      if (!/^https?:\/\//i.test(url)) { html += esc(m[0]); continue }
+      if (/\.pdf(\?|#|$)/i.test(url)) pdfs.push({ url, label: (m[2] || 'Documento PDF').replace(/^\s*\u{1F4C4}\s*/u, '') })
+      else html += `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer nofollow" class="text-golddark underline hover:no-underline">${esc(m[2] || url)}</a>`
+    } else {
+      const src = m[3]
+      if (/^(https:\/\/|data:image\/(png|jpe?g|gif|webp);base64,)/i.test(src)) images.push(src)
+      else html += esc(m[0])
+    }
+  }
+  html += esc(raw.slice(last))
+  return { html: html.replace(/\n{3,}/g, '\n\n').trim(), images, pdfs }
+}

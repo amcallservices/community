@@ -1,12 +1,64 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { renderRich } from "@/lib/sanitize";
+import { renderRich, parseRich } from "@/lib/sanitize";
 import { upload } from "@vercel/blob/client";
-import { Heart, FileText, MessageCircle, Trash2, X, Plus, Send, Image, Link as LinkIcon, Upload } from "lucide-react";
+import { Heart, FileText, MessageCircle, Trash2, X, Plus, Send, Image, Link as LinkIcon, Share2, Check, ChevronDown } from "lucide-react";
 
 type Post = { id: number; title: string; content: string; authorId?: number; authorNome: string; authorCogen: string; authorRole: string; authorAvatar: string | null; likes: number; comments: number; category: string; createdAt: string };
 type Comment = { id: number; text: string; authorId?: number; authorNome: string; authorCogen: string; authorAvatar: string | null; time: string };
+
+const PALETTE = ["#ffc83d", "#ff6b6b", "#2dd4a7", "#5b3df5", "#38bdf8", "#f472b6"];
+const colorFor = (id?: number) => PALETTE[Math.abs(id || 0) % PALETTE.length];
+const textOn = (c: string) => (c === "#5b3df5" || c === "#ff6b6b" ? "#fff" : "#1b1464");
+
+function timeAgo(iso?: string) {
+  if (!iso) return "";
+  const d = new Date(iso).getTime();
+  if (isNaN(d)) return "";
+  const m = Math.floor((Date.now() - d) / 60000);
+  if (m < 1) return "adesso";
+  if (m < 60) return `${m} min fa`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return h === 1 ? "1 ora fa" : `${h} ore fa`;
+  const g = Math.floor(h / 24);
+  if (g === 1) return "ieri";
+  if (g < 7) return `${g} giorni fa`;
+  return new Date(iso).toLocaleDateString("it-IT");
+}
+
+function PostBody({ content, onZoom }: { content: string; onZoom: (src: string) => void }) {
+  const { html, images, pdfs } = parseRich(content);
+  const [open, setOpen] = useState(false);
+  const long = html.length > 260 || html.split("\n").length > 4;
+  return (
+    <div>
+      {html && (
+        <>
+          <div className={`text-navy/80 whitespace-pre-wrap leading-relaxed ${open || !long ? "" : "line-clamp-4"}`} dangerouslySetInnerHTML={{ __html: html }} />
+          {long && <button onClick={() => setOpen(o => !o)} className="mt-1 text-golddark font-semibold text-sm hover:underline inline-flex items-center gap-1">{open ? "Mostra meno" : "Leggi tutto"}<ChevronDown className={`w-4 h-4 transition ${open ? "rotate-180" : ""}`} /></button>}
+        </>
+      )}
+      {images.length > 0 && (
+        <div className={`mt-3 grid gap-1.5 ${images.length === 1 ? "grid-cols-1" : images.length === 2 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3"}`}>
+          {images.slice(0, 6).map((src, i) => (
+            <button key={i} onClick={() => onZoom(src)} className={`relative overflow-hidden rounded-xl bg-ivory2 cursor-zoom-in ${images.length === 1 ? "" : "aspect-square"}`} aria-label="Ingrandisci la foto">
+              <img src={src} alt="Immagine del post" loading="lazy" className={`w-full ${images.length === 1 ? "max-h-[28rem] object-cover" : "h-full object-cover"} hover:scale-105 transition duration-300`} />
+              {i === 5 && images.length > 6 && <span className="absolute inset-0 bg-navy/60 text-white grid place-items-center text-2xl font-bold">+{images.length - 6}</span>}
+            </button>
+          ))}
+        </div>
+      )}
+      {pdfs.map((f, i) => (
+        <a key={i} href={f.url} target="_blank" rel="noopener noreferrer nofollow" className="mt-3 flex items-center gap-3 p-3 rounded-2xl bg-ivory2 border-2 border-line hover:border-wine transition">
+          <span className="w-11 h-11 rounded-xl bg-wine text-white grid place-items-center shrink-0"><FileText className="w-5 h-5" /></span>
+          <span className="min-w-0 flex-1"><b className="block truncate text-navy">{f.label}</b><span className="text-xs text-navy/60">Documento PDF</span></span>
+          <span className="shrink-0 bg-wine text-white text-sm font-semibold px-3 py-2 rounded-lg">Apri</span>
+        </a>
+      ))}
+    </div>
+  );
+}
 
 export default function CommunityPage() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -25,6 +77,9 @@ export default function CommunityPage() {
   const [linkLabel, setLinkLabel] = useState("");
   const [uploadedImage, setUploadedImage] = useState<string>("");
   const [commentImage, setCommentImage] = useState<string>("");
+  const [zoomSrc, setZoomSrc] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [popId, setPopId] = useState<number | null>(null);
   const [pdfProgress, setPdfProgress] = useState<number | null>(null);
   const [pdfError, setPdfError] = useState("");
   const pdfInputRef = useRef<HTMLInputElement>(null);
@@ -201,7 +256,8 @@ export default function CommunityPage() {
     }
   };
 
-  const openComments = async (post: Post) => {
+  const openComments = async (post: Post, toggle = false) => {
+    if (toggle && selectedPost?.id === post.id) { setSelectedPost(null); return; }
     setSelectedPost(post);
     const res = await fetch(`/api/posts-comments?postId=${post.id}`);
     if (res.ok) setComments(await res.json());
@@ -306,44 +362,51 @@ export default function CommunityPage() {
           </div>
         )}
 
-        <div className="space-y-4">
-          {posts.map(post => (
-            <div key={post.id} className="bg-white rounded-2xl shadow-sm p-6 border border-line">
-              <div className="flex items-start gap-3 mb-3">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center text-navy font-bold overflow-hidden">
-                  {post.authorAvatar ? <img src={post.authorAvatar} alt="Avatar" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-wine text-white rounded-lg font-semibold flex items-center justify-center">{(post.authorNome || post.authorCogen)?.[0] || "?"}</div>}
-                </div>
-                <div className="flex-1">
-                  <Link href={`/utente/${post.authorId}`} className="font-semibold text-navy hover:text-navy">{post.authorNome} {post.authorCogen}</Link>
-                  <span className="text-navy/60 text-sm ml-2">{post.createdAt ? new Date(post.createdAt).toLocaleDateString('it-IT') : ''}</span>
-                </div>
-                {(isAdmin || (user && user.id === post.authorId)) && (
-                  <button onClick={() => deletePost(post.id, user?.id, isAdmin)} className="flex items-center gap-1 text-red-400 hover:text-red-300 text-sm ml-auto"><Trash2 className="w-4 h-4" /></button>
-                )}
-              </div>
-              <h3 className="text-xl font-bold text-navy mb-2">{post.title}</h3>
-              <div className="text-navy/80 whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: renderRich(post.content) }} />
-              <div className="flex items-center gap-4 mt-4 pt-4 border-t border-line">
-                <button onClick={() => handleLike(post.id)} className="flex items-center gap-1 text-navy/60 hover:text-red-400"><Heart className="w-5 h-5" /><span>{post.likes || 0}</span></button>
-                <button onClick={() => openComments(post)} className="flex items-center gap-1 text-navy/60 hover:text-navy"><MessageCircle className="w-5 h-5" /><span>{post.comments || 0}</span></button>
-              </div>
+        <div className="space-y-5">
+          {posts.length === 0 && (
+            <div className="bg-white border-2 border-line rounded-3xl p-8 text-center">
+              <h3 className="text-xl font-bold">Ancora nessun post</h3>
+              <p className="mt-2 text-navy/70">Scrivi tu il primo: presentati e racconta a cosa stai lavorando.</p>
             </div>
-          ))}
-        </div>
-      </main>
-
-      {selectedPost && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-sm p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-navy">{selectedPost.title}</h2>
-              <button onClick={() => setSelectedPost(null)} className="text-navy/60 hover:text-navy"><X className="w-6 h-6" /></button>
-            </div>
-            <div className="text-navy/80 mb-6 whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: renderRich(selectedPost.content) }} />
-            
-            <div className="space-y-3 mb-6">
+          )}
+          {posts.map(post => {
+            const col = colorFor(post.authorId);
+            const liked = typeof window !== "undefined" && !!user && localStorage.getItem(`liked_${user.id}_${post.id}`) === "1";
+            const open = selectedPost?.id === post.id;
+            return (
+            <article id={`post-${post.id}`} key={post.id} className="bg-white rounded-3xl border-2 border-line overflow-hidden hover:border-wine hover:-translate-y-0.5 hover:shadow-lg transition scroll-mt-24">
+              <div className="h-1.5" style={{ background: col }} />
+              <div className="p-5 md:p-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-full grid place-items-center font-bold overflow-hidden shrink-0" style={{ background: col, color: textOn(col) }}>
+                    {post.authorAvatar ? <img src={post.authorAvatar} alt="" className="w-full h-full object-cover" /> : ((post.authorNome || post.authorCogen)?.[0] || "?").toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <Link href={`/utente/${post.authorId}`} className="font-semibold hover:underline">{post.authorNome} {post.authorCogen}</Link>
+                    <div className="text-xs text-navy/60" title={post.createdAt ? new Date(post.createdAt).toLocaleString("it-IT") : ""}>{timeAgo(post.createdAt)}</div>
+                  </div>
+                  {(isAdmin || (user && user.id === post.authorId)) && (
+                    <button onClick={() => deletePost(post.id, user?.id, isAdmin)} aria-label="Elimina il post" className="p-2 rounded-full text-navy/40 hover:text-red-600 hover:bg-red-50 transition"><Trash2 className="w-4 h-4" /></button>
+                  )}
+                </div>
+                <h3 className="text-xl md:text-2xl font-extrabold mt-4 mb-2 leading-tight">{post.title}</h3>
+                <PostBody content={post.content} onZoom={setZoomSrc} />
+                <div className="flex items-center gap-1 mt-5 pt-4 border-t-2 border-ivory2">
+                  <button onClick={() => { handleLike(post.id); setPopId(post.id); setTimeout(() => setPopId(null), 400); }} aria-pressed={liked} aria-label="Mi piace" className={`flex items-center gap-1.5 px-3 py-2 rounded-full transition ${liked ? "text-red-600 bg-red-50" : "text-navy/60 hover:bg-ivory2 hover:text-navy"}`}>
+                    <Heart className={`w-5 h-5 transition ${liked ? "fill-red-500" : ""} ${popId === post.id ? "scale-125" : ""}`} /><span className="font-semibold">{post.likes || 0}</span>
+                  </button>
+                  <button onClick={() => openComments(post, true)} aria-expanded={open} className={`flex items-center gap-1.5 px-3 py-2 rounded-full transition ${open ? "bg-ivory2 text-navy" : "text-navy/60 hover:bg-ivory2 hover:text-navy"}`}>
+                    <MessageCircle className="w-5 h-5" /><span className="font-semibold">{post.comments || 0}</span>
+                  </button>
+                  <button onClick={async () => { try { await navigator.clipboard.writeText(`${location.origin}/community#post-${post.id}`); setCopiedId(post.id); setTimeout(() => setCopiedId(null), 1500); } catch {} }} className="ml-auto flex items-center gap-1.5 px-3 py-2 rounded-full text-navy/60 hover:bg-ivory2 hover:text-navy transition">
+                    {copiedId === post.id ? <><Check className="w-5 h-5 text-green-600" /><span className="text-sm font-semibold">Link copiato</span></> : <><Share2 className="w-5 h-5" /><span className="text-sm font-semibold hidden sm:inline">Condividi</span></>}
+                  </button>
+                </div>
+                {open && (
+                  <div className="mt-4 rise">
+                    <div className="space-y-3 mb-4">
               {comments.map(comment => (
-                <div key={comment.id} className="bg-ivory2 p-3">
+                <div key={comment.id} className="bg-ivory2 rounded-2xl p-3">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-6 h-6 rounded-full flex items-center justify-center text-navy text-xs font-bold overflow-hidden">
                       {comment.authorAvatar ? <img src={comment.authorAvatar} alt="Avatar" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-wine text-white rounded-lg font-semibold flex items-center justify-center">{(comment.authorNome || comment.authorCogen)?.[0] || "?"}</div>}
@@ -357,8 +420,8 @@ export default function CommunityPage() {
                   <div className="text-navy/80 text-sm" dangerouslySetInnerHTML={{ __html: renderRich(comment.text) }} />
                 </div>
               ))}
-            </div>
-            
+                      {comments.length === 0 && <p className="text-sm text-navy/60">Nessun commento: scrivi tu il primo.</p>}
+                    </div>
             {user && (
               <div>
                 <div className="flex flex-wrap gap-2 mb-2">
@@ -383,7 +446,19 @@ export default function CommunityPage() {
                 </div>
               </div>
             )}
-          </div>
+                  </div>
+                )}
+              </div>
+            </article>
+            );
+          })}
+        </div>
+      </main>
+
+      {zoomSrc && (
+        <div className="fixed inset-0 bg-navy/90 z-50 flex items-center justify-center p-4 cursor-zoom-out" onClick={() => setZoomSrc(null)} role="dialog" aria-label="Foto ingrandita">
+          <button className="absolute top-4 right-4 text-white p-2" aria-label="Chiudi"><X className="w-7 h-7" /></button>
+          <img src={zoomSrc} alt="Foto ingrandita" className="max-w-full max-h-full rounded-xl" />
         </div>
       )}
     </div>
