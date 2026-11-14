@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOut, LogIn, UserPlus, Menu, X } from "lucide-react";
+import NotificationBell from "./NotificationBell";
 
 type UserData = { id: number; nome: string; cognome: string; email: string; role?: string };
 
@@ -15,10 +16,6 @@ export default function Navbar() {
   const router = useRouter();
 
   useEffect(() => {
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
-    }
-    
     const stored = localStorage.getItem("user");
     if (stored) {
       const u = JSON.parse(stored);
@@ -69,9 +66,12 @@ export default function Navbar() {
             <span className="font-semibold hidden sm:block">Self Publishing Italia</span>
           </Link>
 
-          <button className="md:hidden p-2" aria-label="Menu" onClick={() => setOpen(o => !o)}>
-            {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          <div className="flex items-center gap-1 md:order-last">
+            {user && <NotificationBell />}
+            <button className="md:hidden p-2" aria-label="Menu" onClick={() => setOpen(o => !o)}>
+              {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
 
           <div className={`${open ? "flex" : "hidden"} md:flex absolute md:static top-16 left-0 right-0 z-40 bg-ink flex-col md:flex-row items-start md:items-center gap-5 p-6 md:p-0`}>
             {link("/community", "Community")}

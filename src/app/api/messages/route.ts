@@ -42,6 +42,10 @@ export async function POST(request: NextRequest) {
     if (!receiver) return NextResponse.json({ error: 'Destinatario non trovato' }, { status: 404 })
 
     const message = await prisma.message.create({ data: { content, senderId: user!.id, receiverId: receiver.id } })
+    const who = `${user!.nome || 'Qualcuno'} ${user!.cognome || ''}`.trim()
+    const text = `${who} ti ha mandato un messaggio`
+    const already = await prisma.notification.findFirst({ where: { userId: receiver.id, type: 'message', message: text, read: false } })
+    if (!already) await prisma.notification.create({ data: { userId: receiver.id, type: 'message', title: 'Nuovo messaggio', message: text, link: '/messaggi' } })
     return NextResponse.json({ id: message.id, success: true })
   } catch (error) {
     console.error('Error creating message:', error)

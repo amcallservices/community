@@ -9,6 +9,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { postId, text } = body
+    const parentIdIn = parseInt(body.parentId) || null
     if (typeof text !== 'string' || !text.trim() || text.length > 500_000) {
       return NextResponse.json({ error: 'Commento non valido' }, { status: 400 })
     }
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
 
     // Create comment
     const comment = await prisma.comment.create({
-      data: { postId, content: text, userId: user.id }
+      data: { postId, content: text, userId: user.id, parentId: parentIdIn }
     })
 
     // Increment comment count on post
@@ -28,23 +29,29 @@ export async function POST(request: NextRequest) {
       data: { comments: { increment: 1 } }
     })
 
-    // Create notification for post author (if not same user)
-    if (post.authorId !== user.id) {
-      await prisma.notification.create({
-        data: {
-          userId: post.authorId,
-          type: 'comment',
-          title: 'Nuovo commento',
-          message: `${user.nome || 'Qualcuno'} ha commentato il tuo post "${post.title}"`,
-          link: '/community'
-        }
-      })
+    // Notifiche: all'autore del post e a chi ha già commentato (escluso chi scrive)
+    const who = `${user.nome || 'Qualcuno'} ${user.cognome || ''}`.trim()
+    const link = `/community#post-${postId}`
+    const others = await prisma.comment.findMany({
+      where: { postId, userId: { notIn: [user.id, post.authorId] } },
+      select: { userId: true }, distinct: ['userId'],
+    })
+    const parent = parentIdIn ? await prisma.comment.findUnique({ where: { id: parentIdIn } }) : null
+    const rows: { userId: number; type: string; title: string; message: string; link: string }[] = []
+    if (post.authorId !== user.id) rows.push({ userId: post.authorId, type: 'comment', title: 'Nuovo commento', message: `${who} ha commentato il tuo post${post.title ? ` "${post.title}"` : ''}`, link })
+    for (const o of others) rows.push({ userId: o.userId, type: 'comment', title: 'Nuovo commento', message: `${who} ha commentato anche un post${post.title ? ` ("${post.title}")` : ''} che segui`, link })
+    if (parent && parent.userId !== user.id && parent.postId === postId) {
+      const i = rows.findIndex(r => r.userId === parent.userId)
+      const reply = { userId: parent.userId, type: 'comment', title: 'Risposta al tuo commento', message: `${who} ha risposto al tuo commento`, link }
+      if (i >= 0) rows[i] = reply; else rows.push(reply)
     }
+    if (rows.length) await prisma.notification.createMany({ data: rows })
 
     return NextResponse.json({
       id: comment.id, text: comment.content, postId: comment.postId,
       authorId: user.id, authorNome: user.nome || '', authorCogen: user.cognome || '',
-      authorAvatar: user.avatar || null, time: comment.createdAt.toLocaleDateString('it-IT')
+      authorAvatar: user.avatar || null, time: comment.createdAt.toLocaleDateString('it-IT'),
+      parentId: comment.parentId, createdAt: comment.createdAt.toISOString()
     })
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 })
@@ -65,7 +72,8 @@ export async function GET(request: NextRequest) {
     const formatted = comments.map(c => ({
       id: c.id, text: c.content, authorId: c.userId,
       authorNome: c.user.nome || '', authorCogen: c.user.cognome || '',
-      authorAvatar: c.user.avatar || null, time: c.createdAt.toLocaleDateString('it-IT')
+      authorAvatar: c.user.avatar || null, time: c.createdAt.toLocaleDateString('it-IT'),
+      parentId: c.parentId, createdAt: c.createdAt.toISOString()
     }))
     return NextResponse.json(formatted)
   } catch (error) {
@@ -87,9 +95,10 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Non autorizzato' }, { status: 403 })
     }
 
+    const removed = await prisma.comment.count({ where: { OR: [{ id }, { parentId: id }] } })
     await prisma.$transaction([
-      prisma.comment.delete({ where: { id } }),
-      prisma.post.update({ where: { id: comment.postId }, data: { comments: { decrement: 1 } } }),
+      prisma.comment.deleteMany({ where: { OR: [{ id }, { parentId: id }] } }),
+      prisma.post.update({ where: { id: comment.postId }, data: { comments: { decrement: removed } } }),
     ])
     return NextResponse.json({ success: true })
   } catch (error) {
