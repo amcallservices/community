@@ -55,32 +55,57 @@ export default function CommunityPage() {
     setLoading(false);
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = reader.result as string;
-        setUploadedImage(base64);
-        setNewContent(prev => prev + `\n<img src="${base64}" alt="Immagine" class="max-w-full rounded-lg my-2" />\n`);
-        setShowImageUpload(false);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  // Riduce la foto (max 1600 px, JPEG) prima di caricarla: i post restano leggeri.
+  const shrinkImage = (file: File): Promise<Blob> => new Promise((resolve, reject) => {
+    if (file.type === "image/gif" || file.type === "image/webp") { resolve(file); return; }
+    const img = new window.Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const max = 1600;
+      const scale = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.width * scale);
+      c.height = Math.round(img.height * scale);
+      const ctx = c.getContext("2d");
+      if (!ctx) { URL.revokeObjectURL(url); resolve(file); return; }
+      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      c.toBlob(b => (b ? resolve(b) : resolve(file)), "image/jpeg", 0.85);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("immagine non valida")); };
+    img.src = url;
+  });
 
-  const handleCommentImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = reader.result as string;
-        setCommentImage(base64);
-        setNewComment(prev => prev + `\n<img src="${base64}" alt="Immagine" class="max-w-full rounded-lg my-2" />\n`);
-        setShowImageUpload(false);
-      };
-      reader.readAsDataURL(file);
+  const uploadImages = async (e: React.ChangeEvent<HTMLInputElement>, target: "post" | "comment") => {
+    const files = Array.from(e.target.files || []).filter(f => f.type.startsWith("image/"));
+    e.target.value = "";
+    if (!files.length) return;
+    setPdfError("");
+    setPdfProgress(0);
+    let html = "";
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const f = files[i];
+        if (f.size > 50 * 1024 * 1024) throw new Error("Ogni foto deve pesare meno di 50 MB.");
+        const small = await shrinkImage(f);
+        const ext = small.type === "image/jpeg" ? "jpg" : (f.name.split(".").pop() || "png");
+        const base = f.name.replace(/\.[^.]+$/, "").replace(/[^\w-]+/g, "-").slice(0, 40) || "foto";
+        const blob = await upload(`${base}.${ext}`, small, {
+          access: "public",
+          handleUploadUrl: "/api/upload",
+          contentType: small.type || "image/jpeg",
+          onUploadProgress: ({ percentage }) => setPdfProgress(Math.round((i * 100 + percentage) / files.length)),
+        });
+        html += `\n<img src="${blob.url}" alt="Immagine" />\n`;
+      }
+      if (target === "post") setNewContent(prev => prev + html);
+      else setNewComment(prev => prev + html);
+    } catch (err: any) {
+      if (html) { if (target === "post") setNewContent(prev => prev + html); else setNewComment(prev => prev + html); }
+      setPdfError(err?.message?.startsWith("Ogni foto") ? err.message : "Caricamento delle foto non riuscito. Riprova.");
     }
+    setPdfProgress(null);
   };
 
   const uploadPdf = async (e: React.ChangeEvent<HTMLInputElement>, target: "post" | "comment") => {
@@ -244,7 +269,7 @@ export default function CommunityPage() {
             <textarea placeholder="Contenuto..." value={newContent} onChange={e => setNewContent(e.target.value)} className="w-full p-3 bg-ivory2 border border-line text-navy placeholder-navy/40 h-32" />
             
             <div className="flex gap-2 mt-2">
-              <input type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" onChange={handleImageUpload} ref={fileInputRef} className="hidden" />
+              <input type="file" multiple accept="image/jpeg,image/png,image/gif,image/webp" onChange={e => uploadImages(e, "post")} ref={fileInputRef} className="hidden" />
               <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-1 px-3 py-1 bg-white rounded-2xl shadow-sm text-navy text-sm hover:bg-ivory2"><Image className="w-4 h-4" />Carica Foto</button>
               <button onClick={() => { setShowLinkInput(true); setShowImageUpload(false); }} className="flex items-center gap-1 px-3 py-1 bg-white rounded-2xl shadow-sm text-navy text-sm hover:bg-ivory2"><LinkIcon className="w-4 h-4" />Link</button>
               <input type="file" accept="application/pdf,.pdf" onChange={e => uploadPdf(e, "post")} ref={pdfInputRef} className="hidden" />
@@ -253,7 +278,7 @@ export default function CommunityPage() {
             {pdfProgress !== null && (
               <div className="mt-3" role="status" aria-live="polite">
                 <div className="h-2 rounded-full bg-ivory2 overflow-hidden"><div className="h-full bg-wine transition-all" style={{ width: `${pdfProgress}%` }} /></div>
-                <p className="text-sm text-navy/70 mt-1">Caricamento PDF… {pdfProgress}%</p>
+                <p className="text-sm text-navy/70 mt-1">Caricamento in corso… {pdfProgress}%</p>
               </div>
             )}
             {pdfError && <p className="mt-2 text-sm text-red-600">{pdfError}</p>}
@@ -329,13 +354,13 @@ export default function CommunityPage() {
             {user && (
               <div>
                 <div className="flex flex-wrap gap-2 mb-2">
-                  <input type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" onChange={handleCommentImageUpload} ref={commentFileInputRef} className="hidden" />
+                  <input type="file" multiple accept="image/jpeg,image/png,image/gif,image/webp" onChange={e => uploadImages(e, "comment")} ref={commentFileInputRef} className="hidden" />
                   <button onClick={() => commentFileInputRef.current?.click()} className="flex items-center gap-1 px-2 py-1 bg-white rounded-2xl shadow-sm text-navy rounded text-xs hover:bg-ivory2"><Image className="w-3 h-3" />Foto</button>
                   <button onClick={() => { setShowLinkInput(!showLinkInput); }} className="flex items-center gap-1 px-2 py-1 bg-white rounded-2xl shadow-sm text-navy rounded text-xs hover:bg-ivory2"><LinkIcon className="w-3 h-3" />Link</button>
                   <input type="file" accept="application/pdf,.pdf" onChange={e => uploadPdf(e, "comment")} ref={commentPdfInputRef} className="hidden" />
                   <button onClick={() => commentPdfInputRef.current?.click()} disabled={pdfProgress !== null} className="flex items-center gap-1 px-2 py-1 bg-white rounded-2xl shadow-sm text-navy text-xs hover:bg-ivory2 disabled:opacity-60"><FileText className="w-3 h-3" />PDF</button>
                 </div>
-                {pdfProgress !== null && <p className="text-xs text-navy/70 mb-2" role="status">Caricamento PDF… {pdfProgress}%</p>}
+                {pdfProgress !== null && <p className="text-xs text-navy/70 mb-2" role="status">Caricamento in corso… {pdfProgress}%</p>}
                 {pdfError && <p className="text-xs text-red-600 mb-2">{pdfError}</p>}
                 {showLinkInput && (
                   <div className="mb-2 space-y-1">
