@@ -20,7 +20,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const { user: admin, error: authError } = await requireAdmin()
-  if (authError || !admin) return authError
+  if (authError || !admin) return authError ?? NextResponse.json({ error: 'Accesso richiesto' }, { status: 401 })
   try {
     const body = await request.json()
     const { title, date, time, meetLink, description } = body
