@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Camera, Save, X, Lock, Eye, EyeOff, Send, Pencil, ShieldCheck, FileText, MessageCircle, Heart, CalendarDays, Image as ImageIcon, Users, Newspaper, Mail, Ban, KeyRound, Check, Copy, LayoutDashboard } from "lucide-react";
+import { Camera, Save, X, Lock, Eye, EyeOff, Send, Pencil, ShieldCheck, FileText, MessageCircle, Heart, CalendarDays, Image as ImageIcon, Users, Newspaper, Mail, Ban, KeyRound, Check, Copy, LayoutDashboard, Flag } from "lucide-react";
 import { timeAgo } from "@/components/NotificationBell";
 
 const PALETTE = ["#ffc83d", "#ff6b6b", "#2dd4a7", "#5b3df5", "#38bdf8", "#f472b6"];
@@ -265,6 +265,7 @@ export default function ProfileView({ id }: { id: number | string }) {
           <div className="flex flex-wrap gap-2 mt-4">
             <Link href="/utenti" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brass text-navy font-bold hover:brightness-105"><Users className="w-4 h-4" />Gestisci utenti{adminStats?.banned ? ` (${adminStats.banned} bloccati)` : ""}</Link>
             <Link href="/community" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/15 font-semibold hover:bg-white/25"><Newspaper className="w-4 h-4" />Modera la community</Link>
+            <Link href="/admin/segnalazioni" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/15 font-semibold hover:bg-white/25"><Flag className="w-4 h-4" />Segnalazioni{adminStats?.reports ? ` (${adminStats.reports})` : ""}</Link>
             <Link href="/messaggi" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/15 font-semibold hover:bg-white/25"><Mail className="w-4 h-4" />Messaggi</Link>
           </div>
         </section>

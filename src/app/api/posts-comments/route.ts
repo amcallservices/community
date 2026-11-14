@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { requireUser, avatarUrl } from '@/lib/auth'
+import { findMentions } from '@/lib/mentions'
 
 export async function POST(request: NextRequest) {
   const { user: sessionUser, error: authError } = await requireUser()
@@ -44,6 +45,13 @@ export async function POST(request: NextRequest) {
       const i = rows.findIndex(r => r.userId === parent.userId)
       const reply = { userId: parent.userId, type: 'comment', title: 'Risposta al tuo commento', message: `${who} ha risposto al tuo commento`, link }
       if (i >= 0) rows[i] = reply; else rows.push(reply)
+    }
+    // Menzioni: la notifica "ti ha menzionato" sostituisce le altre per la stessa persona
+    const everyone = await prisma.user.findMany({ where: { banned: false, id: { not: user.id } }, select: { id: true, nome: true, cognome: true } })
+    for (const id of findMentions(text, everyone)) {
+      const m = { userId: id, type: 'mention', title: 'Menzione', message: `${who} ti ha menzionato in un commento`, link }
+      const i = rows.findIndex(r => r.userId === id)
+      if (i >= 0) rows[i] = m; else rows.push(m)
     }
     if (rows.length) await prisma.notification.createMany({ data: rows })
 
@@ -97,6 +105,7 @@ export async function DELETE(request: NextRequest) {
 
     const removed = await prisma.comment.count({ where: { OR: [{ id }, { parentId: id }] } })
     await prisma.$transaction([
+      prisma.report.deleteMany({ where: { commentId: id } }),
       prisma.comment.deleteMany({ where: { OR: [{ id }, { parentId: id }] } }),
       prisma.post.update({ where: { id: comment.postId }, data: { comments: { decrement: removed } } }),
     ])

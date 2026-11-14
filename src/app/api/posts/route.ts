@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { requireUser, getSessionUser, avatarUrl } from '@/lib/auth'
+import { findMentions } from '@/lib/mentions'
+
+const CATEGORIES = ['generale', 'scrittura', 'kdp', 'copertine', 'marketing', 'recensioni', 'domande', 'novita']
 
 export async function GET() {
   try {
@@ -28,6 +31,7 @@ export async function GET() {
       authorCogen: post.author?.cognome || '',
       authorRole: post.author?.role || 'scrittore',
       authorAvatar: post.author ? avatarUrl(post.author) : null,
+      category: post.category,
       likes: post.likes,
       comments: post.comments,
       createdAt: post.createdAt.toISOString()
@@ -50,8 +54,13 @@ export async function POST(request: NextRequest) {
     }
 
     const post = await prisma.post.create({
-      data: { title: typeof title === 'string' ? title.slice(0, 200) : '', content, authorId: user!.id, category: category || 'writing' }
+      data: { title: typeof title === 'string' ? title.slice(0, 200) : '', content, authorId: user!.id, category: CATEGORIES.includes(category) ? category : 'generale' }
     })
+    // Notifica a chi è stato citato con @Nome Cognome
+    const everyone = await prisma.user.findMany({ where: { banned: false, id: { not: user!.id } }, select: { id: true, nome: true, cognome: true } })
+    const who = `${user!.nome || 'Qualcuno'} ${user!.cognome || ''}`.trim()
+    const cited = findMentions(content, everyone)
+    if (cited.length) await prisma.notification.createMany({ data: cited.map(id => ({ userId: id, type: 'mention', title: 'Menzione', message: `${who} ti ha menzionato in un post`, link: `/community#post-${post.id}` })) })
     return NextResponse.json({ 
       id: post.id, title: post.title, content: post.content, authorId: user!.id,
       authorNome: user!.nome || 'Anonimo', authorCogen: user!.cognome || '',
@@ -80,6 +89,7 @@ export async function DELETE(request: NextRequest) {
     await prisma.$transaction([
       prisma.like.deleteMany({ where: { postId: id } }),
       prisma.comment.deleteMany({ where: { postId: id } }),
+      prisma.report.deleteMany({ where: { postId: id } }),
       prisma.post.delete({ where: { id } }),
     ])
     return NextResponse.json({ success: true })

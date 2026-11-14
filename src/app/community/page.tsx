@@ -2,9 +2,10 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { renderRich, parseRich } from "@/lib/sanitize";
+import { decorate, hashtagsOf, type Member } from "@/lib/rich";
 import { timeAgo } from "@/components/NotificationBell";
 import { upload } from "@vercel/blob/client";
-import { Heart, FileText, MessageCircle, Trash2, X, Send, Image, Link as LinkIcon, Share2, Check, ChevronDown, CalendarDays, Users, MessageSquare, User as UserIcon, Video as VideoIcon, Search, ArrowUp, Smile } from "lucide-react";
+import { Heart, FileText, MessageCircle, Trash2, X, Send, Image, Link as LinkIcon, Share2, Check, ChevronDown, CalendarDays, Users, MessageSquare, User as UserIcon, Video as VideoIcon, Search, ArrowUp, Smile, Flag, Hash } from "lucide-react";
 
 type Post = { id: number; title: string; content: string; authorId?: number; authorNome: string; authorCogen: string; authorRole: string; authorAvatar: string | null; likes: number; comments: number; category: string; createdAt: string; reactions?: Record<string, number>; myReaction?: string | null };
 type Comment = { id: number; text: string; authorId?: number; authorNome: string; authorCogen: string; authorAvatar: string | null; time: string; parentId?: number | null; createdAt?: string };
@@ -18,21 +19,30 @@ const REACTIONS = [
   { k: "sad", e: "\u{1F622}", l: "Che emozione", c: "text-amber-600" },
 ];
 const EMOJI = ["\u{1F600}", "\u{1F60D}", "\u{1F389}", "\u{1F4DA}", "\u270D\uFE0F", "\u{1F525}", "\u{1F44F}", "\u{1F4A1}", "\u{1F680}", "\u2764\uFE0F"];
+const CATS = [
+  { k: "generale", l: "Generale", c: "#5b3df5" }, { k: "scrittura", l: "Scrittura", c: "#2dd4a7" }, { k: "kdp", l: "KDP e Amazon", c: "#ffc83d" },
+  { k: "copertine", l: "Copertine", c: "#f472b6" }, { k: "marketing", l: "Marketing", c: "#ff6b6b" }, { k: "recensioni", l: "Recensioni", c: "#38bdf8" },
+  { k: "domande", l: "Domande", c: "#a78bfa" }, { k: "novita", l: "Novit\u00e0 libri", c: "#fb923c" },
+];
+const catOf = (k?: string) => CATS.find(c => c.k === k);
+const REPORT_REASONS = [{ k: "spam", l: "Spam o pubblicit\u00e0" }, { k: "offensivo", l: "Contenuto offensivo" }, { k: "regole", l: "Non rispetta le regole" }, { k: "altro", l: "Altro" }];
 const FILTERS = [["tutti", "Tutti"], ["foto", "Con foto"], ["pdf", "Con PDF"], ["miei", "I miei"]] as const;
 
 const PALETTE = ["#ffc83d", "#ff6b6b", "#2dd4a7", "#5b3df5", "#38bdf8", "#f472b6"];
 const colorFor = (id?: number) => PALETTE[Math.abs(id || 0) % PALETTE.length];
 const textOn = (c: string) => (c === "#5b3df5" || c === "#ff6b6b" ? "#fff" : "#1b1464");
 
-function PostBody({ content, onZoom }: { content: string; onZoom: (src: string) => void }) {
-  const { html, images, pdfs } = parseRich(content);
+function PostBody({ content, onZoom, members, onTag }: { content: string; onZoom: (src: string) => void; members: Member[]; onTag: (t: string) => void }) {
+  const parsed = parseRich(content);
+  const { images, pdfs } = parsed;
+  const html = decorate(parsed.html, members);
   const [open, setOpen] = useState(false);
   const long = html.length > 260 || html.split("\n").length > 4;
   return (
     <div>
       {html && (
         <>
-          <div className={`text-navy/80 whitespace-pre-wrap leading-relaxed ${open || !long ? "" : "line-clamp-4"}`} dangerouslySetInnerHTML={{ __html: html }} />
+          <div onClick={e => { const t = (e.target as HTMLElement).closest("[data-tag]"); if (t) { e.preventDefault(); onTag(t.getAttribute("data-tag") || ""); } }} className={`text-navy/80 whitespace-pre-wrap leading-relaxed ${open || !long ? "" : "line-clamp-4"}`} dangerouslySetInnerHTML={{ __html: html }} />
           {long && <button onClick={() => setOpen(o => !o)} className="mt-1 text-golddark font-semibold text-sm hover:underline inline-flex items-center gap-1">{open ? "Mostra meno" : "Leggi tutto"}<ChevronDown className={`w-4 h-4 transition ${open ? "rotate-180" : ""}`} /></button>}
         </>
       )}
@@ -74,6 +84,16 @@ export default function CommunityPage() {
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
   const [linkLabel, setLinkLabel] = useState("");
+  const [allUsers, setAllUsers] = useState<Member[]>([]);
+  const [newCategory, setNewCategory] = useState("generale");
+  const [catFilter, setCatFilter] = useState("tutte");
+  const [reportTarget, setReportTarget] = useState<{ postId?: number; commentId?: number } | null>(null);
+  const [reportReason, setReportReason] = useState("spam");
+  const [reportNote, setReportNote] = useState("");
+  const [reporting, setReporting] = useState(false);
+  const [reportsOpen, setReportsOpen] = useState(0);
+  const [mention, setMention] = useState<{ target: "post" | "comment"; q: string; start: number; end: number } | null>(null);
+  const [mIdx, setMIdx] = useState(0);
   const [events, setEvents] = useState<any[]>([]);
   const [members, setMembers] = useState<any[]>([]);
   const [zoomSrc, setZoomSrc] = useState<string | null>(null);
@@ -107,8 +127,9 @@ export default function CommunityPage() {
       setIsAdmin(u.role === 'admin');
     }
     loadPosts();
+    if (stored && JSON.parse(stored).role === "admin") fetch("/api/admin/stats").then(r => r.ok ? r.json() : null).then(d => d && setReportsOpen(d.reports || 0)).catch(() => {});
     fetch("/api/events").then(r => r.ok ? r.json() : []).then(d => Array.isArray(d) && setEvents(d.slice(0, 3))).catch(() => {});
-    fetch("/api/utenti").then(r => r.ok ? r.json() : []).then(d => Array.isArray(d) && setMembers(d.slice(-5).reverse())).catch(() => {});
+    fetch("/api/utenti").then(r => r.ok ? r.json() : []).then(d => { if (Array.isArray(d)) { setMembers(d.slice(-5).reverse()); setAllUsers(d.map((u: any) => ({ id: u.id, nome: u.nome || "", cognome: u.cognome || "" }))); } }).catch(() => {});
   }, []);
 
   // Aggiornamento "in diretta": ogni 25 s controlla i nuovi post e aggiorna reazioni e commenti
@@ -272,10 +293,11 @@ export default function CommunityPage() {
       const res = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: "", content: newContent }),
+        body: JSON.stringify({ title: "", content: newContent, category: newCategory }),
       });
       if (!res.ok) throw new Error();
       setNewContent("");
+      setNewCategory("generale");
       setShowNewPost(false);
       setShowLinkInput(false);
       await loadPosts();
@@ -370,6 +392,59 @@ export default function CommunityPage() {
     } catch { say("Errore"); }
   };
 
+  const onTag = (tag: string) => { setQuery("#" + tag); setFilter("tutti"); setCatFilter("tutte"); window.scrollTo({ top: 0, behavior: "smooth" }); };
+
+  // @menzioni: suggerimenti mentre si scrive
+  const mentionMatches = useMemo(() => !mention ? [] : allUsers.filter(u => u.id !== user?.id && `${u.nome} ${u.cognome}`.toLowerCase().includes(mention.q.toLowerCase())).slice(0, 5), [mention, allUsers, user]);
+  const detectMention = (value: string, caret: number, target: "post" | "comment") => {
+    const m = value.slice(0, caret).match(/(?:^|\s)@([\p{L}\p{N}]*)$/u);
+    if (m) { setMention({ target, q: m[1], start: caret - m[1].length - 1, end: caret }); setMIdx(0); } else setMention(null);
+  };
+  const pickMention = (u: Member) => {
+    if (!mention) return;
+    const val = mention.target === "post" ? newContent : newComment;
+    const text = val.slice(0, mention.start) + `@${u.nome} ${u.cognome}`.trim() + " " + val.slice(mention.end);
+    if (mention.target === "post") { setNewContent(text); composerRef.current?.focus(); } else { setNewComment(text); commentBoxRef.current?.focus(); }
+    setMention(null);
+  };
+  const mentionKey = (e: React.KeyboardEvent, target: "post" | "comment") => {
+    if (!mention || mention.target !== target || !mentionMatches.length) return false;
+    if (e.key === "ArrowDown") { e.preventDefault(); setMIdx(i => (i + 1) % mentionMatches.length); return true; }
+    if (e.key === "ArrowUp") { e.preventDefault(); setMIdx(i => (i - 1 + mentionMatches.length) % mentionMatches.length); return true; }
+    if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); pickMention(mentionMatches[mIdx % mentionMatches.length]); return true; }
+    if (e.key === "Escape") { setMention(null); return true; }
+    return false;
+  };
+  const MentionMenu = ({ target, className }: { target: "post" | "comment"; className: string }) => mention?.target === target && mentionMatches.length > 0 ? (
+    <div role="listbox" className={`absolute z-30 left-0 right-0 bg-white border border-line rounded-xl shadow-xl overflow-hidden ${className}`}>
+      {mentionMatches.map((u, i) => (
+        <button key={u.id} role="option" aria-selected={i === mIdx % mentionMatches.length} onMouseDown={e => { e.preventDefault(); pickMention(u); }} className={`w-full flex items-center gap-2 px-3 py-2 text-left text-sm ${i === mIdx % mentionMatches.length ? "bg-ivory2" : "hover:bg-ivory2"}`}>
+          <span className="w-7 h-7 rounded-full grid place-items-center text-xs font-bold" style={{ background: colorFor(u.id), color: textOn(colorFor(u.id)) }}>{(u.nome?.[0] || "?").toUpperCase()}</span>
+          <span className="font-semibold">{u.nome} {u.cognome}</span>
+        </button>
+      ))}
+    </div>
+  ) : null;
+
+  const openReport = (t: { postId?: number; commentId?: number }) => { if (!user) { say("Accedi per segnalare"); return; } setReportTarget(t); setReportReason("spam"); setReportNote(""); };
+  const sendReport = async () => {
+    if (!reportTarget || reporting) return;
+    setReporting(true);
+    try {
+      const r = await fetch("/api/reports", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...reportTarget, reason: reportReason, note: reportNote }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) say(d.error || "Segnalazione non inviata");
+      else { say(d.already ? "Hai gi\u00e0 segnalato questo contenuto" : "Grazie, la segnalazione \u00e8 stata inviata"); setReportTarget(null); }
+    } catch { say("Segnalazione non inviata"); }
+    setReporting(false);
+  };
+
+  const trending = useMemo(() => {
+    const n = new Map<string, number>();
+    for (const p of posts) for (const t of new Set(hashtagsOf(p.content))) n.set(t, (n.get(t) || 0) + 1);
+    return Array.from(n.entries()).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  }, [posts]);
+
   const addEmoji = (e: string) => { setNewContent(t => t + e); composerRef.current?.focus(); };
 
   const visible = useMemo(() => {
@@ -378,10 +453,11 @@ export default function CommunityPage() {
       if (filter === "foto" && !/<img\b/i.test(p.content)) return false;
       if (filter === "pdf" && !/\.pdf/i.test(p.content)) return false;
       if (filter === "miei" && p.authorId !== user?.id) return false;
+      if (catFilter !== "tutte" && (catOf(p.category)?.k ?? "generale") !== catFilter) return false;
       if (q && !`${p.title} ${p.content} ${p.authorNome} ${p.authorCogen}`.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [posts, filter, query, user]);
+  }, [posts, filter, query, user, catFilter]);
 
   const initial = ((user?.nome || user?.email || "?")[0] || "?").toUpperCase();
   const myCol = colorFor(user?.id);
@@ -401,12 +477,13 @@ export default function CommunityPage() {
       <div className="min-w-0 flex-1">
         <div className="bg-ivory2 rounded-2xl px-3.5 py-2 inline-block max-w-full">
           <Link href={`/utente/${c.authorId}`} className="font-semibold text-sm hover:underline">{c.authorNome} {c.authorCogen}</Link>
-          <div className="text-navy/85 text-sm whitespace-pre-wrap break-words" dangerouslySetInnerHTML={{ __html: renderRich(c.text) }} />
+          <div onClick={e => { const t = (e.target as HTMLElement).closest("[data-tag]"); if (t) { e.preventDefault(); onTag(t.getAttribute("data-tag") || ""); } }} className="text-navy/85 text-sm whitespace-pre-wrap break-words" dangerouslySetInnerHTML={{ __html: decorate(renderRich(c.text), allUsers) }} />
         </div>
         <div className="flex items-center gap-3 px-2 mt-0.5 text-xs text-navy/55 font-semibold">
           <span className="font-normal">{c.createdAt ? timeAgo(c.createdAt) : c.time}</span>
           {user && <button onClick={() => { setReplyTo({ id: c.parentId || c.id, nome: c.authorNome }); commentBoxRef.current?.focus(); }} className="hover:text-wine">Rispondi</button>}
           {(isAdmin || (user && user.id === c.authorId)) && <button onClick={() => deleteComment(c.id)} className="hover:text-red-600">Elimina</button>}
+          {user && user.id !== c.authorId && <button onClick={() => openReport({ commentId: c.id })} className="hover:text-red-600">Segnala</button>}
         </div>
       </div>
     </div>
@@ -432,6 +509,7 @@ export default function CommunityPage() {
             <Link href="/eventi" className={side}><CalendarDays className="w-6 h-6 text-wine" />Eventi</Link>
             <Link href="/video" className={side}><VideoIcon className="w-6 h-6 text-wine" />Video</Link>
             {isAdmin && <Link href="/utenti" className={side}><Users className="w-6 h-6 text-wine" />Utenti</Link>}
+            {isAdmin && <Link href="/admin/segnalazioni" className={side}><Flag className="w-6 h-6 text-wine" />Segnalazioni{reportsOpen > 0 && <span className="ml-auto min-w-[22px] h-[22px] px-1.5 rounded-full bg-coral text-white text-xs font-bold grid place-items-center">{reportsOpen}</span>}</Link>}
             <p className="px-3 pt-4 text-xs text-navy/50">Self Publishing Italia · la community degli autori indipendenti</p>
           </div>
         </aside>
@@ -444,12 +522,17 @@ export default function CommunityPage() {
               onDrop={e => { e.preventDefault(); setDragging(false); const fs = Array.from(e.dataTransfer.files); if (fs.some(f => f.type.startsWith("image/"))) uploadImageFiles(fs, "post"); const pdf = fs.find(f => f.type === "application/pdf"); if (pdf) uploadPdf({ target: { files: [pdf], value: "" } } as any, "post"); }}>
               <div className="flex items-start gap-3">
                 <Avatar id={user.id} nome={user.nome || initial} src={user.avatar} />
-                <div className="flex-1 min-w-0">
-                  <textarea ref={composerRef} value={newContent} onFocus={() => setShowNewPost(true)} onChange={e => { setNewContent(e.target.value); e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 320) + "px"; }}
+                <div className="flex-1 min-w-0 relative">
+                  <textarea ref={composerRef} value={newContent} onFocus={() => setShowNewPost(true)} onKeyDown={e => { mentionKey(e, "post"); }} onChange={e => { setNewContent(e.target.value); detectMention(e.target.value, e.target.selectionStart, "post"); e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 320) + "px"; }}
                     rows={showNewPost ? 3 : 1} placeholder={dragging ? "Rilascia qui foto o PDF…" : `A cosa stai lavorando, ${user.nome}?`}
                     className="w-full px-4 py-3 rounded-2xl bg-ivory2 text-navy placeholder-navy/50 resize-none outline-none focus:ring-2 focus:ring-wine/40 transition" />
+                  <MentionMenu target="post" className="top-[calc(100%-3.2rem)]" />
                   {showNewPost && (
                     <div className="rise">
+                      <div className="flex flex-wrap items-center gap-1.5 mt-3" role="group" aria-label="Categoria del post">
+                        <span className="text-xs font-bold uppercase tracking-wide text-navy/45 mr-1">Categoria</span>
+                        {CATS.map(c => <button key={c.k} onClick={() => setNewCategory(c.k)} aria-pressed={newCategory === c.k} className={`px-3 py-1 rounded-full text-sm font-semibold border-2 transition active:scale-95 ${newCategory === c.k ? "text-navy" : "border-line text-navy/60 hover:border-navy/30"}`} style={newCategory === c.k ? { background: c.c + "33", borderColor: c.c } : undefined}>{c.l}</button>)}
+                      </div>
                       <div className="flex flex-wrap gap-1 mt-2">{EMOJI.map(e => <button key={e} onClick={() => addEmoji(e)} className="w-9 h-9 rounded-full hover:bg-ivory2 hover:scale-125 transition text-xl" aria-label={`Inserisci ${e}`}>{e}</button>)}</div>
                       {pdfProgress !== null && (
                         <div className="mt-2" role="status" aria-live="polite"><div className="h-2 rounded-full bg-ivory2 overflow-hidden"><div className="h-full bg-wine transition-all" style={{ width: `${pdfProgress}%` }} /></div><p className="text-xs text-navy/70 mt-1">Caricamento in corso… {pdfProgress}%</p></div>
@@ -491,6 +574,11 @@ export default function CommunityPage() {
             ))}
           </div>
 
+          <div className="flex items-center gap-1.5 mb-4 overflow-x-auto pb-1" role="group" aria-label="Categorie">
+            <button onClick={() => setCatFilter("tutte")} aria-pressed={catFilter === "tutte"} className={`shrink-0 px-3 py-1.5 rounded-full text-sm font-semibold transition ${catFilter === "tutte" ? "bg-navy text-white" : "bg-white border border-line hover:border-navy/40"}`}>Tutte le categorie</button>
+            {CATS.map(c => <button key={c.k} onClick={() => setCatFilter(c.k)} aria-pressed={catFilter === c.k} className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold transition border ${catFilter === c.k ? "text-navy" : "bg-white border-line hover:border-navy/40"}`} style={catFilter === c.k ? { background: c.c + "33", borderColor: c.c } : undefined}><span className="w-2.5 h-2.5 rounded-full" style={{ background: c.c }} />{c.l}</button>)}
+          </div>
+
           {pending && (
             <div className="sticky top-20 z-30 flex justify-center mb-3">
               <button onClick={() => { setPosts(pending); setPending(null); window.scrollTo({ top: 0, behavior: "smooth" }); }} className="bg-wine text-white font-semibold px-5 py-2.5 rounded-full shadow-lg inline-flex items-center gap-2 rise hover:brightness-110"><ArrowUp className="w-4 h-4" />Ci sono nuovi post</button>
@@ -516,15 +604,16 @@ export default function CommunityPage() {
                     <Avatar id={post.authorId} nome={post.authorNome || post.authorCogen} src={post.authorAvatar} />
                     <div className="min-w-0 flex-1">
                       <Link href={`/utente/${post.authorId}`} className="font-semibold hover:underline">{post.authorNome} {post.authorCogen}</Link>
-                      <div className="text-xs text-navy/60" title={post.createdAt ? new Date(post.createdAt).toLocaleString("it-IT") : ""}>{timeAgo(post.createdAt)}</div>
+                      <div className="text-xs text-navy/60 flex flex-wrap items-center gap-x-2 gap-y-1" title={post.createdAt ? new Date(post.createdAt).toLocaleString("it-IT") : ""}>{timeAgo(post.createdAt)}{catOf(post.category) && catOf(post.category)!.k !== "generale" && <button onClick={() => setCatFilter(catOf(post.category)!.k)} className="px-2 py-0.5 rounded-full font-semibold text-navy hover:brightness-95" style={{ background: catOf(post.category)!.c + "40" }}>{catOf(post.category)!.l}</button>}</div>
                     </div>
+                    {user && user.id !== post.authorId && <button onClick={() => openReport({ postId: post.id })} aria-label="Segnala il post" title="Segnala" className="p-2 rounded-full text-navy/30 hover:text-red-600 hover:bg-red-50 transition"><Flag className="w-4 h-4" /></button>}
                     {(isAdmin || (user && user.id === post.authorId)) && (
                       <button onClick={() => deletePost(post.id)} aria-label="Elimina il post" className="p-2 rounded-full text-navy/40 hover:text-red-600 hover:bg-red-50 transition"><Trash2 className="w-4 h-4" /></button>
                     )}
                   </div>
                   <div className="relative" onDoubleClick={() => burst(post)}>
                     {post.title && <h3 className="text-lg md:text-xl font-extrabold mt-3 mb-1.5 leading-tight">{post.title}</h3>}
-                    <div className={post.title ? "" : "mt-3"}><PostBody content={post.content} onZoom={setZoomSrc} /></div>
+                    <div className={post.title ? "" : "mt-3"}><PostBody content={post.content} onZoom={setZoomSrc} members={allUsers} onTag={onTag} /></div>
                     {burstId === post.id && <span className="pointer-events-none absolute inset-0 grid place-items-center"><Heart className="w-24 h-24 text-red-500 fill-red-500 burst drop-shadow-lg" /></span>}
                   </div>
                   {(total > 0 || (post.comments || 0) > 0) && (
@@ -566,9 +655,10 @@ export default function CommunityPage() {
                           {replyTo && <div className="flex items-center gap-2 text-xs text-navy/70 mb-1 ml-10">Stai rispondendo a <b>{replyTo.nome}</b><button onClick={() => setReplyTo(null)} aria-label="Annulla risposta" className="p-0.5 rounded-full hover:bg-ivory2"><X className="w-3.5 h-3.5" /></button></div>}
                           <div className="flex items-end gap-2">
                             <Avatar id={user.id} nome={user.nome || initial} src={user.avatar} size="w-8 h-8 text-sm" />
-                            <div className="flex-1 min-w-0 bg-ivory2 rounded-2xl px-3 py-1.5">
-                              <textarea ref={commentBoxRef} rows={1} value={newComment} onChange={e => { setNewComment(e.target.value); e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 160) + "px"; }}
-                                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleAddComment(); } }}
+                            <div className="flex-1 min-w-0 bg-ivory2 rounded-2xl px-3 py-1.5 relative">
+                              <MentionMenu target="comment" className="bottom-full mb-1" />
+                              <textarea ref={commentBoxRef} rows={1} value={newComment} onChange={e => { setNewComment(e.target.value); detectMention(e.target.value, e.target.selectionStart, "comment"); e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 160) + "px"; }}
+                                onKeyDown={e => { if (mentionKey(e, "comment")) return; if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleAddComment(); } }}
                                 placeholder={replyTo ? `Rispondi a ${replyTo.nome}…` : "Scrivi un commento…"} className="w-full bg-transparent resize-none outline-none py-1 text-sm" />
                               <div className="flex items-center gap-1 -ml-1">
                                 <input type="file" multiple accept="image/jpeg,image/png,image/gif,image/webp" onChange={e => uploadImages(e, "comment")} ref={commentFileInputRef} className="hidden" />
@@ -609,6 +699,12 @@ export default function CommunityPage() {
                 <Link key={e.id} href="/eventi" className="block py-2 border-t first:border-0 border-ivory2 hover:text-wine"><b className="block text-sm leading-snug">{e.title}</b><span className="text-xs text-navy/60">{e.date}</span></Link>
               ))}
             </div>
+            {trending.length > 0 && (
+              <div className="bg-white rounded-2xl border border-line p-4">
+                <h2 className="font-extrabold mb-3 flex items-center gap-2"><Hash className="w-5 h-5 text-wine" />Argomenti di tendenza</h2>
+                <div className="flex flex-wrap gap-2">{trending.map(([t, n]) => <button key={t} onClick={() => onTag(t)} className="px-3 py-1.5 rounded-full bg-ivory2 text-sm font-semibold hover:bg-line transition">#{t} <span className="text-navy/45 font-normal">{n}</span></button>)}</div>
+              </div>
+            )}
             {members.length > 0 && (
               <div className="bg-white rounded-2xl border border-line p-4">
                 <h2 className="font-extrabold mb-3 flex items-center gap-2"><Users className="w-5 h-5 text-wine" />Nuovi iscritti</h2>
@@ -624,6 +720,22 @@ export default function CommunityPage() {
         </aside>
       </div>
 
+      {reportTarget && (
+        <div className="fixed inset-0 z-50 bg-navy/60 grid place-items-center p-4" onClick={() => setReportTarget(null)} role="dialog" aria-modal="true" aria-label="Segnala un contenuto">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl rise" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between"><h2 className="text-xl font-extrabold flex items-center gap-2"><Flag className="w-5 h-5 text-red-600" />Segnala {reportTarget.commentId ? "il commento" : "il post"}</h2><button onClick={() => setReportTarget(null)} aria-label="Chiudi" className="p-2 rounded-full hover:bg-ivory2"><X className="w-5 h-5" /></button></div>
+            <p className="text-sm text-navy/65 mt-1">Lo vedrà solo chi amministra la community. Chi l'ha scritto non saprà che l'hai segnalato.</p>
+            <div className="mt-4 space-y-2">
+              {REPORT_REASONS.map(r => <label key={r.k} className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition ${reportReason === r.k ? "border-wine bg-wine/5" : "border-line hover:border-navy/30"}`}><input type="radio" name="reason" checked={reportReason === r.k} onChange={() => setReportReason(r.k)} className="accent-[#5b3df5]" /><span className="font-semibold">{r.l}</span></label>)}
+            </div>
+            <textarea value={reportNote} onChange={e => setReportNote(e.target.value)} maxLength={500} rows={3} placeholder="Vuoi aggiungere un dettaglio? (facoltativo)" className="mt-3 w-full p-3 rounded-xl bg-ivory2 resize-none outline-none focus:ring-2 focus:ring-wine/40" />
+            <div className="flex gap-2 mt-4">
+              <button onClick={sendReport} disabled={reporting} className="flex-1 py-3 rounded-xl bg-red-600 text-white font-semibold disabled:opacity-50 hover:brightness-110">{reporting ? "Invio\u2026" : "Invia segnalazione"}</button>
+              <button onClick={() => setReportTarget(null)} className="px-5 py-3 rounded-xl bg-white border-2 border-line font-semibold">Annulla</button>
+            </div>
+          </div>
+        </div>
+      )}
       {zoomSrc && (
         <div className="fixed inset-0 bg-navy/90 z-50 flex items-center justify-center p-4 cursor-zoom-out" onClick={() => setZoomSrc(null)} role="dialog" aria-label="Foto ingrandita">
           <button className="absolute top-4 right-4 text-white p-2" aria-label="Chiudi"><X className="w-7 h-7" /></button>

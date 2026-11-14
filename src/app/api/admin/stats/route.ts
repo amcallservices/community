@@ -8,7 +8,7 @@ export async function GET() {
   if (error) return error
   try {
     const week = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-    const [users, posts, comments, reactions, messages, newUsers, newPosts, banned] = await Promise.all([
+    const [users, posts, comments, reactions, messages, newUsers, newPosts, banned, reports] = await Promise.all([
       prisma.user.count(),
       prisma.post.count(),
       prisma.comment.count(),
@@ -17,8 +17,9 @@ export async function GET() {
       prisma.user.count({ where: { createdAt: { gte: week } } }),
       prisma.post.count({ where: { createdAt: { gte: week } } }),
       prisma.user.count({ where: { banned: true } }),
+      prisma.report.count({ where: { status: 'open' } }),
     ])
-    return NextResponse.json({ users, posts, comments, reactions, messages, newUsers, newPosts, banned })
+    return NextResponse.json({ users, posts, comments, reactions, messages, newUsers, newPosts, banned, reports })
   } catch {
     return NextResponse.json({ error: 'Errore' }, { status: 500 })
   }
