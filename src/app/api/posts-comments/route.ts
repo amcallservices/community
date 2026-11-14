@@ -28,18 +28,17 @@ export async function POST(request: NextRequest) {
       data: { comments: { increment: 1 } }
     })
 
-    // Create notification for post author (if not same user)
-    if (post.authorId !== user.id) {
-      await prisma.notification.create({
-        data: {
-          userId: post.authorId,
-          type: 'comment',
-          title: 'Nuovo commento',
-          message: `${user.nome || 'Qualcuno'} ha commentato il tuo post "${post.title}"`,
-          link: '/community'
-        }
-      })
-    }
+    // Notifiche: all'autore del post e a chi ha già commentato (escluso chi scrive)
+    const who = `${user.nome || 'Qualcuno'} ${user.cognome || ''}`.trim()
+    const link = `/community#post-${postId}`
+    const others = await prisma.comment.findMany({
+      where: { postId, userId: { notIn: [user.id, post.authorId] } },
+      select: { userId: true }, distinct: ['userId'],
+    })
+    const rows: { userId: number; type: string; title: string; message: string; link: string }[] = []
+    if (post.authorId !== user.id) rows.push({ userId: post.authorId, type: 'comment', title: 'Nuovo commento', message: `${who} ha commentato il tuo post "${post.title}"`, link })
+    for (const o of others) rows.push({ userId: o.userId, type: 'comment', title: 'Nuovo commento', message: `${who} ha commentato anche il post "${post.title}"`, link })
+    if (rows.length) await prisma.notification.createMany({ data: rows })
 
     return NextResponse.json({
       id: comment.id, text: comment.content, postId: comment.postId,

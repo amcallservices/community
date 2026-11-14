@@ -2,8 +2,9 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { renderRich, parseRich } from "@/lib/sanitize";
+import { timeAgo } from "@/components/NotificationBell";
 import { upload } from "@vercel/blob/client";
-import { Heart, FileText, MessageCircle, Trash2, X, Plus, Send, Image, Link as LinkIcon, Share2, Check, ChevronDown } from "lucide-react";
+import { Heart, FileText, MessageCircle, Trash2, X, Plus, Send, Image, Link as LinkIcon, Share2, Check, ChevronDown, CalendarDays, Users, MessageSquare, User as UserIcon, Video as VideoIcon } from "lucide-react";
 
 type Post = { id: number; title: string; content: string; authorId?: number; authorNome: string; authorCogen: string; authorRole: string; authorAvatar: string | null; likes: number; comments: number; category: string; createdAt: string };
 type Comment = { id: number; text: string; authorId?: number; authorNome: string; authorCogen: string; authorAvatar: string | null; time: string };
@@ -11,21 +12,6 @@ type Comment = { id: number; text: string; authorId?: number; authorNome: string
 const PALETTE = ["#ffc83d", "#ff6b6b", "#2dd4a7", "#5b3df5", "#38bdf8", "#f472b6"];
 const colorFor = (id?: number) => PALETTE[Math.abs(id || 0) % PALETTE.length];
 const textOn = (c: string) => (c === "#5b3df5" || c === "#ff6b6b" ? "#fff" : "#1b1464");
-
-function timeAgo(iso?: string) {
-  if (!iso) return "";
-  const d = new Date(iso).getTime();
-  if (isNaN(d)) return "";
-  const m = Math.floor((Date.now() - d) / 60000);
-  if (m < 1) return "adesso";
-  if (m < 60) return `${m} min fa`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return h === 1 ? "1 ora fa" : `${h} ore fa`;
-  const g = Math.floor(h / 24);
-  if (g === 1) return "ieri";
-  if (g < 7) return `${g} giorni fa`;
-  return new Date(iso).toLocaleDateString("it-IT");
-}
 
 function PostBody({ content, onZoom }: { content: string; onZoom: (src: string) => void }) {
   const { html, images, pdfs } = parseRich(content);
@@ -77,6 +63,8 @@ export default function CommunityPage() {
   const [linkLabel, setLinkLabel] = useState("");
   const [uploadedImage, setUploadedImage] = useState<string>("");
   const [commentImage, setCommentImage] = useState<string>("");
+  const [events, setEvents] = useState<any[]>([]);
+  const [members, setMembers] = useState<any[]>([]);
   const [zoomSrc, setZoomSrc] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [popId, setPopId] = useState<number | null>(null);
@@ -95,7 +83,22 @@ export default function CommunityPage() {
       setIsAdmin(u.role === 'admin');
     }
     loadPosts();
+    fetch("/api/events").then(r => r.ok ? r.json() : []).then(d => Array.isArray(d) && setEvents(d.slice(0, 3))).catch(() => {});
+    fetch("/api/utenti").then(r => r.ok ? r.json() : []).then(d => Array.isArray(d) && setMembers(d.slice(-5).reverse())).catch(() => {});
   }, []);
+
+  // Arrivo da una notifica (#post-12): scorri al post e evidenzialo
+  useEffect(() => {
+    if (loading || !posts.length) return;
+    const m = location.hash.match(/^#post-(\d+)$/);
+    if (!m) return;
+    const el = document.getElementById(`post-${m[1]}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("ring-4", "ring-brass");
+    const t = setTimeout(() => el.classList.remove("ring-4", "ring-brass"), 2500);
+    return () => clearTimeout(t);
+  }, [loading, posts.length]);
 
   const loadPosts = async () => {
     try {
@@ -311,17 +314,46 @@ export default function CommunityPage() {
 
   if (loading) return <div className="min-h-screen bg-ivory flex items-center justify-center"><div className="text-navy">Caricamento...</div></div>;
 
+  const initial = ((user?.nome || user?.email || "?")[0] || "?").toUpperCase();
+  const myCol = colorFor(user?.id);
+  const side = "flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold hover:bg-white transition";
+
   return (
     <div className="min-h-screen bg-ivory">
-      <main className="max-w-3xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-navy">Community</h1>
-          {user && (
-            <button onClick={() => setShowNewPost(true)} className="flex items-center gap-2 px-4 py-2 bg-wine text-white rounded-lg font-semibold hover:brightness-95">
-              <Plus className="w-5 h-5" />Nuovo Post
-            </button>
+      <div className="max-w-6xl mx-auto px-4 py-6 lg:grid lg:grid-cols-[250px_minmax(0,1fr)] xl:grid-cols-[250px_minmax(0,1fr)_290px] lg:gap-6">
+        <aside className="hidden lg:block">
+          <div className="sticky top-20 space-y-1">
+            {user ? (
+              <Link href="/profilo" className={side}>
+                <span className="w-10 h-10 rounded-full grid place-items-center font-bold overflow-hidden" style={{ background: myCol, color: textOn(myCol) }}>{(user as any).avatar ? <img src={(user as any).avatar} alt="" className="w-full h-full object-cover" /> : initial}</span>
+                <span className="truncate">{user.nome} {user.cognome}</span>
+              </Link>
+            ) : (
+              <Link href="/login" className={side}><UserIcon className="w-6 h-6 text-wine" />Accedi</Link>
+            )}
+            <Link href="/messaggi" className={side}><MessageSquare className="w-6 h-6 text-wine" />Messaggi</Link>
+            <Link href="/eventi" className={side}><CalendarDays className="w-6 h-6 text-wine" />Eventi</Link>
+            <Link href="/video" className={side}><VideoIcon className="w-6 h-6 text-wine" />Video</Link>
+            {isAdmin && <Link href="/utenti" className={side}><Users className="w-6 h-6 text-wine" />Utenti</Link>}
+            <p className="px-3 pt-4 text-xs text-navy/50">Self Publishing Italia · la community degli autori indipendenti</p>
+          </div>
+        </aside>
+
+        <main className="min-w-0 max-w-2xl w-full mx-auto">
+          {user && !showNewPost && (
+            <div className="bg-white rounded-2xl border border-line shadow-sm p-4 mb-5">
+              <div className="flex items-center gap-3">
+                <span className="w-11 h-11 rounded-full grid place-items-center font-bold overflow-hidden shrink-0" style={{ background: myCol, color: textOn(myCol) }}>{(user as any).avatar ? <img src={(user as any).avatar} alt="" className="w-full h-full object-cover" /> : initial}</span>
+                <button onClick={() => setShowNewPost(true)} className="flex-1 text-left px-4 py-3 rounded-full bg-ivory2 text-navy/60 hover:bg-line transition">A cosa stai lavorando, {user.nome}?</button>
+              </div>
+              <div className="flex gap-1 mt-3 pt-3 border-t border-ivory2 text-sm font-semibold">
+                <button onClick={() => { setShowNewPost(true); setTimeout(() => fileInputRef.current?.click(), 50); }} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-ivory2"><Image className="w-5 h-5 text-mint" />Foto</button>
+                <button onClick={() => { setShowNewPost(true); setTimeout(() => pdfInputRef.current?.click(), 50); }} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-ivory2"><FileText className="w-5 h-5 text-coral" />PDF</button>
+                <button onClick={() => { setShowNewPost(true); setShowLinkInput(true); }} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-ivory2"><LinkIcon className="w-5 h-5 text-wine" />Link</button>
+              </div>
+            </div>
           )}
-        </div>
+          {!user && <div className="bg-white rounded-2xl border border-line p-5 mb-5 text-center"><Link href="/login" className="font-semibold underline">Accedi</Link> o <Link href="/registrati" className="font-semibold underline">registrati</Link> per scrivere, commentare e mettere mi piace.</div>}
 
         {showNewPost && (
           <div className="bg-white rounded-2xl shadow-sm p-6 border border-line mb-6">
@@ -374,9 +406,8 @@ export default function CommunityPage() {
             const liked = typeof window !== "undefined" && !!user && localStorage.getItem(`liked_${user.id}_${post.id}`) === "1";
             const open = selectedPost?.id === post.id;
             return (
-            <article id={`post-${post.id}`} key={post.id} className="bg-white rounded-3xl border-2 border-line overflow-hidden hover:border-wine hover:-translate-y-0.5 hover:shadow-lg transition scroll-mt-24">
-              <div className="h-1.5" style={{ background: col }} />
-              <div className="p-5 md:p-6">
+            <article id={`post-${post.id}`} key={post.id} className="bg-white rounded-2xl border border-line shadow-sm overflow-hidden transition-shadow hover:shadow-md scroll-mt-24">
+              <div className="p-4 md:p-5">
                 <div className="flex items-center gap-3">
                   <div className="w-11 h-11 rounded-full grid place-items-center font-bold overflow-hidden shrink-0" style={{ background: col, color: textOn(col) }}>
                     {post.authorAvatar ? <img src={post.authorAvatar} alt="" className="w-full h-full object-cover" /> : ((post.authorNome || post.authorCogen)?.[0] || "?").toUpperCase()}
@@ -389,17 +420,23 @@ export default function CommunityPage() {
                     <button onClick={() => deletePost(post.id, user?.id, isAdmin)} aria-label="Elimina il post" className="p-2 rounded-full text-navy/40 hover:text-red-600 hover:bg-red-50 transition"><Trash2 className="w-4 h-4" /></button>
                   )}
                 </div>
-                <h3 className="text-xl md:text-2xl font-extrabold mt-4 mb-2 leading-tight">{post.title}</h3>
+                <h3 className="text-lg md:text-xl font-extrabold mt-3 mb-1.5 leading-tight">{post.title}</h3>
                 <PostBody content={post.content} onZoom={setZoomSrc} />
-                <div className="flex items-center gap-1 mt-5 pt-4 border-t-2 border-ivory2">
-                  <button onClick={() => { handleLike(post.id); setPopId(post.id); setTimeout(() => setPopId(null), 400); }} aria-pressed={liked} aria-label="Mi piace" className={`flex items-center gap-1.5 px-3 py-2 rounded-full transition ${liked ? "text-red-600 bg-red-50" : "text-navy/60 hover:bg-ivory2 hover:text-navy"}`}>
-                    <Heart className={`w-5 h-5 transition ${liked ? "fill-red-500" : ""} ${popId === post.id ? "scale-125" : ""}`} /><span className="font-semibold">{post.likes || 0}</span>
+                {((post.likes || 0) > 0 || (post.comments || 0) > 0) && (
+                  <div className="flex items-center justify-between mt-4 text-sm text-navy/60">
+                    <span>{(post.likes || 0) > 0 && <span className="inline-flex items-center gap-1"><span className="w-5 h-5 rounded-full bg-red-500 grid place-items-center"><Heart className="w-3 h-3 text-white fill-white" /></span>{post.likes}</span>}</span>
+                    <button onClick={() => openComments(post, true)} className="hover:underline">{(post.comments || 0) > 0 ? `${post.comments} ${post.comments === 1 ? "commento" : "commenti"}` : ""}</button>
+                  </div>
+                )}
+                <div className="flex items-center gap-1 mt-3 pt-1.5 border-t border-ivory2 text-sm font-semibold">
+                  <button onClick={() => { handleLike(post.id); setPopId(post.id); setTimeout(() => setPopId(null), 400); }} aria-pressed={liked} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg transition ${liked ? "text-red-600" : "text-navy/60 hover:bg-ivory2"}`}>
+                    <Heart className={`w-5 h-5 transition ${liked ? "fill-red-500" : ""} ${popId === post.id ? "scale-125" : ""}`} />Mi piace
                   </button>
-                  <button onClick={() => openComments(post, true)} aria-expanded={open} className={`flex items-center gap-1.5 px-3 py-2 rounded-full transition ${open ? "bg-ivory2 text-navy" : "text-navy/60 hover:bg-ivory2 hover:text-navy"}`}>
-                    <MessageCircle className="w-5 h-5" /><span className="font-semibold">{post.comments || 0}</span>
+                  <button onClick={() => openComments(post, true)} aria-expanded={open} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg transition ${open ? "bg-ivory2 text-navy" : "text-navy/60 hover:bg-ivory2"}`}>
+                    <MessageCircle className="w-5 h-5" />Commenta
                   </button>
-                  <button onClick={async () => { try { await navigator.clipboard.writeText(`${location.origin}/community#post-${post.id}`); setCopiedId(post.id); setTimeout(() => setCopiedId(null), 1500); } catch {} }} className="ml-auto flex items-center gap-1.5 px-3 py-2 rounded-full text-navy/60 hover:bg-ivory2 hover:text-navy transition">
-                    {copiedId === post.id ? <><Check className="w-5 h-5 text-green-600" /><span className="text-sm font-semibold">Link copiato</span></> : <><Share2 className="w-5 h-5" /><span className="text-sm font-semibold hidden sm:inline">Condividi</span></>}
+                  <button onClick={async () => { try { await navigator.clipboard.writeText(`${location.origin}/community#post-${post.id}`); setCopiedId(post.id); setTimeout(() => setCopiedId(null), 1500); } catch {} }} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-navy/60 hover:bg-ivory2 transition">
+                    {copiedId === post.id ? <><Check className="w-5 h-5 text-green-600" />Link copiato</> : <><Share2 className="w-5 h-5" />Condividi</>}
                   </button>
                 </div>
                 {open && (
@@ -453,7 +490,30 @@ export default function CommunityPage() {
             );
           })}
         </div>
-      </main>
+        </main>
+
+        <aside className="hidden xl:block">
+          <div className="sticky top-20 space-y-4">
+            <div className="bg-white rounded-2xl border border-line p-4">
+              <h2 className="font-extrabold mb-3 flex items-center gap-2"><CalendarDays className="w-5 h-5 text-wine" />Prossimi eventi</h2>
+              {events.length === 0 ? <p className="text-sm text-navy/60">Nessun evento in programma.</p> : events.map(e => (
+                <Link key={e.id} href="/eventi" className="block py-2 border-t first:border-0 border-ivory2 hover:text-wine"><b className="block text-sm leading-snug">{e.title}</b><span className="text-xs text-navy/60">{e.date}</span></Link>
+              ))}
+            </div>
+            {members.length > 0 && (
+              <div className="bg-white rounded-2xl border border-line p-4">
+                <h2 className="font-extrabold mb-3 flex items-center gap-2"><Users className="w-5 h-5 text-wine" />Nuovi iscritti</h2>
+                {members.map(m => { const c = colorFor(m.id); return (
+                  <Link key={m.id} href={`/utente/${m.id}`} className="flex items-center gap-3 py-1.5 hover:text-wine">
+                    <span className="w-9 h-9 rounded-full grid place-items-center text-sm font-bold overflow-hidden shrink-0" style={{ background: c, color: textOn(c) }}>{m.avatar ? <img src={m.avatar} alt="" className="w-full h-full object-cover" /> : (m.nome?.[0] || "?").toUpperCase()}</span>
+                    <span className="text-sm font-semibold truncate">{m.nome} {m.cognome}</span>
+                  </Link>
+                ); })}
+              </div>
+            )}
+          </div>
+        </aside>
+      </div>
 
       {zoomSrc && (
         <div className="fixed inset-0 bg-navy/90 z-50 flex items-center justify-center p-4 cursor-zoom-out" onClick={() => setZoomSrc(null)} role="dialog" aria-label="Foto ingrandita">
