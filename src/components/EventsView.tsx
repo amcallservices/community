@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { Plus, Trash2, CalendarDays, Video, Check, CalendarPlus, Users, X, Clock, Share2, Link2, MessageCircle } from "lucide-react";
+import { Plus, Trash2, CalendarDays, Video, Check, Users, X, Clock, Share2, Link2, MessageCircle } from "lucide-react";
 import { SITE_URL } from "@/lib/site";
 
 type Ev = { id: number; title: string; date: string; meetLink?: string | null; description?: string | null; going: number; mine: boolean };
@@ -20,24 +20,6 @@ function when(d: Date) {
   if (days === 0) return { label: `Oggi alle ${hhmm}`, live: true, past: false };
   if (days === 1) return { label: `Domani alle ${hhmm}`, live: false, past: false };
   return { label: `Tra ${days} giorni`, live: false, past: false };
-}
-
-function downloadIcs(e: Ev) {
-  const start = toDate(e.date);
-  const end = new Date(start.getTime() + 3600000);
-  const esc = (t: string) => t.replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/[,;]/g, m => "\\" + m);
-  const lines = [
-    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Self Publishing Italia//IT", "BEGIN:VEVENT",
-    `UID:evento-${e.id}@selfpublishingitalia.site`, `DTSTAMP:${utcStamp(new Date())}`, `DTSTART:${utcStamp(start)}`, `DTEND:${utcStamp(end)}`,
-    `SUMMARY:${esc(e.title)}`,
-    ...(e.description || e.meetLink ? [`DESCRIPTION:${esc([e.description, e.meetLink ? `Link: ${e.meetLink}` : ""].filter(Boolean).join("\n"))}`] : []),
-    ...(e.meetLink ? [`URL:${e.meetLink}`] : []),
-    "BEGIN:VALARM", "TRIGGER:-PT1H", "ACTION:DISPLAY", "DESCRIPTION:Promemoria", "END:VALARM", "END:VEVENT", "END:VCALENDAR",
-  ];
-  const blob = new Blob([lines.join("\r\n")], { type: "text/calendar;charset=utf-8" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob); a.download = `evento-${e.id}.ics`; a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 
 export default function EventsView({ onlyId }: { onlyId?: number }) {
@@ -133,7 +115,6 @@ export default function EventsView({ onlyId }: { onlyId?: number }) {
                 </button>
               )}
               {ev.meetLink && !w.past && <a href={ev.meetLink} target="_blank" rel="noopener noreferrer" className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold border-2 transition ${w.live ? "bg-brass border-brass text-navy hover:brightness-105" : "bg-white border-line hover:border-wine"}`}><Video className="w-4 h-4" />Entra su Google Meet</a>}
-              {!w.past && <button onClick={() => downloadIcs(ev)} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border-2 border-line font-semibold hover:border-wine transition"><CalendarPlus className="w-4 h-4" />Aggiungi al calendario</button>}
               {isAdmin && <button onClick={() => deleteEvent(ev.id)} aria-label="Elimina evento" className="p-2.5 rounded-xl text-red-600 bg-red-50 hover:bg-red-100 ml-auto"><Trash2 className="w-4 h-4" /></button>}
             </div>
             <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-line">
