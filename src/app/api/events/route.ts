@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { requireAdmin, getSessionUser } from '@/lib/auth'
 import { SITE_URL } from '@/lib/site'
+import { romeToUtc } from '@/lib/events'
 
 export async function GET() {
   try {
@@ -33,8 +34,8 @@ export async function POST(request: NextRequest) {
     // Post automatico in community + notifica a tutti gli iscritti
     try {
       const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-      const when = new Date(dateTime.replace(' ', 'T'))
-      const label = isNaN(when.getTime()) ? dateTime : when.toLocaleString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome' })
+      const when = romeToUtc(dateTime)
+      const label = !when ? dateTime : when.toLocaleString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome' })
       const url = `${SITE_URL}/eventi/${event.id}`
       const content = `\u{1F4C5} Nuovo evento: ${event.title}\n${label}${event.description ? `\n\n${event.description}` : ''}\n\n<a href="${esc(url)}">Partecipa e iscriviti all'evento</a>`
       await prisma.post.create({ data: { title: '', content, authorId: admin.id, category: 'generale' } })
