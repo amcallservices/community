@@ -14,15 +14,16 @@ export async function POST(request: NextRequest) {
 
     const existing = await prisma.eventRsvp.findUnique({ where: { eventId_userId: { eventId, userId: user!.id } } })
     if (existing) {
-      await prisma.eventRsvp.delete({ where: { id: existing.id } })
+      await prisma.eventRsvp.deleteMany({ where: { eventId, userId: user!.id } })
     } else {
       const start = romeToUtc(event.date)
       if (start && start.getTime() < Date.now() - 3 * 3600 * 1000) return NextResponse.json({ error: 'Evento già concluso' }, { status: 400 })
-      await prisma.eventRsvp.create({ data: { eventId, userId: user!.id } })
+      await prisma.eventRsvp.upsert({ where: { eventId_userId: { eventId, userId: user!.id } }, update: {}, create: { eventId, userId: user!.id } })
     }
     const going = await prisma.eventRsvp.count({ where: { eventId } })
     return NextResponse.json({ mine: !existing, going })
-  } catch {
-    return NextResponse.json({ error: 'Errore' }, { status: 500 })
+  } catch (e) {
+    console.error('rsvp', e)
+    return NextResponse.json({ error: 'Salvataggio non riuscito, riprova tra qualche secondo' }, { status: 500 })
   }
 }
