@@ -1,13 +1,24 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { renderRich, parseRich } from "@/lib/sanitize";
 import { timeAgo } from "@/components/NotificationBell";
 import { upload } from "@vercel/blob/client";
-import { Heart, FileText, MessageCircle, Trash2, X, Plus, Send, Image, Link as LinkIcon, Share2, Check, ChevronDown, CalendarDays, Users, MessageSquare, User as UserIcon, Video as VideoIcon } from "lucide-react";
+import { Heart, FileText, MessageCircle, Trash2, X, Send, Image, Link as LinkIcon, Share2, Check, ChevronDown, CalendarDays, Users, MessageSquare, User as UserIcon, Video as VideoIcon, Search, ArrowUp, Smile } from "lucide-react";
 
-type Post = { id: number; title: string; content: string; authorId?: number; authorNome: string; authorCogen: string; authorRole: string; authorAvatar: string | null; likes: number; comments: number; category: string; createdAt: string };
-type Comment = { id: number; text: string; authorId?: number; authorNome: string; authorCogen: string; authorAvatar: string | null; time: string };
+type Post = { id: number; title: string; content: string; authorId?: number; authorNome: string; authorCogen: string; authorRole: string; authorAvatar: string | null; likes: number; comments: number; category: string; createdAt: string; reactions?: Record<string, number>; myReaction?: string | null };
+type Comment = { id: number; text: string; authorId?: number; authorNome: string; authorCogen: string; authorAvatar: string | null; time: string; parentId?: number | null; createdAt?: string };
+
+const REACTIONS = [
+  { k: "like", e: "\u{1F44D}", l: "Mi piace", c: "text-wine" },
+  { k: "love", e: "\u2764\uFE0F", l: "Adoro", c: "text-red-600" },
+  { k: "haha", e: "\u{1F602}", l: "Ahah", c: "text-amber-600" },
+  { k: "wow", e: "\u{1F62E}", l: "Wow", c: "text-amber-600" },
+  { k: "clap", e: "\u{1F44F}", l: "Bravo", c: "text-amber-600" },
+  { k: "sad", e: "\u{1F622}", l: "Che emozione", c: "text-amber-600" },
+];
+const EMOJI = ["\u{1F600}", "\u{1F60D}", "\u{1F389}", "\u{1F4DA}", "\u270D\uFE0F", "\u{1F525}", "\u{1F44F}", "\u{1F4A1}", "\u{1F680}", "\u2764\uFE0F"];
+const FILTERS = [["tutti", "Tutti"], ["foto", "Con foto"], ["pdf", "Con PDF"], ["miei", "I miei"]] as const;
 
 const PALETTE = ["#ffc83d", "#ff6b6b", "#2dd4a7", "#5b3df5", "#38bdf8", "#f472b6"];
 const colorFor = (id?: number) => PALETTE[Math.abs(id || 0) % PALETTE.length];
@@ -48,32 +59,45 @@ function PostBody({ content, onZoom }: { content: string; onZoom: (src: string) 
 
 export default function CommunityPage() {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [pending, setPending] = useState<Post[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showNewPost, setShowNewPost] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
   const [newContent, setNewContent] = useState("");
+  const [publishing, setPublishing] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
-  const [showImageUpload, setShowImageUpload] = useState(false);
+  const [replyTo, setReplyTo] = useState<{ id: number; nome: string } | null>(null);
+  const [sendingComment, setSendingComment] = useState(false);
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
   const [linkLabel, setLinkLabel] = useState("");
-  const [uploadedImage, setUploadedImage] = useState<string>("");
-  const [commentImage, setCommentImage] = useState<string>("");
   const [events, setEvents] = useState<any[]>([]);
   const [members, setMembers] = useState<any[]>([]);
   const [zoomSrc, setZoomSrc] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [popId, setPopId] = useState<number | null>(null);
+  const [burstId, setBurstId] = useState<number | null>(null);
+  const [pickerFor, setPickerFor] = useState<number | null>(null);
+  const [filter, setFilter] = useState<(typeof FILTERS)[number][0]>("tutti");
+  const [query, setQuery] = useState("");
+  const [toast, setToast] = useState("");
+  const [dragging, setDragging] = useState(false);
   const [pdfProgress, setPdfProgress] = useState<number | null>(null);
   const [pdfError, setPdfError] = useState("");
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const commentPdfInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const commentFileInputRef = useRef<HTMLInputElement>(null);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
+  const commentBoxRef = useRef<HTMLTextAreaElement>(null);
+  const timers = useRef<Record<string, any>>({});
+  const postsRef = useRef<Post[]>([]);
+  postsRef.current = posts;
+
+  const say = (m: string) => { setToast(m); clearTimeout(timers.current.toast); timers.current.toast = setTimeout(() => setToast(""), 2200); };
 
   useEffect(() => {
     const stored = localStorage.getItem("user");
@@ -85,6 +109,25 @@ export default function CommunityPage() {
     loadPosts();
     fetch("/api/events").then(r => r.ok ? r.json() : []).then(d => Array.isArray(d) && setEvents(d.slice(0, 3))).catch(() => {});
     fetch("/api/utenti").then(r => r.ok ? r.json() : []).then(d => Array.isArray(d) && setMembers(d.slice(-5).reverse())).catch(() => {});
+  }, []);
+
+  // Aggiornamento "in diretta": ogni 25 s controlla i nuovi post e aggiorna reazioni e commenti
+  useEffect(() => {
+    const t = setInterval(async () => {
+      if (document.hidden) return;
+      try {
+        const r = await fetch("/api/posts");
+        if (!r.ok) return;
+        const fresh: Post[] = await r.json();
+        const cur = postsRef.current;
+        const known = new Set(cur.map(p => p.id));
+        const mine = JSON.parse(localStorage.getItem("user") || "null")?.id;
+        const added = fresh.filter(p => !known.has(p.id) && p.authorId !== mine);
+        setPosts(ps => ps.filter(p => fresh.some(f => f.id === p.id)).map(p => { const f = fresh.find(x => x.id === p.id)!; return { ...p, likes: f.likes, comments: f.comments, reactions: f.reactions, myReaction: f.myReaction }; }));
+        setPending(added.length ? fresh : null);
+      } catch {}
+    }, 25000);
+    return () => clearInterval(t);
   }, []);
 
   // Arrivo da una notifica (#post-12): scorri al post e evidenzialo
@@ -103,10 +146,7 @@ export default function CommunityPage() {
   const loadPosts = async () => {
     try {
       const res = await fetch("/api/posts");
-      if (res.ok) {
-        const data = await res.json();
-        setPosts(data);
-      }
+      if (res.ok) { setPosts(await res.json()); setPending(null); }
     } catch (err) {
       console.error("Error loading posts:", err);
     }
@@ -135,9 +175,14 @@ export default function CommunityPage() {
     img.src = url;
   });
 
-  const uploadImages = async (e: React.ChangeEvent<HTMLInputElement>, target: "post" | "comment") => {
-    const files = Array.from(e.target.files || []).filter(f => f.type.startsWith("image/"));
+  const uploadImages = (e: React.ChangeEvent<HTMLInputElement>, target: "post" | "comment") => {
+    const list = Array.from(e.target.files || []);
     e.target.value = "";
+    return uploadImageFiles(list, target);
+  };
+
+  const uploadImageFiles = async (all: File[], target: "post" | "comment") => {
+    const files = all.filter(f => f.type.startsWith("image/"));
     if (!files.length) return;
     setPdfError("");
     setPdfProgress(0);
@@ -221,102 +266,157 @@ export default function CommunityPage() {
   };
 
   const handleCreatePost = async () => {
-    if (!newTitle.trim() || !newContent.trim() || !user) return;
-    await fetch("/api/posts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: newTitle,
-        content: newContent,
-        authorId: user.id,
-        authorNome: user.nome,
-        authorCogen: user.cognome,
-        authorRole: user.role,
-        userEmail: user.email
-      })
-    });
-    setNewTitle("");
-    setNewContent("");
-    setUploadedImage("");
-    setShowNewPost(false);
-    loadPosts();
+    if (!newContent.trim() || !user || publishing) return;
+    setPublishing(true);
+    try {
+      const res = await fetch("/api/posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "", content: newContent }),
+      });
+      if (!res.ok) throw new Error();
+      setNewContent("");
+      setShowNewPost(false);
+      setShowLinkInput(false);
+      await loadPosts();
+      say("Post pubblicato \u{1F389}");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch {
+      say("Non sono riuscito a pubblicare. Riprova.");
+    }
+    setPublishing(false);
   };
 
-  const handleLike = async (postId: number) => {
-    if (!user) return;
-    // aggiornamento immediato, poi conferma dal server
+  // Reazioni: se manca "type" il tasto Mi piace mette/toglie "like"
+  const react = async (postId: number, type?: string) => {
+    if (!user) { say("Accedi per reagire ai post"); return; }
     const before = posts;
-    const likedKey = `liked_${user.id}_${postId}`;
-    const wasLiked = localStorage.getItem(likedKey) === "1";
-    setPosts(ps => ps.map(p => p.id === postId ? { ...p, likes: Math.max(0, (p.likes || 0) + (wasLiked ? -1 : 1)) } : p));
+    setPosts(ps => ps.map(p => {
+      if (p.id !== postId) return p;
+      const reactions = { ...(p.reactions || {}) };
+      const mine = p.myReaction || null;
+      const next = type ? (mine === type ? null : type) : (mine ? null : "like");
+      if (mine) { reactions[mine] = Math.max(0, (reactions[mine] || 1) - 1); if (!reactions[mine]) delete reactions[mine]; }
+      if (next) reactions[next] = (reactions[next] || 0) + 1;
+      return { ...p, reactions, myReaction: next, likes: Object.values(reactions).reduce((a, b) => a + b, 0) };
+    }));
+    setPopId(postId); setTimeout(() => setPopId(null), 450);
+    setPickerFor(null);
     try {
-      const res = await fetch("/api/posts/like", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ postId }) });
+      const mine = before.find(p => p.id === postId)?.myReaction;
+      const body: any = { postId };
+      if (type) body.type = type; else if (!mine) body.type = "like";
+      const res = await fetch("/api/posts/like", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       if (!res.ok) throw new Error();
-      const { liked } = await res.json();
-      if (liked) localStorage.setItem(likedKey, "1"); else localStorage.removeItem(likedKey);
     } catch {
       setPosts(before);
+      say("Non sono riuscito a salvare la reazione");
     }
   };
+
+  // Doppio clic (o doppio tocco) sul post = cuore
+  const burst = (post: Post) => {
+    if (!user) return;
+    if (post.myReaction !== "love") react(post.id, "love");
+    setBurstId(post.id); clearTimeout(timers.current.burst); timers.current.burst = setTimeout(() => setBurstId(null), 800);
+  };
+
+  const showPicker = (id: number) => { clearTimeout(timers.current.pk); timers.current.pk = setTimeout(() => setPickerFor(id), 350); };
+  const hidePicker = () => { clearTimeout(timers.current.pk); timers.current.pk = setTimeout(() => setPickerFor(null), 450); };
 
   const openComments = async (post: Post, toggle = false) => {
     if (toggle && selectedPost?.id === post.id) { setSelectedPost(null); return; }
     setSelectedPost(post);
+    setReplyTo(null); setNewComment("");
     const res = await fetch(`/api/posts-comments?postId=${post.id}`);
     if (res.ok) setComments(await res.json());
+    setTimeout(() => commentBoxRef.current?.focus(), 80);
   };
 
   const handleAddComment = async () => {
-    if (!newComment.trim() || !user || !selectedPost) return;
-    await fetch("/api/posts-comments", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        postId: selectedPost.id,
-        text: newComment,
-        authorNome: user.nome,
-        authorCogen: user.cognome,
-        userEmail: user.email
-      })
-    });
-    setNewComment("");
-    setCommentImage("");
-    openComments(selectedPost);
-    setPosts(ps => ps.map(p => p.id === selectedPost.id ? { ...p, comments: (p.comments || 0) + 1 } : p));
+    if (!newComment.trim() || !user || !selectedPost || sendingComment) return;
+    setSendingComment(true);
+    const post = selectedPost;
+    try {
+      const res = await fetch("/api/posts-comments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postId: post.id, text: newComment, parentId: replyTo?.id || null }),
+      });
+      if (!res.ok) throw new Error();
+      const created: Comment = await res.json();
+      setComments(cs => [...cs, created]);
+      setPosts(ps => ps.map(p => p.id === post.id ? { ...p, comments: (p.comments || 0) + 1 } : p));
+      setNewComment(""); setReplyTo(null);
+    } catch {
+      say("Commento non inviato. Riprova.");
+    }
+    setSendingComment(false);
   };
 
-  const deletePost = async (id: number, authorId: number, admin: boolean) => {
+  const deletePost = async (id: number) => {
     if (!confirm("Sei sicuro di voler eliminare questo post?")) return;
     try {
       const res = await fetch(`/api/posts?id=${id}`, { method: "DELETE" });
-      if (res.ok) {
-        loadPosts();
-        setSelectedPost(null);
-      } else {
-        const data = await res.json();
-        alert(data.error || "Errore nella cancellazione");
-      }
-    } catch (err) {
-      alert("Errore");
-    }
+      if (res.ok) { setPosts(ps => ps.filter(p => p.id !== id)); setSelectedPost(null); say("Post eliminato"); }
+      else { const data = await res.json(); say(data.error || "Errore nella cancellazione"); }
+    } catch { say("Errore"); }
   };
 
-  const deleteComment = async (commentId: number, postId: number, authorId: number, admin: boolean) => {
+  const deleteComment = async (commentId: number) => {
     try {
       const res = await fetch(`/api/posts-comments?id=${commentId}`, { method: "DELETE" });
-      if (res.ok && selectedPost) {
-        openComments(selectedPost);
-      }
-    } catch (err) {
-      alert("Errore");
-    }
+      if (res.ok && selectedPost) { openComments(selectedPost); loadPosts(); }
+    } catch { say("Errore"); }
   };
 
-  if (loading) return <div className="min-h-screen bg-ivory flex items-center justify-center"><div className="text-navy">Caricamento...</div></div>;
+  const addEmoji = (e: string) => { setNewContent(t => t + e); composerRef.current?.focus(); };
+
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return posts.filter(p => {
+      if (filter === "foto" && !/<img\b/i.test(p.content)) return false;
+      if (filter === "pdf" && !/\.pdf/i.test(p.content)) return false;
+      if (filter === "miei" && p.authorId !== user?.id) return false;
+      if (q && !`${p.title} ${p.content} ${p.authorNome} ${p.authorCogen}`.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [posts, filter, query, user]);
 
   const initial = ((user?.nome || user?.email || "?")[0] || "?").toUpperCase();
   const myCol = colorFor(user?.id);
-  const side = "flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold hover:bg-white transition";
+  const side = "flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold hover:bg-white hover:translate-x-1 transition";
+
+  const Avatar = ({ id, nome, src, size = "w-11 h-11" }: { id?: number; nome?: string; src?: string | null; size?: string }) => {
+    const c = colorFor(id);
+    return <span className={`${size} rounded-full grid place-items-center font-bold overflow-hidden shrink-0`} style={{ background: c, color: textOn(c) }}>{src ? <img src={src} alt="" className="w-full h-full object-cover" /> : (nome?.[0] || "?").toUpperCase()}</span>;
+  };
+
+  const topComments = comments.filter(c => !c.parentId);
+  const repliesOf = (id: number) => comments.filter(c => c.parentId === id);
+
+  const CommentView = ({ c, reply }: { c: Comment; reply?: boolean }) => (
+    <div className={`flex gap-2 ${reply ? "ml-10 mt-2" : ""} rise`}>
+      <Avatar id={c.authorId} nome={c.authorNome} src={c.authorAvatar} size={reply ? "w-7 h-7 text-xs" : "w-8 h-8 text-sm"} />
+      <div className="min-w-0 flex-1">
+        <div className="bg-ivory2 rounded-2xl px-3.5 py-2 inline-block max-w-full">
+          <Link href={`/utente/${c.authorId}`} className="font-semibold text-sm hover:underline">{c.authorNome} {c.authorCogen}</Link>
+          <div className="text-navy/85 text-sm whitespace-pre-wrap break-words" dangerouslySetInnerHTML={{ __html: renderRich(c.text) }} />
+        </div>
+        <div className="flex items-center gap-3 px-2 mt-0.5 text-xs text-navy/55 font-semibold">
+          <span className="font-normal">{c.createdAt ? timeAgo(c.createdAt) : c.time}</span>
+          {user && <button onClick={() => { setReplyTo({ id: c.parentId || c.id, nome: c.authorNome }); commentBoxRef.current?.focus(); }} className="hover:text-wine">Rispondi</button>}
+          {(isAdmin || (user && user.id === c.authorId)) && <button onClick={() => deleteComment(c.id)} className="hover:text-red-600">Elimina</button>}
+        </div>
+      </div>
+    </div>
+  );
+
+  if (loading) return (
+    <div className="max-w-2xl mx-auto px-4 py-6 space-y-4" aria-busy="true">
+      {[0, 1, 2].map(i => <div key={i} className="bg-white rounded-2xl border border-line p-5 animate-pulse"><div className="flex gap-3"><div className="w-11 h-11 rounded-full bg-ivory2" /><div className="flex-1 space-y-2"><div className="h-3 bg-ivory2 rounded w-1/3" /><div className="h-3 bg-ivory2 rounded w-1/5" /></div></div><div className="mt-4 space-y-2"><div className="h-3 bg-ivory2 rounded" /><div className="h-3 bg-ivory2 rounded w-5/6" /><div className="h-28 bg-ivory2 rounded-xl" /></div></div>)}
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-ivory">
@@ -324,10 +424,7 @@ export default function CommunityPage() {
         <aside className="hidden lg:block">
           <div className="sticky top-20 space-y-1">
             {user ? (
-              <Link href="/profilo" className={side}>
-                <span className="w-10 h-10 rounded-full grid place-items-center font-bold overflow-hidden" style={{ background: myCol, color: textOn(myCol) }}>{(user as any).avatar ? <img src={(user as any).avatar} alt="" className="w-full h-full object-cover" /> : initial}</span>
-                <span className="truncate">{user.nome} {user.cognome}</span>
-              </Link>
+              <Link href="/profilo" className={side}><Avatar id={user.id} nome={user.nome || initial} src={user.avatar} size="w-10 h-10" /><span className="truncate">{user.nome} {user.cognome}</span></Link>
             ) : (
               <Link href="/login" className={side}><UserIcon className="w-6 h-6 text-wine" />Accedi</Link>
             )}
@@ -340,156 +437,168 @@ export default function CommunityPage() {
         </aside>
 
         <main className="min-w-0 max-w-2xl w-full mx-auto">
-          {user && !showNewPost && (
-            <div className="bg-white rounded-2xl border border-line shadow-sm p-4 mb-5">
-              <div className="flex items-center gap-3">
-                <span className="w-11 h-11 rounded-full grid place-items-center font-bold overflow-hidden shrink-0" style={{ background: myCol, color: textOn(myCol) }}>{(user as any).avatar ? <img src={(user as any).avatar} alt="" className="w-full h-full object-cover" /> : initial}</span>
-                <button onClick={() => setShowNewPost(true)} className="flex-1 text-left px-4 py-3 rounded-full bg-ivory2 text-navy/60 hover:bg-line transition">A cosa stai lavorando, {user.nome}?</button>
-              </div>
-              <div className="flex gap-1 mt-3 pt-3 border-t border-ivory2 text-sm font-semibold">
-                <button onClick={() => { setShowNewPost(true); setTimeout(() => fileInputRef.current?.click(), 50); }} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-ivory2"><Image className="w-5 h-5 text-mint" />Foto</button>
-                <button onClick={() => { setShowNewPost(true); setTimeout(() => pdfInputRef.current?.click(), 50); }} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-ivory2"><FileText className="w-5 h-5 text-coral" />PDF</button>
-                <button onClick={() => { setShowNewPost(true); setShowLinkInput(true); }} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-ivory2"><LinkIcon className="w-5 h-5 text-wine" />Link</button>
-              </div>
-            </div>
-          )}
-          {!user && <div className="bg-white rounded-2xl border border-line p-5 mb-5 text-center"><Link href="/login" className="font-semibold underline">Accedi</Link> o <Link href="/registrati" className="font-semibold underline">registrati</Link> per scrivere, commentare e mettere mi piace.</div>}
-
-        {showNewPost && (
-          <div className="bg-white rounded-2xl shadow-sm p-6 border border-line mb-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-navy">Nuovo Post</h2>
-              <button onClick={() => setShowNewPost(false)} className="text-navy/60 hover:text-navy"><X className="w-5 h-5" /></button>
-            </div>
-            <input type="text" placeholder="Titolo" value={newTitle} onChange={e => setNewTitle(e.target.value)} className="w-full p-3 bg-ivory2 border border-line text-navy placeholder-navy/40 mb-3" />
-            <textarea placeholder="Contenuto..." value={newContent} onChange={e => setNewContent(e.target.value)} className="w-full p-3 bg-ivory2 border border-line text-navy placeholder-navy/40 h-32" />
-            
-            <div className="flex gap-2 mt-2">
-              <input type="file" multiple accept="image/jpeg,image/png,image/gif,image/webp" onChange={e => uploadImages(e, "post")} ref={fileInputRef} className="hidden" />
-              <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-1 px-3 py-1 bg-white rounded-2xl shadow-sm text-navy text-sm hover:bg-ivory2"><Image className="w-4 h-4" />Carica Foto</button>
-              <button onClick={() => { setShowLinkInput(true); setShowImageUpload(false); }} className="flex items-center gap-1 px-3 py-1 bg-white rounded-2xl shadow-sm text-navy text-sm hover:bg-ivory2"><LinkIcon className="w-4 h-4" />Link</button>
-              <input type="file" accept="application/pdf,.pdf" onChange={e => uploadPdf(e, "post")} ref={pdfInputRef} className="hidden" />
-              <button onClick={() => pdfInputRef.current?.click()} disabled={pdfProgress !== null} className="flex items-center gap-1 px-3 py-1 bg-white rounded-2xl shadow-sm text-navy text-sm hover:bg-ivory2 disabled:opacity-60"><FileText className="w-4 h-4" />Carica PDF</button>
-            </div>
-            {pdfProgress !== null && (
-              <div className="mt-3" role="status" aria-live="polite">
-                <div className="h-2 rounded-full bg-ivory2 overflow-hidden"><div className="h-full bg-wine transition-all" style={{ width: `${pdfProgress}%` }} /></div>
-                <p className="text-sm text-navy/70 mt-1">Caricamento in corso… {pdfProgress}%</p>
-              </div>
-            )}
-            {pdfError && <p className="mt-2 text-sm text-red-600">{pdfError}</p>}
-            
-            {showLinkInput && (
-              <div className="mt-2 space-y-2">
-                <input type="text" placeholder="Etichetta link (es: Guarda su Amazon)" value={linkLabel} onChange={e => setLinkLabel(e.target.value)} className="w-full p-2 bg-ivory2 border border-line text-navy placeholder-navy/40 text-sm" />
-                <input type="text" placeholder="URL (es: https://amazon.it/...)" value={linkUrl} onChange={e => setLinkUrl(e.target.value)} className="w-full p-2 bg-ivory2 border border-line text-navy placeholder-navy/40 text-sm" />
-                <button onClick={insertLink} className="px-3 py-2 bg-wine text-white rounded-lg font-semibold text-sm">Aggiungi</button>
-              </div>
-            )}
-            
-            <div className="flex gap-2 mt-4">
-              <button onClick={handleCreatePost} disabled={!newTitle.trim() || !newContent.trim()} className="px-6 py-2 bg-wine text-white rounded-lg font-semibold hover:brightness-95 disabled:opacity-50">Pubblica</button>
-              <button onClick={() => { setShowNewPost(false); setUploadedImage(""); }} className="px-6 py-2 bg-ivory2 text-navy hover:bg-ivory2">Annulla</button>
-            </div>
-          </div>
-        )}
-
-        <div className="space-y-5">
-          {posts.length === 0 && (
-            <div className="bg-white border-2 border-line rounded-3xl p-8 text-center">
-              <h3 className="text-xl font-bold">Ancora nessun post</h3>
-              <p className="mt-2 text-navy/70">Scrivi tu il primo: presentati e racconta a cosa stai lavorando.</p>
-            </div>
-          )}
-          {posts.map(post => {
-            const col = colorFor(post.authorId);
-            const liked = typeof window !== "undefined" && !!user && localStorage.getItem(`liked_${user.id}_${post.id}`) === "1";
-            const open = selectedPost?.id === post.id;
-            return (
-            <article id={`post-${post.id}`} key={post.id} className="bg-white rounded-2xl border border-line shadow-sm overflow-hidden transition-shadow hover:shadow-md scroll-mt-24">
-              <div className="p-4 md:p-5">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-full grid place-items-center font-bold overflow-hidden shrink-0" style={{ background: col, color: textOn(col) }}>
-                    {post.authorAvatar ? <img src={post.authorAvatar} alt="" className="w-full h-full object-cover" /> : ((post.authorNome || post.authorCogen)?.[0] || "?").toUpperCase()}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <Link href={`/utente/${post.authorId}`} className="font-semibold hover:underline">{post.authorNome} {post.authorCogen}</Link>
-                    <div className="text-xs text-navy/60" title={post.createdAt ? new Date(post.createdAt).toLocaleString("it-IT") : ""}>{timeAgo(post.createdAt)}</div>
-                  </div>
-                  {(isAdmin || (user && user.id === post.authorId)) && (
-                    <button onClick={() => deletePost(post.id, user?.id, isAdmin)} aria-label="Elimina il post" className="p-2 rounded-full text-navy/40 hover:text-red-600 hover:bg-red-50 transition"><Trash2 className="w-4 h-4" /></button>
+          {user ? (
+            <div className={`bg-white rounded-2xl border shadow-sm p-4 mb-4 transition ${dragging ? "border-wine ring-4 ring-wine/20" : "border-line"}`}
+              onDragOver={e => { e.preventDefault(); if (!dragging) { setDragging(true); setShowNewPost(true); } }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={e => { e.preventDefault(); setDragging(false); const fs = Array.from(e.dataTransfer.files); if (fs.some(f => f.type.startsWith("image/"))) uploadImageFiles(fs, "post"); const pdf = fs.find(f => f.type === "application/pdf"); if (pdf) uploadPdf({ target: { files: [pdf], value: "" } } as any, "post"); }}>
+              <div className="flex items-start gap-3">
+                <Avatar id={user.id} nome={user.nome || initial} src={user.avatar} />
+                <div className="flex-1 min-w-0">
+                  <textarea ref={composerRef} value={newContent} onFocus={() => setShowNewPost(true)} onChange={e => { setNewContent(e.target.value); e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 320) + "px"; }}
+                    rows={showNewPost ? 3 : 1} placeholder={dragging ? "Rilascia qui foto o PDF…" : `A cosa stai lavorando, ${user.nome}?`}
+                    className="w-full px-4 py-3 rounded-2xl bg-ivory2 text-navy placeholder-navy/50 resize-none outline-none focus:ring-2 focus:ring-wine/40 transition" />
+                  {showNewPost && (
+                    <div className="rise">
+                      <div className="flex flex-wrap gap-1 mt-2">{EMOJI.map(e => <button key={e} onClick={() => addEmoji(e)} className="w-9 h-9 rounded-full hover:bg-ivory2 hover:scale-125 transition text-xl" aria-label={`Inserisci ${e}`}>{e}</button>)}</div>
+                      {pdfProgress !== null && (
+                        <div className="mt-2" role="status" aria-live="polite"><div className="h-2 rounded-full bg-ivory2 overflow-hidden"><div className="h-full bg-wine transition-all" style={{ width: `${pdfProgress}%` }} /></div><p className="text-xs text-navy/70 mt-1">Caricamento in corso… {pdfProgress}%</p></div>
+                      )}
+                      {pdfError && <p className="mt-2 text-sm text-red-600">{pdfError}</p>}
+                      {showLinkInput && (
+                        <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+                          <input type="text" placeholder="Etichetta (es. Guarda su Amazon)" value={linkLabel} onChange={e => setLinkLabel(e.target.value)} className="p-2 rounded-lg bg-ivory2 text-sm" />
+                          <input type="text" placeholder="https://…" value={linkUrl} onChange={e => setLinkUrl(e.target.value)} className="p-2 rounded-lg bg-ivory2 text-sm" />
+                          <button onClick={insertLink} className="px-3 py-2 bg-wine text-white rounded-lg font-semibold text-sm">Aggiungi</button>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
-                <h3 className="text-lg md:text-xl font-extrabold mt-3 mb-1.5 leading-tight">{post.title}</h3>
-                <PostBody content={post.content} onZoom={setZoomSrc} />
-                {((post.likes || 0) > 0 || (post.comments || 0) > 0) && (
-                  <div className="flex items-center justify-between mt-4 text-sm text-navy/60">
-                    <span>{(post.likes || 0) > 0 && <span className="inline-flex items-center gap-1"><span className="w-5 h-5 rounded-full bg-red-500 grid place-items-center"><Heart className="w-3 h-3 text-white fill-white" /></span>{post.likes}</span>}</span>
-                    <button onClick={() => openComments(post, true)} className="hover:underline">{(post.comments || 0) > 0 ? `${post.comments} ${post.comments === 1 ? "commento" : "commenti"}` : ""}</button>
-                  </div>
-                )}
-                <div className="flex items-center gap-1 mt-3 pt-1.5 border-t border-ivory2 text-sm font-semibold">
-                  <button onClick={() => { handleLike(post.id); setPopId(post.id); setTimeout(() => setPopId(null), 400); }} aria-pressed={liked} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg transition ${liked ? "text-red-600" : "text-navy/60 hover:bg-ivory2"}`}>
-                    <Heart className={`w-5 h-5 transition ${liked ? "fill-red-500" : ""} ${popId === post.id ? "scale-125" : ""}`} />Mi piace
-                  </button>
-                  <button onClick={() => openComments(post, true)} aria-expanded={open} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg transition ${open ? "bg-ivory2 text-navy" : "text-navy/60 hover:bg-ivory2"}`}>
-                    <MessageCircle className="w-5 h-5" />Commenta
-                  </button>
-                  <button onClick={async () => { try { await navigator.clipboard.writeText(`${location.origin}/community#post-${post.id}`); setCopiedId(post.id); setTimeout(() => setCopiedId(null), 1500); } catch {} }} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-navy/60 hover:bg-ivory2 transition">
-                    {copiedId === post.id ? <><Check className="w-5 h-5 text-green-600" />Link copiato</> : <><Share2 className="w-5 h-5" />Condividi</>}
-                  </button>
-                </div>
-                {open && (
-                  <div className="mt-4 rise">
-                    <div className="space-y-3 mb-4">
-              {comments.map(comment => (
-                <div key={comment.id} className="bg-ivory2 rounded-2xl p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-navy text-xs font-bold overflow-hidden">
-                      {comment.authorAvatar ? <img src={comment.authorAvatar} alt="Avatar" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-wine text-white rounded-lg font-semibold flex items-center justify-center">{(comment.authorNome || comment.authorCogen)?.[0] || "?"}</div>}
-                    </div>
-                    <Link href={`/utente/${comment.authorId}`} className="font-semibold text-navy text-sm hover:text-navy">{comment.authorNome} {comment.authorCogen}</Link>
-                    <span className="text-navy/60 text-xs">{comment.time}</span>
-                    {(isAdmin || (user && user.id === comment.authorId)) && (
-                      <button onClick={() => deleteComment(comment.id, selectedPost.id, user?.id, isAdmin)} className="text-red-400 hover:text-red-300 text-sm ml-auto"><Trash2 className="w-3 h-3" /></button>
-                    )}
-                  </div>
-                  <div className="text-navy/80 text-sm" dangerouslySetInnerHTML={{ __html: renderRich(comment.text) }} />
-                </div>
-              ))}
-                      {comments.length === 0 && <p className="text-sm text-navy/60">Nessun commento: scrivi tu il primo.</p>}
-                    </div>
-            {user && (
-              <div>
-                <div className="flex flex-wrap gap-2 mb-2">
-                  <input type="file" multiple accept="image/jpeg,image/png,image/gif,image/webp" onChange={e => uploadImages(e, "comment")} ref={commentFileInputRef} className="hidden" />
-                  <button onClick={() => commentFileInputRef.current?.click()} className="flex items-center gap-1 px-2 py-1 bg-white rounded-2xl shadow-sm text-navy rounded text-xs hover:bg-ivory2"><Image className="w-3 h-3" />Foto</button>
-                  <button onClick={() => { setShowLinkInput(!showLinkInput); }} className="flex items-center gap-1 px-2 py-1 bg-white rounded-2xl shadow-sm text-navy rounded text-xs hover:bg-ivory2"><LinkIcon className="w-3 h-3" />Link</button>
-                  <input type="file" accept="application/pdf,.pdf" onChange={e => uploadPdf(e, "comment")} ref={commentPdfInputRef} className="hidden" />
-                  <button onClick={() => commentPdfInputRef.current?.click()} disabled={pdfProgress !== null} className="flex items-center gap-1 px-2 py-1 bg-white rounded-2xl shadow-sm text-navy text-xs hover:bg-ivory2 disabled:opacity-60"><FileText className="w-3 h-3" />PDF</button>
-                </div>
-                {pdfProgress !== null && <p className="text-xs text-navy/70 mb-2" role="status">Caricamento in corso… {pdfProgress}%</p>}
-                {pdfError && <p className="text-xs text-red-600 mb-2">{pdfError}</p>}
-                {showLinkInput && (
-                  <div className="mb-2 space-y-1">
-                    <input type="text" placeholder="Etichetta" value={linkLabel} onChange={e => setLinkLabel(e.target.value)} className="w-full p-2 bg-ivory2 border border-line rounded text-navy text-sm" />
-                    <input type="text" placeholder="URL" value={linkUrl} onChange={e => setLinkUrl(e.target.value)} className="w-full p-2 bg-ivory2 border border-line rounded text-navy text-sm" />
-                    <button onClick={insertCommentLink} className="px-3 py-1 bg-wine text-white rounded-lg font-semibold rounded text-sm">Inserisci</button>
-                  </div>
-                )}
-                <div className="flex gap-2">
-                  <input type="text" placeholder="Commento..." value={newComment} onChange={e => setNewComment(e.target.value)} className="flex-1 p-3 bg-ivory2 border border-line text-navy placeholder-navy/40" />
-                  <button onClick={handleAddComment} disabled={!newComment.trim()} className="px-4 bg-wine text-white rounded-lg font-semibold disabled:opacity-50"><Send className="w-5 h-5" /></button>
-                </div>
+              </div>
+              <input type="file" multiple accept="image/jpeg,image/png,image/gif,image/webp" onChange={e => uploadImages(e, "post")} ref={fileInputRef} className="hidden" />
+              <input type="file" accept="application/pdf,.pdf" onChange={e => uploadPdf(e, "post")} ref={pdfInputRef} className="hidden" />
+              <div className="flex items-center gap-1 mt-3 pt-3 border-t border-ivory2 text-sm font-semibold">
+                <button onClick={() => { setShowNewPost(true); fileInputRef.current?.click(); }} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-ivory2"><Image className="w-5 h-5 text-mint" /><span className="hidden sm:inline">Foto</span></button>
+                <button onClick={() => { setShowNewPost(true); pdfInputRef.current?.click(); }} disabled={pdfProgress !== null} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-ivory2 disabled:opacity-60"><FileText className="w-5 h-5 text-coral" /><span className="hidden sm:inline">PDF</span></button>
+                <button onClick={() => { setShowNewPost(true); setShowLinkInput(v => !v); }} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-ivory2"><LinkIcon className="w-5 h-5 text-wine" /><span className="hidden sm:inline">Link</span></button>
+                <button onClick={() => { setShowNewPost(true); composerRef.current?.focus(); }} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-ivory2"><Smile className="w-5 h-5 text-brass" /><span className="hidden sm:inline">Emoji</span></button>
+                {showNewPost && <button onClick={() => { setShowNewPost(false); setNewContent(""); setShowLinkInput(false); if (composerRef.current) composerRef.current.style.height = ""; }} className="px-3 py-2 rounded-lg text-navy/60 hover:bg-ivory2">Annulla</button>}
+                <button onClick={handleCreatePost} disabled={!newContent.trim() || publishing} className="px-5 py-2 rounded-lg bg-wine text-white disabled:opacity-40 hover:brightness-110 active:scale-95 transition">{publishing ? "Pubblico…" : "Pubblica"}</button>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-line p-5 mb-4 text-center"><Link href="/login" className="font-semibold underline">Accedi</Link> o <Link href="/registrati" className="font-semibold underline">registrati</Link> per scrivere, commentare e reagire ai post.</div>
+          )}
+
+          <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1">
+            <div className="relative shrink-0">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-navy/50" />
+              <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Cerca nei post" aria-label="Cerca nei post" className="pl-9 pr-3 py-2 rounded-full bg-white border border-line text-sm w-40 focus:w-56 transition-all outline-none focus:border-wine" />
+            </div>
+            {FILTERS.filter(([k]) => k !== "miei" || user).map(([k, l]) => (
+              <button key={k} onClick={() => setFilter(k)} aria-pressed={filter === k} className={`shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition active:scale-95 ${filter === k ? "bg-wine text-white" : "bg-white border border-line hover:border-wine"}`}>{l}</button>
+            ))}
+          </div>
+
+          {pending && (
+            <div className="sticky top-20 z-30 flex justify-center mb-3">
+              <button onClick={() => { setPosts(pending); setPending(null); window.scrollTo({ top: 0, behavior: "smooth" }); }} className="bg-wine text-white font-semibold px-5 py-2.5 rounded-full shadow-lg inline-flex items-center gap-2 rise hover:brightness-110"><ArrowUp className="w-4 h-4" />Ci sono nuovi post</button>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            {visible.length === 0 && (
+              <div className="bg-white border border-line rounded-2xl p-8 text-center">
+                <h3 className="text-xl font-bold">{posts.length === 0 ? "Ancora nessun post" : "Nessun post trovato"}</h3>
+                <p className="mt-2 text-navy/70">{posts.length === 0 ? "Scrivi tu il primo: presentati e racconta a cosa stai lavorando." : "Prova con un'altra parola o cambia filtro."}</p>
               </div>
             )}
+            {visible.map(post => {
+              const mineR = REACTIONS.find(r => r.k === post.myReaction);
+              const total = post.likes || 0;
+              const top = Object.entries(post.reactions || {}).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k]) => REACTIONS.find(r => r.k === k)?.e).filter(Boolean);
+              const open = selectedPost?.id === post.id;
+              return (
+              <article id={`post-${post.id}`} key={post.id} className="bg-white rounded-2xl border border-line shadow-sm transition-all hover:shadow-md scroll-mt-24 rise">
+                <div className="p-4 md:p-5">
+                  <div className="flex items-center gap-3">
+                    <Avatar id={post.authorId} nome={post.authorNome || post.authorCogen} src={post.authorAvatar} />
+                    <div className="min-w-0 flex-1">
+                      <Link href={`/utente/${post.authorId}`} className="font-semibold hover:underline">{post.authorNome} {post.authorCogen}</Link>
+                      <div className="text-xs text-navy/60" title={post.createdAt ? new Date(post.createdAt).toLocaleString("it-IT") : ""}>{timeAgo(post.createdAt)}</div>
+                    </div>
+                    {(isAdmin || (user && user.id === post.authorId)) && (
+                      <button onClick={() => deletePost(post.id)} aria-label="Elimina il post" className="p-2 rounded-full text-navy/40 hover:text-red-600 hover:bg-red-50 transition"><Trash2 className="w-4 h-4" /></button>
+                    )}
                   </div>
-                )}
-              </div>
-            </article>
-            );
-          })}
-        </div>
+                  <div className="relative" onDoubleClick={() => burst(post)}>
+                    {post.title && <h3 className="text-lg md:text-xl font-extrabold mt-3 mb-1.5 leading-tight">{post.title}</h3>}
+                    <div className={post.title ? "" : "mt-3"}><PostBody content={post.content} onZoom={setZoomSrc} /></div>
+                    {burstId === post.id && <span className="pointer-events-none absolute inset-0 grid place-items-center"><Heart className="w-24 h-24 text-red-500 fill-red-500 burst drop-shadow-lg" /></span>}
+                  </div>
+                  {(total > 0 || (post.comments || 0) > 0) && (
+                    <div className="flex items-center justify-between mt-4 text-sm text-navy/60">
+                      <span className="inline-flex items-center gap-1.5">{total > 0 && <><span className="flex -space-x-1">{top.map((e, i) => <span key={i} className="w-5 h-5 rounded-full bg-white border border-line grid place-items-center text-[12px] leading-none">{e}</span>)}</span>{post.myReaction && total > 1 ? `Tu e altri ${total - 1}` : total}</>}</span>
+                      <button onClick={() => openComments(post, true)} className="hover:underline">{(post.comments || 0) > 0 ? `${post.comments} ${post.comments === 1 ? "commento" : "commenti"}` : ""}</button>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1 mt-3 pt-1.5 border-t border-ivory2 text-sm font-semibold">
+                    <div className="relative flex-1" onMouseEnter={() => showPicker(post.id)} onMouseLeave={hidePicker}
+                      onTouchStart={() => { clearTimeout(timers.current.lp); timers.current.lp = setTimeout(() => setPickerFor(post.id), 450); }} onTouchEnd={() => clearTimeout(timers.current.lp)} onTouchMove={() => clearTimeout(timers.current.lp)}>
+                      {pickerFor === post.id && (
+                        <div className="absolute bottom-full left-0 mb-2 z-20 flex gap-1 bg-white rounded-full shadow-xl border border-line px-2 py-1.5 pick" onMouseEnter={() => clearTimeout(timers.current.pk)}>
+                          {REACTIONS.map(r => <button key={r.k} onClick={e => { e.stopPropagation(); react(post.id, r.k); }} title={r.l} aria-label={r.l} className="text-2xl w-10 h-10 rounded-full hover:scale-150 hover:-translate-y-2 transition-transform origin-bottom">{r.e}</button>)}
+                        </div>
+                      )}
+                      <button onClick={() => react(post.id)} aria-pressed={!!post.myReaction} className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg transition active:scale-95 ${mineR ? mineR.c : "text-navy/60"} hover:bg-ivory2`}>
+                        {mineR ? <span className={`text-xl leading-none ${popId === post.id ? "pop" : ""}`}>{mineR.e}</span> : <Heart className="w-5 h-5" />}{mineR ? mineR.l : "Mi piace"}
+                      </button>
+                    </div>
+                    <button onClick={() => openComments(post, true)} aria-expanded={open} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg transition active:scale-95 ${open ? "bg-ivory2 text-navy" : "text-navy/60 hover:bg-ivory2"}`}>
+                      <MessageCircle className="w-5 h-5" />Commenta
+                    </button>
+                    <button onClick={async () => { try { await navigator.clipboard.writeText(`${location.origin}/community#post-${post.id}`); setCopiedId(post.id); setTimeout(() => setCopiedId(null), 1500); say("Link copiato"); } catch {} }} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-navy/60 hover:bg-ivory2 transition active:scale-95">
+                      {copiedId === post.id ? <><Check className="w-5 h-5 text-green-600" />Copiato</> : <><Share2 className="w-5 h-5" />Condividi</>}
+                    </button>
+                  </div>
+                  {open && (
+                    <div className="mt-3 pt-3 border-t border-ivory2 space-y-3">
+                      {topComments.length === 0 && <p className="text-sm text-navy/60">Nessun commento: scrivi tu il primo.</p>}
+                      {topComments.map(c => (
+                        <div key={c.id}>
+                          <CommentView c={c} />
+                          {repliesOf(c.id).map(r => <CommentView key={r.id} c={r} reply />)}
+                        </div>
+                      ))}
+                      {user ? (
+                        <div className="pt-1">
+                          {replyTo && <div className="flex items-center gap-2 text-xs text-navy/70 mb-1 ml-10">Stai rispondendo a <b>{replyTo.nome}</b><button onClick={() => setReplyTo(null)} aria-label="Annulla risposta" className="p-0.5 rounded-full hover:bg-ivory2"><X className="w-3.5 h-3.5" /></button></div>}
+                          <div className="flex items-end gap-2">
+                            <Avatar id={user.id} nome={user.nome || initial} src={user.avatar} size="w-8 h-8 text-sm" />
+                            <div className="flex-1 min-w-0 bg-ivory2 rounded-2xl px-3 py-1.5">
+                              <textarea ref={commentBoxRef} rows={1} value={newComment} onChange={e => { setNewComment(e.target.value); e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 160) + "px"; }}
+                                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleAddComment(); } }}
+                                placeholder={replyTo ? `Rispondi a ${replyTo.nome}…` : "Scrivi un commento…"} className="w-full bg-transparent resize-none outline-none py-1 text-sm" />
+                              <div className="flex items-center gap-1 -ml-1">
+                                <input type="file" multiple accept="image/jpeg,image/png,image/gif,image/webp" onChange={e => uploadImages(e, "comment")} ref={commentFileInputRef} className="hidden" />
+                                <input type="file" accept="application/pdf,.pdf" onChange={e => uploadPdf(e, "comment")} ref={commentPdfInputRef} className="hidden" />
+                                <button onClick={() => commentFileInputRef.current?.click()} aria-label="Aggiungi foto" className="p-1.5 rounded-full hover:bg-white text-navy/60"><Image className="w-4 h-4" /></button>
+                                <button onClick={() => commentPdfInputRef.current?.click()} disabled={pdfProgress !== null} aria-label="Aggiungi PDF" className="p-1.5 rounded-full hover:bg-white text-navy/60 disabled:opacity-50"><FileText className="w-4 h-4" /></button>
+                                <button onClick={() => setShowLinkInput(v => !v)} aria-label="Aggiungi link" className="p-1.5 rounded-full hover:bg-white text-navy/60"><LinkIcon className="w-4 h-4" /></button>
+                                {["\u{1F44F}", "❤️", "\u{1F602}"].map(e => <button key={e} onClick={() => setNewComment(t => t + e)} className="p-1 rounded-full hover:bg-white hover:scale-125 transition text-base">{e}</button>)}
+                              </div>
+                            </div>
+                            <button onClick={handleAddComment} disabled={!newComment.trim() || sendingComment} aria-label="Invia commento" className="w-10 h-10 rounded-full bg-wine text-white grid place-items-center disabled:opacity-40 active:scale-90 transition"><Send className="w-4 h-4" /></button>
+                          </div>
+                          {pdfProgress !== null && <p className="text-xs text-navy/70 mt-1 ml-10" role="status">Caricamento in corso… {pdfProgress}%</p>}
+                          {pdfError && <p className="text-xs text-red-600 mt-1 ml-10">{pdfError}</p>}
+                          {showLinkInput && (
+                            <div className="mt-2 ml-10 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+                              <input type="text" placeholder="Etichetta" value={linkLabel} onChange={e => setLinkLabel(e.target.value)} className="p-2 rounded-lg bg-ivory2 text-sm" />
+                              <input type="text" placeholder="https://…" value={linkUrl} onChange={e => setLinkUrl(e.target.value)} className="p-2 rounded-lg bg-ivory2 text-sm" />
+                              <button onClick={insertCommentLink} className="px-3 py-2 bg-wine text-white rounded-lg font-semibold text-sm">Inserisci</button>
+                            </div>
+                          )}
+                        </div>
+                      ) : <p className="text-sm text-navy/60"><Link href="/login" className="underline font-semibold">Accedi</Link> per commentare.</p>}
+                    </div>
+                  )}
+                </div>
+              </article>
+              );
+            })}
+          </div>
         </main>
 
         <aside className="hidden xl:block">
@@ -503,12 +612,12 @@ export default function CommunityPage() {
             {members.length > 0 && (
               <div className="bg-white rounded-2xl border border-line p-4">
                 <h2 className="font-extrabold mb-3 flex items-center gap-2"><Users className="w-5 h-5 text-wine" />Nuovi iscritti</h2>
-                {members.map(m => { const c = colorFor(m.id); return (
-                  <Link key={m.id} href={`/utente/${m.id}`} className="flex items-center gap-3 py-1.5 hover:text-wine">
-                    <span className="w-9 h-9 rounded-full grid place-items-center text-sm font-bold overflow-hidden shrink-0" style={{ background: c, color: textOn(c) }}>{m.avatar ? <img src={m.avatar} alt="" className="w-full h-full object-cover" /> : (m.nome?.[0] || "?").toUpperCase()}</span>
+                {members.map(m => (
+                  <Link key={m.id} href={`/utente/${m.id}`} className="flex items-center gap-3 py-1.5 hover:text-wine hover:translate-x-1 transition">
+                    <Avatar id={m.id} nome={m.nome} src={m.avatar} size="w-9 h-9 text-sm" />
                     <span className="text-sm font-semibold truncate">{m.nome} {m.cognome}</span>
                   </Link>
-                ); })}
+                ))}
               </div>
             )}
           </div>
@@ -521,6 +630,7 @@ export default function CommunityPage() {
           <img src={zoomSrc} alt="Foto ingrandita" className="max-w-full max-h-full rounded-xl" />
         </div>
       )}
+      {toast && <div role="status" className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-navy text-white px-5 py-3 rounded-full shadow-xl font-semibold text-sm toast">{toast}</div>}
     </div>
   );
 }

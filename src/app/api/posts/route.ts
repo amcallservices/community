@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
-import { requireUser } from '@/lib/auth'
+import { requireUser, getSessionUser } from '@/lib/auth'
 
 export async function GET() {
   try {
@@ -11,7 +11,15 @@ export async function GET() {
         author: { select: { id: true, nome: true, cognome: true, role: true, avatar: true } }
       }
     })
-    const transformed = posts.map(post => ({
+    const me = await getSessionUser().catch(() => null)
+    const reacts = await prisma.like.findMany({ where: { postId: { in: posts.map(p => p.id) } }, select: { postId: true, userId: true, type: true } })
+    const transformed = posts.map(post => {
+      const mine = reacts.filter(r => r.postId === post.id)
+      const reactions: Record<string, number> = {}
+      for (const r of mine) reactions[r.type] = (reactions[r.type] || 0) + 1
+      return {
+      reactions,
+      myReaction: me ? (mine.find(r => r.userId === me.id)?.type ?? null) : null,
       id: post.id,
       title: post.title,
       content: post.content,
@@ -23,7 +31,8 @@ export async function GET() {
       likes: post.likes,
       comments: post.comments,
       createdAt: post.createdAt.toISOString()
-    }))
+      }
+    })
     return NextResponse.json(transformed)
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 })
@@ -41,7 +50,7 @@ export async function POST(request: NextRequest) {
     }
 
     const post = await prisma.post.create({
-      data: { title: title || 'Untitled', content, authorId: user!.id, category: category || 'writing' }
+      data: { title: typeof title === 'string' ? title.slice(0, 200) : '', content, authorId: user!.id, category: category || 'writing' }
     })
     return NextResponse.json({ 
       id: post.id, title: post.title, content: post.content, authorId: user!.id,
