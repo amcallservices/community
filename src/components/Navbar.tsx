@@ -63,7 +63,7 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-3" aria-label="Self Publishing Italia">
             <img src="/logo.svg" alt="" width={40} height={40} className="w-10 h-10 rounded-xl" />
-            <span className="font-semibold hidden sm:block">Self Publishing Italia</span>
+            <span className="hidden sm:flex flex-col leading-tight"><span className="font-semibold">Self Publishing Italia</span><span className="text-[11px] font-normal text-paper/65">la community di SCRITTORE.site</span></span>
           </Link>
 
           <div className="flex items-center gap-1 md:order-last">
