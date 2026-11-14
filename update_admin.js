@@ -8,7 +8,7 @@ const { PrismaClient } = require('@prisma/client');
 const { randomBytes, scryptSync } = require('crypto');
 const prisma = new PrismaClient();
 
-const emails = (process.env.ADMIN_EMAILS || 'admin@scrittore.site,stramantonio@gmail.com')
+const emails = (process.env.ADMIN_EMAILS || 'stramantonio@gmail.com')
   .split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
 const password = process.env.ADMIN_PASSWORD;
 
