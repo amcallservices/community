@@ -4,14 +4,15 @@ import { requireAdmin, requireUser } from '@/lib/auth'
 
 // GET /api/utenti - list all users
 export async function GET() {
-  const { error: authError } = await requireUser()
+  const { user: me, error: authError } = await requireUser()
   if (authError) return authError
   try {
     const users = await prisma.user.findMany({
       select: { id: true, nome: true, cognome: true, email: true, avatar: true, role: true },
       orderBy: { id: 'asc' }
     })
-    return NextResponse.json(users)
+    // L'email degli iscritti la vedono solo gli admin
+    return NextResponse.json(me!.role === 'admin' ? users : users.map(({ email, ...u }) => u))
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 })
   }
