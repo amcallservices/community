@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { requireAdmin, getSessionUser } from '@/lib/auth'
+import { SITE_URL } from '@/lib/site'
 
 export async function GET() {
   try {
@@ -18,8 +19,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const { error: authError } = await requireAdmin()
-  if (authError) return authError
+  const { user: admin, error: authError } = await requireAdmin()
+  if (authError || !admin) return authError
   try {
     const body = await request.json()
     const { title, date, time, meetLink, description } = body
@@ -29,6 +30,17 @@ export async function POST(request: NextRequest) {
     const event = await prisma.event.create({
       data: { title, date: dateTime, meetLink: meetLink || null, description: typeof description === 'string' && description.trim() ? description.trim().slice(0, 2000) : null }
     })
+    // Post automatico in community + notifica a tutti gli iscritti
+    try {
+      const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+      const when = new Date(dateTime.replace(' ', 'T'))
+      const label = isNaN(when.getTime()) ? dateTime : when.toLocaleString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome' })
+      const url = `${SITE_URL}/eventi/${event.id}`
+      const content = `\u{1F4C5} Nuovo evento: ${event.title}\n${label}${event.description ? `\n\n${event.description}` : ''}\n\n<a href="${esc(url)}">Partecipa e iscriviti all'evento</a>`
+      await prisma.post.create({ data: { title: '', content, authorId: admin.id, category: 'generale' } })
+      const users = await prisma.user.findMany({ where: { id: { not: admin.id } }, select: { id: true } })
+      if (users.length) await prisma.notification.createMany({ data: users.map(u => ({ userId: u.id, type: 'event', title: 'Nuovo evento', message: `${event.title} \u2014 ${label}`, link: `/eventi/${event.id}` })) })
+    } catch {}
     return NextResponse.json(event)
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 })
