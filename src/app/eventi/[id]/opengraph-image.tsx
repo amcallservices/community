@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import prisma from "@/lib/db";
+import { romeToUtc } from "@/lib/events";
 
 export const alt = "Evento Self Publishing Italia";
 export const size = { width: 1200, height: 630 };
@@ -9,8 +10,8 @@ export const dynamic = "force-dynamic";
 export default async function OgImage({ params }: { params: Promise<{ id: string }> }) {
   const n = parseInt((await params).id) || 0;
   const ev = n ? await prisma.event.findUnique({ where: { id: n } }).catch(() => null) : null;
-  const d = ev ? new Date(ev.date.replace(" ", "T")) : null;
-  const ok = d && !isNaN(d.getTime());
+  const d = ev ? romeToUtc(ev.date) : null;
+  const ok = !!d;
   const day = ok ? d!.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Rome" }) : "";
   const hour = ok ? d!.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Rome" }) : "";
   const title = (ev?.title || "Eventi per autori").slice(0, 90);

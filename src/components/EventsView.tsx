@@ -3,10 +3,11 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { Plus, Trash2, CalendarDays, Video, Check, Users, X, Clock, Share2, Link2, MessageCircle } from "lucide-react";
 import { SITE_URL } from "@/lib/site";
+import { romeToUtc } from "@/lib/events";
 
 type Ev = { id: number; title: string; date: string; meetLink?: string | null; description?: string | null; going: number; mine: boolean };
 
-const toDate = (s: string) => new Date(s.replace(" ", "T"));
+const toDate = (s: string) => romeToUtc(s) ?? new Date(NaN);
 const pad = (n: number) => String(n).padStart(2, "0");
 const utcStamp = (d: Date) => `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`;
 
@@ -81,7 +82,7 @@ export default function EventsView({ onlyId }: { onlyId?: number }) {
   const share = async (ev: Ev, how: "wa" | "fb" | "copy" | "native") => {
     const url = `${SITE_URL}/eventi/${ev.id}`;
     const d = toDate(ev.date);
-    const text = `${ev.title} \u2014 ${d.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })} alle ${d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}. Iscriviti qui:`;
+    const text = `${ev.title} \u2014 ${d.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long", timeZone: "Europe/Rome" })} alle ${d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Rome" })}. Iscriviti qui:`;
     if (how === "wa") window.open(`https://wa.me/?text=${encodeURIComponent(text + " " + url)}`, "_blank", "noopener");
     else if (how === "fb") window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, "_blank", "noopener");
     else if (how === "native") { try { await navigator.share({ title: ev.title, text, url }); } catch {} }
