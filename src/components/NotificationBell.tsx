@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Bell, Heart, MessageCircle, CheckCheck } from "lucide-react";
+import { Bell, Heart, MessageCircle, Mail, CheckCheck } from "lucide-react";
 
 type Notif = { id: number; type: string; message: string; link?: string | null; read: boolean; createdAt: string };
 
@@ -22,6 +22,7 @@ export function timeAgo(iso?: string) {
 
 export function NotifIcon({ type }: { type: string }) {
   if (type === "like") return <span className="w-10 h-10 rounded-full bg-red-100 text-red-500 grid place-items-center shrink-0"><Heart className="w-5 h-5 fill-red-500" /></span>;
+  if (type === "message") return <span className="w-10 h-10 rounded-full bg-mint/25 text-navy grid place-items-center shrink-0"><Mail className="w-5 h-5" /></span>;
   if (type === "comment") return <span className="w-10 h-10 rounded-full bg-wine/10 text-wine grid place-items-center shrink-0"><MessageCircle className="w-5 h-5" /></span>;
   return <span className="w-10 h-10 rounded-full bg-brass/30 text-navy grid place-items-center shrink-0"><Bell className="w-5 h-5" /></span>;
 }
