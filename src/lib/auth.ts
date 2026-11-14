@@ -88,8 +88,15 @@ export async function requireAdmin() {
   return { user: user!, error: null }
 }
 
-export function publicUser(u: { id: number; email: string; name: string; nome: string | null; cognome: string | null; role: string; avatar: string | null }) {
-  return { id: u.id, email: u.email, name: u.name, nome: u.nome, cognome: u.cognome, role: u.role, avatar: u.avatar }
+// Le foto profilo salvate come testo (data:...) si servono da /api/avatar/ID: leggere e con cache.
+export function avatarUrl(u: { id: number; avatar: string | null; updatedAt?: Date | null }): string | null {
+  if (!u.avatar) return null
+  if (!u.avatar.startsWith('data:')) return u.avatar
+  return `/api/avatar/${u.id}?v=${u.updatedAt ? u.updatedAt.getTime() : 0}`
+}
+
+export function publicUser(u: { id: number; email: string; name: string; nome: string | null; cognome: string | null; role: string; avatar: string | null; updatedAt?: Date | null }) {
+  return { id: u.id, email: u.email, name: u.name, nome: u.nome, cognome: u.cognome, role: u.role, avatar: avatarUrl(u) }
 }
 
 /* ---------- Recupero password ---------- */

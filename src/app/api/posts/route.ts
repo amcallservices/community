@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
-import { requireUser, getSessionUser } from '@/lib/auth'
+import { requireUser, getSessionUser, avatarUrl } from '@/lib/auth'
 
 export async function GET() {
   try {
@@ -8,7 +8,7 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
       take: 50,
       include: {
-        author: { select: { id: true, nome: true, cognome: true, role: true, avatar: true } }
+        author: { select: { id: true, nome: true, cognome: true, role: true, avatar: true, updatedAt: true } }
       }
     })
     const me = await getSessionUser().catch(() => null)
@@ -27,7 +27,7 @@ export async function GET() {
       authorNome: post.author?.nome || 'Anonimo',
       authorCogen: post.author?.cognome || '',
       authorRole: post.author?.role || 'scrittore',
-      authorAvatar: post.author?.avatar || null,
+      authorAvatar: post.author ? avatarUrl(post.author) : null,
       likes: post.likes,
       comments: post.comments,
       createdAt: post.createdAt.toISOString()
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
       id: post.id, title: post.title, content: post.content, authorId: user!.id,
       authorNome: user!.nome || 'Anonimo', authorCogen: user!.cognome || '',
-      authorRole: user!.role || 'scrittore', authorAvatar: user!.avatar || null,
+      authorRole: user!.role || 'scrittore', authorAvatar: avatarUrl(user!),
       comments: 0, createdAt: post.createdAt.toISOString()
     })
   } catch (error) {
