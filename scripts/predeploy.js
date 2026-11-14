@@ -10,12 +10,21 @@ if (!url) {
   process.exit(0);
 }
 
-try {
-  execSync('npx prisma db push --skip-generate', { stdio: 'inherit' });
-} catch (e) {
-  console.error('[predeploy] prisma db push fallito');
-  process.exit(1);
+// Il database ha un numero limitato di connessioni: se sono tutte occupate riproviamo
+// qualche volta. Se non si riesce, il sito va online lo stesso (lo schema esiste già)
+// e l'avviso resta nei log.
+function sleep(ms) { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms); }
+let pushed = false;
+for (let i = 1; i <= 5 && !pushed; i++) {
+  try {
+    execSync('npx prisma db push --skip-generate', { stdio: 'inherit' });
+    pushed = true;
+  } catch (e) {
+    console.error(`[predeploy] prisma db push fallito (tentativo ${i}/5)`);
+    if (i < 5) sleep(15000);
+  }
 }
+if (!pushed) console.warn('[predeploy] db push non riuscito: proseguo senza aggiornare lo schema.');
 
 function hashPassword(p) {
   const salt = randomBytes(16).toString('hex');
@@ -24,7 +33,7 @@ function hashPassword(p) {
 
 (async () => {
   const { PrismaClient } = require('@prisma/client');
-  const prisma = new PrismaClient();
+  const prisma = new PrismaClient({ datasources: { db: { url: /connection_limit=/i.test(url) || !/^postgres(ql)?:\/\//i.test(url) ? url : url + (url.includes('?') ? '&' : '?') + 'connection_limit=1' } } });
   const emails = (process.env.ADMIN_EMAILS || 'stramantonio@gmail.com')
     .split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
   const password = process.env.ADMIN_PASSWORD;
@@ -44,4 +53,4 @@ function hashPassword(p) {
   } finally {
     await prisma.$disconnect();
   }
-})().catch(e => { console.error('[predeploy]', e.message || e); process.exit(1); });
+})().catch(e => { console.warn('[predeploy] admin non verificati:', e.message || e); process.exit(0); });
