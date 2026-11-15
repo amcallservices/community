@@ -35,6 +35,9 @@ export async function DELETE(request: NextRequest) {
     const postIds = userPosts.map(p => p.id)
     
     // Delete related data in correct order
+    const polls = await prisma.poll.findMany({ where: { postId: { in: postIds } }, select: { id: true } })
+    await prisma.pollVote.deleteMany({ where: { OR: [{ pollId: { in: polls.map(p => p.id) } }, { userId: { in: idsArray } }] } })
+    await prisma.poll.deleteMany({ where: { id: { in: polls.map(p => p.id) } } })
     // Delete likes on these posts
     await prisma.like.deleteMany({ where: { postId: { in: postIds } } })
     // Delete likes by these users

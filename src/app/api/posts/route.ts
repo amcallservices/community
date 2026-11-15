@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { requireUser, getSessionUser, avatarUrl, suspendedError } from '@/lib/auth'
 import { findMentions } from '@/lib/mentions'
+import { pollsFor, cleanOptions } from '@/lib/polls'
 
 const CATEGORIES = ['generale', 'scrittura', 'kdp', 'copertine', 'marketing', 'recensioni', 'domande', 'novita']
 
@@ -16,6 +17,7 @@ export async function GET() {
     })
     const me = await getSessionUser().catch(() => null)
     const reacts = await prisma.like.findMany({ where: { postId: { in: posts.map(p => p.id) } }, select: { postId: true, userId: true, type: true } })
+    const polls = await pollsFor(posts.map(p => p.id), me?.id ?? null)
     const transformed = posts.map(post => {
       const mine = reacts.filter(r => r.postId === post.id)
       const reactions: Record<string, number> = {}
@@ -32,6 +34,7 @@ export async function GET() {
       authorRole: post.author?.role || 'scrittore',
       authorAvatar: post.author ? avatarUrl(post.author) : null,
       category: post.category,
+      poll: polls.get(post.id) ?? null,
       likes: post.likes,
       comments: post.comments,
       createdAt: post.createdAt.toISOString()
@@ -50,7 +53,7 @@ export async function POST(request: NextRequest) {
     const susp = suspendedError(user!)
     if (susp) return susp
     const body = await request.json()
-    const { title, content, category } = body
+    const { title, content, category, poll } = body
     if (typeof content !== 'string' || !content.trim() || content.length > 2_000_000) {
       return NextResponse.json({ error: 'Contenuto non valido' }, { status: 400 })
     }
@@ -58,6 +61,12 @@ export async function POST(request: NextRequest) {
     const post = await prisma.post.create({
       data: { title: typeof title === 'string' ? title.slice(0, 200) : '', content, authorId: user!.id, category: CATEGORIES.includes(category) ? category : 'generale' }
     })
+    const pollOptions = poll ? cleanOptions(poll.options) : null
+    if (poll && !pollOptions) {
+      await prisma.post.delete({ where: { id: post.id } }).catch(() => {})
+      return NextResponse.json({ error: 'Il sondaggio deve avere da 2 a 6 risposte' }, { status: 400 })
+    }
+    if (pollOptions) await prisma.poll.create({ data: { postId: post.id, options: JSON.stringify(pollOptions) } })
     // Notifica a chi è stato citato con @Nome Cognome
     const everyone = await prisma.user.findMany({ where: { banned: false, id: { not: user!.id } }, select: { id: true, nome: true, cognome: true } })
     const who = `${user!.nome || 'Qualcuno'} ${user!.cognome || ''}`.trim()
@@ -88,6 +97,11 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Non autorizzato' }, { status: 403 })
     }
 
+    const poll = await prisma.poll.findUnique({ where: { postId: id } })
+    if (poll) {
+      await prisma.pollVote.deleteMany({ where: { pollId: poll.id } })
+      await prisma.poll.delete({ where: { id: poll.id } })
+    }
     await prisma.$transaction([
       prisma.like.deleteMany({ where: { postId: id } }),
       prisma.comment.deleteMany({ where: { postId: id } }),

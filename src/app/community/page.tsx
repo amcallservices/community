@@ -5,9 +5,9 @@ import { renderRich, parseRich } from "@/lib/sanitize";
 import { decorate, hashtagsOf, type Member } from "@/lib/rich";
 import { timeAgo } from "@/components/NotificationBell";
 import { upload } from "@vercel/blob/client";
-import { Heart, FileText, MessageCircle, Trash2, X, Send, Image, Link as LinkIcon, Share2, Check, ChevronDown, CalendarDays, Users, MessageSquare, User as UserIcon, Video as VideoIcon, Search, ArrowUp, Smile, Flag, Hash } from "lucide-react";
+import { Heart, FileText, MessageCircle, Trash2, X, Send, Image, Link as LinkIcon, Share2, Check, ChevronDown, CalendarDays, Users, MessageSquare, User as UserIcon, Video as VideoIcon, Search, ArrowUp, Smile, Flag, Hash, BarChart3 } from "lucide-react";
 
-type Post = { id: number; title: string; content: string; authorId?: number; authorNome: string; authorCogen: string; authorRole: string; authorAvatar: string | null; likes: number; comments: number; category: string; createdAt: string; reactions?: Record<string, number>; myReaction?: string | null };
+type Post = { id: number; title: string; content: string; authorId?: number; authorNome: string; authorCogen: string; authorRole: string; authorAvatar: string | null; likes: number; comments: number; category: string; createdAt: string; reactions?: Record<string, number>; myReaction?: string | null; poll?: { options: { text: string; votes: number }[]; total: number; mine: number | null } | null };
 type Comment = { id: number; text: string; authorId?: number; authorNome: string; authorCogen: string; authorAvatar: string | null; time: string; parentId?: number | null; createdAt?: string };
 
 const REACTIONS = [
@@ -92,6 +92,8 @@ export default function CommunityPage() {
   const [reportNote, setReportNote] = useState("");
   const [reporting, setReporting] = useState(false);
   const [reportsOpen, setReportsOpen] = useState(0);
+  const [pollOn, setPollOn] = useState(false);
+  const [pollOpts, setPollOpts] = useState<string[]>(["", ""]);
   const [suspendedUntil, setSuspendedUntil] = useState<string | null>(null);
   const [mention, setMention] = useState<{ target: "post" | "comment"; q: string; start: number; end: number } | null>(null);
   const [mIdx, setMIdx] = useState(0);
@@ -290,16 +292,18 @@ export default function CommunityPage() {
 
   const handleCreatePost = async () => {
     if (!newContent.trim() || !user || publishing) return;
+    if (pollOn && pollOpts.map(o => o.trim()).filter(Boolean).length < 2) { say("Il sondaggio ha bisogno di almeno 2 risposte"); return; }
     setPublishing(true);
     try {
       const res = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: "", content: newContent, category: newCategory }),
+        body: JSON.stringify({ title: "", content: newContent, category: newCategory, ...(pollOn ? { poll: { options: pollOpts } } : {}) }),
       });
       if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || ""); }
       setNewContent("");
       setNewCategory("generale");
+      setPollOn(false); setPollOpts(["", ""]);
       setShowNewPost(false);
       setShowLinkInput(false);
       await loadPosts();
@@ -309,6 +313,24 @@ export default function CommunityPage() {
       say(e?.message || "Non sono riuscito a pubblicare. Riprova.");
     }
     setPublishing(false);
+  };
+
+  const vote = async (postId: number, option: number) => {
+    if (!user) { say("Accedi per votare"); return; }
+    const before = posts;
+    setPosts(ps => ps.map(p => {
+      if (p.id !== postId || !p.poll) return p;
+      const prev = p.poll.mine;
+      const options = p.poll.options.map((o, i) => ({ ...o, votes: o.votes + (i === option && prev !== option ? 1 : 0) - (i === prev ? 1 : 0) }));
+      const mine = prev === option ? null : option;
+      return { ...p, poll: { options, mine, total: options.reduce((a, o) => a + o.votes, 0) } };
+    }));
+    try {
+      const r = await fetch("/api/polls/vote", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ postId, option }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || "");
+      setPosts(ps => ps.map(p => p.id === postId ? { ...p, poll: d } : p));
+    } catch (e: any) { setPosts(before); say(e?.message || "Voto non riuscito"); }
   };
 
   // Reazioni: se manca "type" il tasto Mi piace mette/toglie "like"
@@ -545,6 +567,21 @@ export default function CommunityPage() {
                         <div className="mt-2" role="status" aria-live="polite"><div className="h-2 rounded-full bg-ivory2 overflow-hidden"><div className="h-full bg-wine transition-all" style={{ width: `${pdfProgress}%` }} /></div><p className="text-xs text-navy/70 mt-1">Caricamento in corso… {pdfProgress}%</p></div>
                       )}
                       {pdfError && <p className="mt-2 text-sm text-red-600">{pdfError}</p>}
+                      {pollOn && (
+                        <div className="mt-3 rounded-xl border-2 border-line p-3 rise">
+                          <div className="flex items-center justify-between mb-2"><b className="flex items-center gap-2"><BarChart3 className="w-4 h-4 text-wine" />Sondaggio</b><button onClick={() => { setPollOn(false); setPollOpts(["", ""]); }} className="text-sm text-navy/60 hover:text-red-600">Rimuovi</button></div>
+                          <p className="text-xs text-navy/55 mb-2">La domanda è il testo del post. Scrivi da 2 a 6 risposte.</p>
+                          <div className="space-y-2">
+                            {pollOpts.map((o, i) => (
+                              <div key={i} className="flex gap-2">
+                                <input value={o} maxLength={80} onChange={e => setPollOpts(os => os.map((x, j) => j === i ? e.target.value : x))} placeholder={`Risposta ${i + 1}`} className="flex-1 p-2.5 rounded-lg bg-ivory2 text-sm outline-none focus:ring-2 focus:ring-wine/40" />
+                                {pollOpts.length > 2 && <button onClick={() => setPollOpts(os => os.filter((_, j) => j !== i))} aria-label="Togli risposta" className="p-2 rounded-lg hover:bg-ivory2"><X className="w-4 h-4" /></button>}
+                              </div>
+                            ))}
+                          </div>
+                          {pollOpts.length < 6 && <button onClick={() => setPollOpts(os => [...os, ""])} className="mt-2 text-sm font-semibold text-wine hover:underline">+ Aggiungi risposta</button>}
+                        </div>
+                      )}
                       {showLinkInput && (
                         <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
                           <input type="text" placeholder="Etichetta (es. Guarda su Amazon)" value={linkLabel} onChange={e => setLinkLabel(e.target.value)} className="p-2 rounded-lg bg-ivory2 text-sm" />
@@ -562,8 +599,9 @@ export default function CommunityPage() {
                 <button onClick={() => { setShowNewPost(true); fileInputRef.current?.click(); }} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-ivory2"><Image className="w-5 h-5 text-mint" /><span className="hidden sm:inline">Foto</span></button>
                 <button onClick={() => { setShowNewPost(true); pdfInputRef.current?.click(); }} disabled={pdfProgress !== null} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-ivory2 disabled:opacity-60"><FileText className="w-5 h-5 text-coral" /><span className="hidden sm:inline">PDF</span></button>
                 <button onClick={() => { setShowNewPost(true); setShowLinkInput(v => !v); }} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-ivory2"><LinkIcon className="w-5 h-5 text-wine" /><span className="hidden sm:inline">Link</span></button>
+                <button onClick={() => { setShowNewPost(true); setPollOn(v => !v); }} aria-pressed={pollOn} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-ivory2 ${pollOn ? "bg-ivory2" : ""}`}><BarChart3 className="w-5 h-5 text-coral" /><span className="hidden sm:inline">Sondaggio</span></button>
                 <button onClick={() => { setShowNewPost(true); composerRef.current?.focus(); }} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-ivory2"><Smile className="w-5 h-5 text-brass" /><span className="hidden sm:inline">Emoji</span></button>
-                {showNewPost && <button onClick={() => { setShowNewPost(false); setNewContent(""); setShowLinkInput(false); if (composerRef.current) composerRef.current.style.height = ""; }} className="px-3 py-2 rounded-lg text-navy/60 hover:bg-ivory2">Annulla</button>}
+                {showNewPost && <button onClick={() => { setShowNewPost(false); setNewContent(""); setShowLinkInput(false); setPollOn(false); setPollOpts(["", ""]); if (composerRef.current) composerRef.current.style.height = ""; }} className="px-3 py-2 rounded-lg text-navy/60 hover:bg-ivory2">Annulla</button>}
                 <button onClick={handleCreatePost} disabled={!newContent.trim() || publishing} className="px-5 py-2 rounded-lg bg-wine text-white disabled:opacity-40 hover:brightness-110 active:scale-95 transition">{publishing ? "Pubblico…" : "Pubblica"}</button>
               </div>
             </div>
@@ -621,6 +659,24 @@ export default function CommunityPage() {
                   <div className="relative" onDoubleClick={() => burst(post)}>
                     {post.title && <h3 className="text-lg md:text-xl font-extrabold mt-3 mb-1.5 leading-tight">{post.title}</h3>}
                     <div className={post.title ? "" : "mt-3"}><PostBody content={post.content} onZoom={setZoomSrc} members={allUsers} onTag={onTag} /></div>
+                    {post.poll && (
+                      <div className="mt-3 space-y-2" role="group" aria-label="Sondaggio">
+                        {post.poll.options.map((o, i) => {
+                          const pct = post.poll!.total ? Math.round((o.votes / post.poll!.total) * 100) : 0;
+                          const mine = post.poll!.mine === i;
+                          return (
+                            <button key={i} onClick={() => vote(post.id, i)} aria-pressed={mine} className={`relative w-full text-left rounded-xl border-2 overflow-hidden transition active:scale-[.99] ${mine ? "border-wine" : "border-line hover:border-navy/30"}`}>
+                              <span className={`absolute inset-y-0 left-0 transition-all duration-500 ${mine ? "bg-wine/20" : "bg-ivory2"}`} style={{ width: `${pct}%` }} />
+                              <span className="relative flex items-center justify-between gap-3 px-4 py-2.5">
+                                <span className="font-semibold flex items-center gap-2">{mine && <Check className="w-4 h-4 text-wine" />}{o.text}</span>
+                                <span className="text-sm text-navy/65 shrink-0">{pct}% <span className="text-navy/40">({o.votes})</span></span>
+                              </span>
+                            </button>
+                          );
+                        })}
+                        <p className="text-xs text-navy/55">{post.poll.total === 1 ? "1 voto" : `${post.poll.total} voti`}. Tocca di nuovo la tua risposta per toglierla.</p>
+                      </div>
+                    )}
                     {burstId === post.id && <span className="pointer-events-none absolute inset-0 grid place-items-center"><Heart className="w-24 h-24 text-red-500 fill-red-500 burst drop-shadow-lg" /></span>}
                   </div>
                   {(total > 0 || (post.comments || 0) > 0) && (

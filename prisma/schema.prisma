@@ -172,3 +172,20 @@ model PasswordReset {
   used      Boolean  @default(false)
   createdAt DateTime @default(now())
 }
+
+model Poll {
+  id        Int      @id @default(autoincrement())
+  postId    Int      @unique
+  options   String
+  createdAt DateTime @default(now())
+}
+
+model PollVote {
+  id        Int      @id @default(autoincrement())
+  pollId    Int
+  userId    Int
+  option    Int
+  createdAt DateTime @default(now())
+
+  @@unique([pollId, userId])
+}
