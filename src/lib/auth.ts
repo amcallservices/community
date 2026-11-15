@@ -126,6 +126,24 @@ export function hashToken(token: string) {
 }
 
 export async function sendResetEmail(to: string, link: string): Promise<boolean> {
+  const subject = 'Recupero password - Self Publishing Italia'
+  const html = `<p>Hai chiesto di reimpostare la password.</p><p><a href="${link}">Clicca qui per sceglierne una nuova</a> (il link vale 1 ora).</p><p>Se non sei stato tu, ignora questa email.</p>`
+
+  // Gmail (password per le app): funziona verso qualsiasi indirizzo, senza dominio da verificare.
+  const gUser = process.env.GMAIL_USER
+  const gPass = process.env.GMAIL_APP_PASSWORD
+  if (gUser && gPass) {
+    try {
+      const nodemailer = (await import('nodemailer')).default
+      const transport = nodemailer.createTransport({ host: 'smtp.gmail.com', port: 465, secure: true, auth: { user: gUser, pass: gPass.replace(/\s+/g, '') } })
+      await transport.sendMail({ from: `Self Publishing Italia <${gUser}>`, to, subject, html })
+      return true
+    } catch (e) {
+      console.error('Invio Gmail fallito:', e)
+      return false
+    }
+  }
+
   const key = process.env.RESEND_API_KEY
   if (!key) return false
   const res = await fetch('https://api.resend.com/emails', {
@@ -134,8 +152,8 @@ export async function sendResetEmail(to: string, link: string): Promise<boolean>
     body: JSON.stringify({
       from: process.env.MAIL_FROM || 'Self Publishing Italia <onboarding@resend.dev>',
       to,
-      subject: 'Recupero password - Self Publishing Italia',
-      html: `<p>Hai chiesto di reimpostare la password.</p><p><a href="${link}">Clicca qui per sceglierne una nuova</a> (il link vale 1 ora).</p><p>Se non sei stato tu, ignora questa email.</p>`,
+      subject,
+      html,
     }),
   })
   return res.ok
