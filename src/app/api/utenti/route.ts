@@ -8,11 +8,11 @@ export async function GET() {
   if (authError) return authError
   try {
     const users = await prisma.user.findMany({
-      select: { id: true, nome: true, cognome: true, email: true, avatar: true, role: true, updatedAt: true },
+      select: { id: true, nome: true, cognome: true, email: true, avatar: true, role: true, updatedAt: true, banned: true, suspendedUntil: true },
       orderBy: { id: 'asc' }
     })
     // L'email degli iscritti la vedono solo gli admin
-    return NextResponse.json(me!.role === 'admin' ? users : users.map(({ email, ...u }) => u))
+    return NextResponse.json(me!.role === 'admin' ? users : users.map(({ email, banned, suspendedUntil, ...u }) => u))
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 })
   }
@@ -35,6 +35,9 @@ export async function DELETE(request: NextRequest) {
     const postIds = userPosts.map(p => p.id)
     
     // Delete related data in correct order
+    const polls = await prisma.poll.findMany({ where: { postId: { in: postIds } }, select: { id: true } })
+    await prisma.pollVote.deleteMany({ where: { OR: [{ pollId: { in: polls.map(p => p.id) } }, { userId: { in: idsArray } }] } })
+    await prisma.poll.deleteMany({ where: { id: { in: polls.map(p => p.id) } } })
     // Delete likes on these posts
     await prisma.like.deleteMany({ where: { postId: { in: postIds } } })
     // Delete likes by these users
