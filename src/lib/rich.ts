@@ -17,6 +17,7 @@ export function decorate(html: string, members: Member[] = []): string {
     const re = new RegExp(`(^|[\\s(])@(${list.map(m => rx(m.name)).join("|")})(?![\\p{L}\\p{N}])`, "giu");
     out = out.replace(re, (_m, pre, name) => `${pre}<a href="/utente/${byName.get(String(name).toLowerCase())}" class="text-wine font-semibold hover:underline">@${name}</a>`);
   }
+  out = out.replace(/(^|[\s(])@tutti(?![\p{L}\p{N}])/giu, (_m, pre) => `${pre}<span class="px-1.5 py-0.5 rounded-md bg-brass/40 text-navy font-bold">@tutti</span>`);
   return out;
 }
 

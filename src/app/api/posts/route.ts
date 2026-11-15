@@ -58,6 +58,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Contenuto non valido' }, { status: 400 })
     }
 
+    // @tutti: avvisa tutti gli iscritti. Admin senza limiti, gli altri una volta al giorno.
+    const callsAll = /(^|[\s(>])@tutti(?![\p{L}\p{N}])/iu.test(content.replace(/<[^>]*>/g, ' '))
+    if (callsAll && user!.role !== 'admin') {
+      const recent = await prisma.post.count({ where: { authorId: user!.id, createdAt: { gt: new Date(Date.now() - 24 * 3600 * 1000) }, content: { contains: '@tutti', mode: 'insensitive' } } })
+      if (recent >= 1) return NextResponse.json({ error: 'Puoi usare @tutti una sola volta al giorno. Togli @tutti dal testo per pubblicare.' }, { status: 429 })
+    }
+
     const post = await prisma.post.create({
       data: { title: typeof title === 'string' ? title.slice(0, 200) : '', content, authorId: user!.id, category: CATEGORIES.includes(category) ? category : 'generale' }
     })
@@ -70,8 +77,8 @@ export async function POST(request: NextRequest) {
     // Notifica a chi è stato citato con @Nome Cognome
     const everyone = await prisma.user.findMany({ where: { banned: false, id: { not: user!.id } }, select: { id: true, nome: true, cognome: true } })
     const who = `${user!.nome || 'Qualcuno'} ${user!.cognome || ''}`.trim()
-    const cited = findMentions(content, everyone)
-    if (cited.length) await prisma.notification.createMany({ data: cited.map(id => ({ userId: id, type: 'mention', title: 'Menzione', message: `${who} ti ha menzionato in un post`, link: `/community#post-${post.id}` })) })
+    const cited = callsAll ? everyone.map(e => e.id) : findMentions(content, everyone)
+    if (cited.length) await prisma.notification.createMany({ data: cited.map(id => ({ userId: id, type: 'mention', title: 'Menzione', message: callsAll ? `${who} ha scritto a tutti in un post` : `${who} ti ha menzionato in un post`, link: `/community#post-${post.id}` })) })
     return NextResponse.json({ 
       id: post.id, title: post.title, content: post.content, authorId: user!.id,
       authorNome: user!.nome || 'Anonimo', authorCogen: user!.cognome || '',
