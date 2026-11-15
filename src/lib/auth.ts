@@ -81,6 +81,13 @@ export async function requireUser() {
   return { user, error: null }
 }
 
+// Se l'utente è sospeso (non può pubblicare) restituisce la risposta d'errore, altrimenti null.
+export function suspendedError(u: { suspendedUntil?: Date | null }) {
+  if (!u.suspendedUntil || u.suspendedUntil.getTime() <= Date.now()) return null
+  const until = u.suspendedUntil.toLocaleString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome' })
+  return NextResponse.json({ error: `Sei sospeso: non puoi pubblicare fino a ${until}.`, suspendedUntil: u.suspendedUntil }, { status: 403 })
+}
+
 export async function requireAdmin() {
   const { user, error } = await requireUser()
   if (error) return { user: null, error }

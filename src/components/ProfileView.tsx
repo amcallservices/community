@@ -138,6 +138,12 @@ export default function ProfileView({ id }: { id: number | string }) {
     try { await navigator.clipboard.writeText(d.link); say("Link copiato: valido 24 ore"); } catch {}
   };
 
+  const suspend = async (hours: 0 | 24 | 48) => {
+    const r = await fetch("/api/users/suspend", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: u.id, hours }) });
+    const d = await r.json().catch(() => ({}));
+    if (r.ok) { say(hours ? `Sospeso per ${hours} ore: non pu\u00f2 pubblicare` : "Sospensione revocata"); load(); } else say(d.error || "Errore");
+  };
+
   const toggleBan = async () => {
     if (!u.email) return;
     if (!u.banned && !confirm(`Bloccare ${u.nome} ${u.cognome}? Non potrà più accedere.`)) return;
@@ -205,6 +211,7 @@ export default function ProfileView({ id }: { id: number | string }) {
               <span className={`px-3 py-1 rounded-full font-semibold ${isAdminUser ? "bg-brass/30" : "bg-ivory2"}`}>{ROLE[u.role] || u.role || "Autore"}</span>
               {since && <span className="text-navy/60">Iscritto da {since}</span>}
               {u.banned && <span className="px-3 py-1 rounded-full bg-red-100 text-red-700 font-semibold">Bloccato</span>}
+              {u.suspendedUntil && !u.banned && (admin || own) && <span className="px-3 py-1 rounded-full bg-brass/40 text-navy font-semibold">Sospeso fino a {new Date(u.suspendedUntil).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>}
             </div>
             {!editing && (u.bio ? <p className="mt-3 text-navy/80 whitespace-pre-wrap leading-relaxed">{u.bio}</p> : own ? <button onClick={() => setEditing(true)} className="mt-3 text-golddark font-semibold hover:underline">+ Aggiungi una presentazione</button> : null)}
             {u.email && <p className="mt-2 text-sm text-navy/60 inline-flex items-center gap-2"><Mail className="w-4 h-4" />{u.email}</p>}
@@ -276,6 +283,12 @@ export default function ProfileView({ id }: { id: number | string }) {
           <h2 className="font-extrabold flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-wine" />Strumenti admin</h2>
           <div className="flex flex-wrap gap-2 mt-3">
             <button onClick={makeLink} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-ivory2 font-semibold hover:bg-line"><KeyRound className="w-4 h-4" />Link recupero password</button>
+            {!u.banned && (u.suspendedUntil
+              ? <button onClick={() => suspend(0)} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold bg-mint/30 hover:bg-mint/50"><Check className="w-4 h-4" />Revoca sospensione</button>
+              : <>
+                  <button onClick={() => suspend(24)} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold bg-brass/30 hover:bg-brass/50"><Ban className="w-4 h-4" />Sospendi 24 ore</button>
+                  <button onClick={() => suspend(48)} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold bg-brass/30 hover:bg-brass/50"><Ban className="w-4 h-4" />Sospendi 48 ore</button>
+                </>)}
             <button onClick={toggleBan} className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold ${u.banned ? "bg-mint/30 hover:bg-mint/50" : "bg-red-50 text-red-700 hover:bg-red-100"}`}><Ban className="w-4 h-4" />{u.banned ? "Sblocca utente" : "Blocca utente"}</button>
           </div>
           {resetLink && (

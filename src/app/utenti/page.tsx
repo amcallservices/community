@@ -2,9 +2,18 @@
 import { useState, useEffect } from "react";
 import { Users, Trash2 } from "lucide-react";
 
-type User = { id: number; nome: string; cognome: string; email: string; role: string };
+type User = { id: number; nome: string; cognome: string; email: string; role: string; banned?: boolean; suspendedUntil?: string | null };
 
 export default function UtentiPage() {
+  const moderate = async (u: User, what: "s24" | "s48" | "s0" | "block" | "unblock") => {
+    if (what === "block" && !confirm(`Bloccare ${u.nome} ${u.cognome}? Non potr\u00e0 pi\u00f9 accedere.`)) return;
+    const r = what.startsWith("s")
+      ? await fetch("/api/users/suspend", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: u.id, hours: Number(what.slice(1)) }) })
+      : await fetch("/api/users/ban", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: u.id, banned: what === "block" }) });
+    if (!r.ok) { const d = await r.json().catch(() => ({})); alert(d.error || "Errore"); return; }
+    const d = await (await fetch("/api/utenti")).json();
+    if (Array.isArray(d)) setUtenti(d);
+  };
   const [utenti, setUtenti] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -98,6 +107,7 @@ export default function UtentiPage() {
                   <th className="text-left px-6 py-3 text-navy/80 font-medium">Cognome</th>
                   <th className="text-left px-6 py-3 text-navy/80 font-medium">Email</th>
                   <th className="text-left px-6 py-3 text-navy/80 font-medium">Ruolo</th>
+                  <th className="text-left px-6 py-3 text-navy/80 font-medium">Stato</th>
                   <th className="text-left px-6 py-3 text-navy/80 font-medium">Azioni</th>
                 </tr>
               </thead>
@@ -113,7 +123,20 @@ export default function UtentiPage() {
                         {u.role}
                       </span>
                     </td>
-                    <td className="px-6 py-3">
+                    <td className="px-6 py-3 text-sm">
+                      {u.banned ? <span className="px-2 py-1 rounded bg-red-100 text-red-700 font-semibold">Bloccato</span>
+                        : u.suspendedUntil && new Date(u.suspendedUntil) > new Date() ? <span className="px-2 py-1 rounded bg-brass/40 font-semibold">Sospeso fino a {new Date(u.suspendedUntil).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+                        : <span className="text-navy/50">Attivo</span>}
+                    </td>
+                    <td className="px-6 py-3 whitespace-nowrap">
+                      {u.role !== "admin" && (u.banned
+                        ? <button onClick={() => moderate(u, "unblock")} className="text-xs mr-3 underline text-navy hover:text-wine">Sblocca</button>
+                        : <>
+                            {u.suspendedUntil && new Date(u.suspendedUntil) > new Date()
+                              ? <button onClick={() => moderate(u, "s0")} className="text-xs mr-3 underline text-navy hover:text-wine">Revoca sospensione</button>
+                              : <><button onClick={() => moderate(u, "s24")} className="text-xs mr-3 underline text-navy hover:text-wine">Sospendi 24h</button><button onClick={() => moderate(u, "s48")} className="text-xs mr-3 underline text-navy hover:text-wine">48h</button></>}
+                            <button onClick={() => moderate(u, "block")} className="text-xs mr-3 underline text-red-600 hover:text-red-800">Blocca</button>
+                          </>)}
                       <button onClick={() => resetLink(u)} className="text-golddark hover:text-navy text-xs mr-3 underline">Link recupero</button>
                       <button onClick={() => deleteUsers([u.id])} className="text-red-400 hover:text-red-300">
                         <Trash2 className="w-4 h-4" />

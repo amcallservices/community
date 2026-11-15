@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
-import { requireUser, avatarUrl } from '@/lib/auth'
+import { requireUser, avatarUrl, suspendedError } from '@/lib/auth'
 import { findMentions } from '@/lib/mentions'
 
 export async function POST(request: NextRequest) {
   const { user: sessionUser, error: authError } = await requireUser()
   if (authError) return authError
   const user = sessionUser!
+  const susp = suspendedError(user)
+  if (susp) return susp
   try {
     const body = await request.json()
     const { postId, text } = body

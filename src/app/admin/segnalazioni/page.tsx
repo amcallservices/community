@@ -25,6 +25,15 @@ export default function SegnalazioniPage() {
   };
   useEffect(() => { load(tab); }, [tab]);
 
+  const modAuthor = async (authorId: number, what: "s24" | "s48" | "block") => {
+    if (what === "block" && !confirm("Bloccare questo utente? Non potr\u00e0 pi\u00f9 accedere.")) return;
+    const r = what === "block"
+      ? await fetch("/api/users/ban", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: authorId, banned: true }) })
+      : await fetch("/api/users/suspend", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: authorId, hours: what === "s24" ? 24 : 48 }) });
+    const d = await r.json().catch(() => ({}));
+    say(r.ok ? (what === "block" ? "Utente bloccato" : "Utente sospeso") : d.error || "Errore");
+  };
+
   const act = async (id: number, action: "dismiss" | "resolve" | "delete") => {
     if (action === "delete" && !confirm("Eliminare definitivamente questo contenuto? Non si può annullare.")) return;
     const r = await fetch("/api/reports", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, action }) });
@@ -72,6 +81,11 @@ export default function SegnalazioniPage() {
               <div className="flex flex-wrap gap-2 mt-4">
                 {r.target && <Link href={`/community#post-${r.target.postId}`} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border-2 border-line font-semibold hover:border-wine"><ExternalLink className="w-4 h-4" />Vai al post</Link>}
                 {r.target && <button onClick={() => act(r.id, "delete")} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 text-white font-semibold hover:brightness-110"><Trash2 className="w-4 h-4" />Elimina contenuto</button>}
+                {r.target && <>
+                  <button onClick={() => modAuthor(r.target.authorId, "s24")} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brass/30 font-semibold hover:bg-brass/50">Sospendi autore 24h</button>
+                  <button onClick={() => modAuthor(r.target.authorId, "s48")} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brass/30 font-semibold hover:bg-brass/50">48h</button>
+                  <button onClick={() => modAuthor(r.target.authorId, "block")} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-50 text-red-700 font-semibold hover:bg-red-100">Blocca autore</button>
+                </>}
                 <button onClick={() => act(r.id, "resolve")} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-mint/30 font-semibold hover:bg-mint/50"><Check className="w-4 h-4" />Risolta</button>
                 <button onClick={() => act(r.id, "dismiss")} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-ivory2 font-semibold hover:bg-line"><X className="w-4 h-4" />Ignora</button>
               </div>

@@ -13,7 +13,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true, name: true, nome: true, cognome: true, role: true, avatar: true, bio: true, banned: true, createdAt: true, updatedAt: true }
+      select: { id: true, email: true, name: true, nome: true, cognome: true, role: true, avatar: true, bio: true, banned: true, suspendedUntil: true, createdAt: true, updatedAt: true }
     })
 
     if (!user) {
@@ -34,12 +34,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         (LENGTH(content) - LENGTH(REPLACE(LOWER(content), '.pdf', ''))) / 4 AS pdfs
         FROM "Post" WHERE "authorId" = ${userId} ORDER BY "createdAt" DESC LIMIT 8`,
     ])
-    const { email, banned, updatedAt, ...pub } = user
+    const { email, banned, suspendedUntil, updatedAt, ...pub } = user
     return NextResponse.json({
       ...pub,
       avatar: avatarUrl(user),
       ...(canSeePrivate ? { email } : {}),
       ...(me?.role === 'admin' ? { banned } : {}),
+      ...(canSeePrivate ? { suspendedUntil: suspendedUntil && suspendedUntil.getTime() > Date.now() ? suspendedUntil : null } : {}),
       stats: { posts, comments, reactions },
       recentPosts: recent.map(p => ({
         id: Number(p.id), title: p.title, likes: Number(p.likes), comments: Number(p.comments), createdAt: p.createdAt,

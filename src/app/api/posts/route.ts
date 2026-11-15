@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
-import { requireUser, getSessionUser, avatarUrl } from '@/lib/auth'
+import { requireUser, getSessionUser, avatarUrl, suspendedError } from '@/lib/auth'
 import { findMentions } from '@/lib/mentions'
 
 const CATEGORIES = ['generale', 'scrittura', 'kdp', 'copertine', 'marketing', 'recensioni', 'domande', 'novita']
@@ -47,6 +47,8 @@ export async function POST(request: NextRequest) {
   try {
     const { user, error: authError } = await requireUser()
     if (authError) return authError
+    const susp = suspendedError(user!)
+    if (susp) return susp
     const body = await request.json()
     const { title, content, category } = body
     if (typeof content !== 'string' || !content.trim() || content.length > 2_000_000) {

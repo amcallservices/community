@@ -92,6 +92,7 @@ export default function CommunityPage() {
   const [reportNote, setReportNote] = useState("");
   const [reporting, setReporting] = useState(false);
   const [reportsOpen, setReportsOpen] = useState(0);
+  const [suspendedUntil, setSuspendedUntil] = useState<string | null>(null);
   const [mention, setMention] = useState<{ target: "post" | "comment"; q: string; start: number; end: number } | null>(null);
   const [mIdx, setMIdx] = useState(0);
   const [events, setEvents] = useState<any[]>([]);
@@ -127,6 +128,7 @@ export default function CommunityPage() {
       setIsAdmin(u.role === 'admin');
     }
     loadPosts();
+    if (stored) { try { const id = JSON.parse(stored).id; fetch(`/api/users/${id}`).then(r => r.ok ? r.json() : null).then(d => d && setSuspendedUntil(d.suspendedUntil || null)).catch(() => {}); } catch {} }
     if (stored && JSON.parse(stored).role === "admin") fetch("/api/admin/stats").then(r => r.ok ? r.json() : null).then(d => d && setReportsOpen(d.reports || 0)).catch(() => {});
     fetch("/api/events").then(r => r.ok ? r.json() : []).then(d => Array.isArray(d) && setEvents(d.slice(0, 3))).catch(() => {});
     fetch("/api/utenti").then(r => r.ok ? r.json() : []).then(d => { if (Array.isArray(d)) { setMembers(d.slice(-5).reverse()); setAllUsers(d.map((u: any) => ({ id: u.id, nome: u.nome || "", cognome: u.cognome || "" }))); } }).catch(() => {});
@@ -295,7 +297,7 @@ export default function CommunityPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: "", content: newContent, category: newCategory }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || ""); }
       setNewContent("");
       setNewCategory("generale");
       setShowNewPost(false);
@@ -303,8 +305,8 @@ export default function CommunityPage() {
       await loadPosts();
       say("Post pubblicato \u{1F389}");
       window.scrollTo({ top: 0, behavior: "smooth" });
-    } catch {
-      say("Non sono riuscito a pubblicare. Riprova.");
+    } catch (e: any) {
+      say(e?.message || "Non sono riuscito a pubblicare. Riprova.");
     }
     setPublishing(false);
   };
@@ -365,13 +367,13 @@ export default function CommunityPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ postId: post.id, text: newComment, parentId: replyTo?.id || null }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || ""); }
       const created: Comment = await res.json();
       setComments(cs => [...cs, created]);
       setPosts(ps => ps.map(p => p.id === post.id ? { ...p, comments: (p.comments || 0) + 1 } : p));
       setNewComment(""); setReplyTo(null);
-    } catch {
-      say("Commento non inviato. Riprova.");
+    } catch (e: any) {
+      say(e?.message || "Commento non inviato. Riprova.");
     }
     setSendingComment(false);
   };
@@ -515,6 +517,11 @@ export default function CommunityPage() {
         </aside>
 
         <main className="min-w-0 max-w-2xl w-full mx-auto">
+          {user && suspendedUntil && new Date(suspendedUntil) > new Date() && (
+            <div role="alert" className="mb-4 rounded-2xl border-2 border-brass bg-brass/20 p-4 font-semibold">
+              Sei sospeso: non puoi pubblicare post e commenti fino a {new Date(suspendedUntil).toLocaleString("it-IT", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}. Puoi comunque leggere e mettere Mi piace.
+            </div>
+          )}
           {user ? (
             <div className={`bg-white rounded-2xl border shadow-sm p-4 mb-4 transition ${dragging ? "border-wine ring-4 ring-wine/20" : "border-line"}`}
               onDragOver={e => { e.preventDefault(); if (!dragging) { setDragging(true); setShowNewPost(true); } }}

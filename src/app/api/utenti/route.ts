@@ -8,11 +8,11 @@ export async function GET() {
   if (authError) return authError
   try {
     const users = await prisma.user.findMany({
-      select: { id: true, nome: true, cognome: true, email: true, avatar: true, role: true, updatedAt: true },
+      select: { id: true, nome: true, cognome: true, email: true, avatar: true, role: true, updatedAt: true, banned: true, suspendedUntil: true },
       orderBy: { id: 'asc' }
     })
     // L'email degli iscritti la vedono solo gli admin
-    return NextResponse.json(me!.role === 'admin' ? users : users.map(({ email, ...u }) => u))
+    return NextResponse.json(me!.role === 'admin' ? users : users.map(({ email, banned, suspendedUntil, ...u }) => u))
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 })
   }

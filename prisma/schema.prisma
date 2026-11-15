@@ -18,6 +18,7 @@ model User {
   bio       String?
   role      String   @default("scrittore")
   banned    Boolean  @default(false)
+  suspendedUntil DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
