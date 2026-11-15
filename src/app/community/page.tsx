@@ -73,6 +73,7 @@ export default function CommunityPage() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isMod, setIsMod] = useState(false);
   const [showNewPost, setShowNewPost] = useState(false);
   const [newContent, setNewContent] = useState("");
   const [publishing, setPublishing] = useState(false);
@@ -128,10 +129,11 @@ export default function CommunityPage() {
       const u = JSON.parse(stored);
       setUser(u);
       setIsAdmin(u.role === 'admin');
+      setIsMod(u.role === 'moderatore');
     }
     loadPosts();
-    if (stored) { try { const id = JSON.parse(stored).id; fetch(`/api/users/${id}`).then(r => r.ok ? r.json() : null).then(d => d && setSuspendedUntil(d.suspendedUntil || null)).catch(() => {}); } catch {} }
-    if (stored && JSON.parse(stored).role === "admin") fetch("/api/admin/stats").then(r => r.ok ? r.json() : null).then(d => d && setReportsOpen(d.reports || 0)).catch(() => {});
+    if (stored) { try { const id = JSON.parse(stored).id; fetch(`/api/users/${id}`).then(r => r.ok ? r.json() : null).then(d => { if (!d) return; setSuspendedUntil(d.suspendedUntil || null); setIsAdmin(d.role === 'admin'); setIsMod(d.role === 'moderatore'); if (d.role && d.role !== JSON.parse(stored).role) { localStorage.setItem('user', JSON.stringify({ ...JSON.parse(stored), role: d.role })); if (d.role === 'admin' || d.role === 'moderatore') fetch('/api/admin/stats').then(r => r.ok ? r.json() : null).then(x => x && setReportsOpen(x.reports || 0)).catch(() => {}); } }).catch(() => {}); } catch {} }
+    if (stored && ["admin", "moderatore"].includes(JSON.parse(stored).role)) fetch("/api/admin/stats").then(r => r.ok ? r.json() : null).then(d => d && setReportsOpen(d.reports || 0)).catch(() => {});
     fetch("/api/events").then(r => r.ok ? r.json() : []).then(d => Array.isArray(d) && setEvents(d.slice(0, 3))).catch(() => {});
     fetch("/api/utenti").then(r => r.ok ? r.json() : []).then(d => { if (Array.isArray(d)) { setMembers(d.slice(-5).reverse()); setAllUsers(d.map((u: any) => ({ id: u.id, nome: u.nome || "", cognome: u.cognome || "" }))); } }).catch(() => {});
   }, []);
@@ -511,7 +513,7 @@ export default function CommunityPage() {
         <div className="flex items-center gap-3 px-2 mt-0.5 text-xs text-navy/55 font-semibold">
           <span className="font-normal">{c.createdAt ? timeAgo(c.createdAt) : c.time}</span>
           {user && <button onClick={() => { setReplyTo({ id: c.parentId || c.id, nome: c.authorNome }); commentBoxRef.current?.focus(); }} className="hover:text-wine">Rispondi</button>}
-          {(isAdmin || (user && user.id === c.authorId)) && <button onClick={() => deleteComment(c.id)} className="hover:text-red-600">Elimina</button>}
+          {(isAdmin || isMod || (user && user.id === c.authorId)) && <button onClick={() => deleteComment(c.id)} className="hover:text-red-600">Elimina</button>}
           {user && user.id !== c.authorId && <button onClick={() => openReport({ commentId: c.id })} className="hover:text-red-600">Segnala</button>}
         </div>
       </div>
@@ -538,7 +540,7 @@ export default function CommunityPage() {
             <Link href="/eventi" className={side}><CalendarDays className="w-6 h-6 text-wine" />Eventi</Link>
             <Link href="/video" className={side}><VideoIcon className="w-6 h-6 text-wine" />Video</Link>
             {isAdmin && <Link href="/utenti" className={side}><Users className="w-6 h-6 text-wine" />Utenti</Link>}
-            {isAdmin && <Link href="/admin/segnalazioni" className={side}><Flag className="w-6 h-6 text-wine" />Segnalazioni{reportsOpen > 0 && <span className="ml-auto min-w-[22px] h-[22px] px-1.5 rounded-full bg-coral text-white text-xs font-bold grid place-items-center">{reportsOpen}</span>}</Link>}
+            {(isAdmin || isMod) && <Link href="/admin/segnalazioni" className={side}><Flag className="w-6 h-6 text-wine" />Segnalazioni{reportsOpen > 0 && <span className="ml-auto min-w-[22px] h-[22px] px-1.5 rounded-full bg-coral text-white text-xs font-bold grid place-items-center">{reportsOpen}</span>}</Link>}
             <p className="px-3 pt-4 text-xs text-navy/50">Self Publishing Italia · la community degli autori indipendenti</p>
           </div>
         </aside>
@@ -657,7 +659,7 @@ export default function CommunityPage() {
                       <div className="text-xs text-navy/60 flex flex-wrap items-center gap-x-2 gap-y-1" title={post.createdAt ? new Date(post.createdAt).toLocaleString("it-IT") : ""}>{timeAgo(post.createdAt)}{catOf(post.category) && catOf(post.category)!.k !== "generale" && <button onClick={() => setCatFilter(catOf(post.category)!.k)} className="px-2 py-0.5 rounded-full font-semibold text-navy hover:brightness-95" style={{ background: catOf(post.category)!.c + "40" }}>{catOf(post.category)!.l}</button>}</div>
                     </div>
                     {user && user.id !== post.authorId && <button onClick={() => openReport({ postId: post.id })} aria-label="Segnala il post" title="Segnala" className="p-2 rounded-full text-navy/30 hover:text-red-600 hover:bg-red-50 transition"><Flag className="w-4 h-4" /></button>}
-                    {(isAdmin || (user && user.id === post.authorId)) && (
+                    {(isAdmin || isMod || (user && user.id === post.authorId)) && (
                       <button onClick={() => deletePost(post.id)} aria-label="Elimina il post" className="p-2 rounded-full text-navy/40 hover:text-red-600 hover:bg-red-50 transition"><Trash2 className="w-4 h-4" /></button>
                     )}
                   </div>

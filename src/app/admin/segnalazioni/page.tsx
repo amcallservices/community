@@ -12,6 +12,8 @@ export default function SegnalazioniPage() {
   const [tab, setTab] = useState<"open" | "closed">("open");
   const [items, setItems] = useState<any[] | null>(null);
   const [toast, setToast] = useState("");
+  const [role, setRole] = useState("");
+  useEffect(() => { try { setRole(JSON.parse(localStorage.getItem("user") || "{}").role || ""); } catch {} }, []);
   const say = (m: string) => { setToast(m); setTimeout(() => setToast(""), 2400); };
 
   const load = async (t = tab) => {
@@ -81,7 +83,7 @@ export default function SegnalazioniPage() {
               <div className="flex flex-wrap gap-2 mt-4">
                 {r.target && <Link href={`/community#post-${r.target.postId}`} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border-2 border-line font-semibold hover:border-wine"><ExternalLink className="w-4 h-4" />Vai al post</Link>}
                 {r.target && <button onClick={() => act(r.id, "delete")} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 text-white font-semibold hover:brightness-110"><Trash2 className="w-4 h-4" />Elimina contenuto</button>}
-                {r.target && <>
+                {r.target && role === "admin" && <>
                   <button onClick={() => modAuthor(r.target.authorId, "s24")} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brass/30 font-semibold hover:bg-brass/50">Sospendi autore 24h</button>
                   <button onClick={() => modAuthor(r.target.authorId, "s48")} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brass/30 font-semibold hover:bg-brass/50">48h</button>
                   <button onClick={() => modAuthor(r.target.authorId, "block")} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-50 text-red-700 font-semibold hover:bg-red-100">Blocca autore</button>

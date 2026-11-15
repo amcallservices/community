@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
-import { requireUser, requireAdmin } from '@/lib/auth'
+import { requireUser, requireStaff } from '@/lib/auth'
 
 const REASONS = ['spam', 'offensivo', 'regole', 'altro']
 
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     await prisma.report.create({ data: { postId: commentId ? null : postId, commentId, reporterId: user!.id, reason: body.reason, note: note || null } })
 
     // avvisa gli admin (una sola notifica non letta alla volta)
-    const admins = await prisma.user.findMany({ where: { role: 'admin' }, select: { id: true } })
+    const admins = await prisma.user.findMany({ where: { role: { in: ['admin', 'moderatore'] } }, select: { id: true } })
     const message = 'C’è una nuova segnalazione da controllare'
     for (const a of admins) {
       const exists = await prisma.notification.findFirst({ where: { userId: a.id, type: 'report', read: false } })
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
 
 // GET /api/reports?status=open|closed - solo admin
 export async function GET(request: NextRequest) {
-  const { error } = await requireAdmin()
+  const { error } = await requireStaff()
   if (error) return error
   try {
     const closed = new URL(request.url).searchParams.get('status') === 'closed'
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
 
 // PATCH /api/reports { id, action: 'dismiss' | 'resolve' | 'delete' } - solo admin
 export async function PATCH(request: NextRequest) {
-  const { error } = await requireAdmin()
+  const { error } = await requireStaff()
   if (error) return error
   try {
     const { id, action } = await request.json()

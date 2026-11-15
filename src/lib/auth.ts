@@ -95,6 +95,16 @@ export async function requireAdmin() {
   return { user: user!, error: null }
 }
 
+export const isStaff = (role?: string | null) => role === 'admin' || role === 'moderatore'
+
+// Admin o moderatore: può eliminare post/commenti e gestire le segnalazioni (non gli utenti).
+export async function requireStaff() {
+  const { user, error } = await requireUser()
+  if (error) return { user: null, error }
+  if (!isStaff(user!.role)) return { user: null, error: NextResponse.json({ error: 'Solo admin e moderatori' }, { status: 403 }) }
+  return { user: user!, error: null }
+}
+
 // Le foto profilo salvate come testo (data:...) si servono da /api/avatar/ID: leggere e con cache.
 export function avatarUrl(u: { id: number; avatar: string | null; updatedAt?: Date | null }): string | null {
   if (!u.avatar) return null

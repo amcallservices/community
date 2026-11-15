@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
-import { requireUser, getSessionUser, avatarUrl, suspendedError } from '@/lib/auth'
+import { requireUser, getSessionUser, avatarUrl, suspendedError, isStaff } from '@/lib/auth'
 import { findMentions } from '@/lib/mentions'
 import { pollsFor, cleanOptions } from '@/lib/polls'
 
@@ -100,7 +100,7 @@ export async function DELETE(request: NextRequest) {
 
     const post = await prisma.post.findUnique({ where: { id } })
     if (!post) return NextResponse.json({ error: 'Post non trovato' }, { status: 404 })
-    if (user!.role !== 'admin' && post.authorId !== user!.id) {
+    if (!isStaff(user!.role) && post.authorId !== user!.id) {
       return NextResponse.json({ error: 'Non autorizzato' }, { status: 403 })
     }
 
