@@ -419,7 +419,12 @@ export default function CommunityPage() {
   const onTag = (tag: string) => { setQuery("#" + tag); setFilter("tutti"); setCatFilter("tutte"); window.scrollTo({ top: 0, behavior: "smooth" }); };
 
   // @menzioni: suggerimenti mentre si scrive
-  const mentionMatches = useMemo(() => !mention ? [] : allUsers.filter(u => u.id !== user?.id && `${u.nome} ${u.cognome}`.toLowerCase().includes(mention.q.toLowerCase())).slice(0, 5), [mention, allUsers, user]);
+  const mentionMatches = useMemo(() => {
+    if (!mention) return [];
+    const q = mention.q.toLowerCase();
+    const all: Member[] = mention.target === "post" && "tutti".startsWith(q) ? [{ id: -1, nome: "tutti", cognome: "" }] : [];
+    return [...all, ...allUsers.filter(u => u.id !== user?.id && `${u.nome} ${u.cognome}`.toLowerCase().includes(q))].slice(0, 5);
+  }, [mention, allUsers, user]);
   const detectMention = (value: string, caret: number, target: "post" | "comment") => {
     const m = value.slice(0, caret).match(/(?:^|\s)@([\p{L}\p{N}]*)$/u);
     if (m) { setMention({ target, q: m[1], start: caret - m[1].length - 1, end: caret }); setMIdx(0); } else setMention(null);
