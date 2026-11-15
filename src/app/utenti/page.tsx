@@ -5,9 +5,11 @@ import { Users, Trash2 } from "lucide-react";
 type User = { id: number; nome: string; cognome: string; email: string; role: string; banned?: boolean; suspendedUntil?: string | null };
 
 export default function UtentiPage() {
-  const moderate = async (u: User, what: "s24" | "s48" | "s0" | "block" | "unblock") => {
+  const moderate = async (u: User, what: "s24" | "s48" | "s0" | "block" | "unblock" | "mod" | "unmod") => {
     if (what === "block" && !confirm(`Bloccare ${u.nome} ${u.cognome}? Non potr\u00e0 pi\u00f9 accedere.`)) return;
-    const r = what.startsWith("s")
+    const r = what === "mod" || what === "unmod"
+      ? await fetch("/api/users/role", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: u.id, role: what === "mod" ? "moderatore" : "scrittore" }) })
+      : what.startsWith("s")
       ? await fetch("/api/users/suspend", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: u.id, hours: Number(what.slice(1)) }) })
       : await fetch("/api/users/ban", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: u.id, banned: what === "block" }) });
     if (!r.ok) { const d = await r.json().catch(() => ({})); alert(d.error || "Errore"); return; }
@@ -119,7 +121,7 @@ export default function UtentiPage() {
                     <td className="px-6 py-3 text-navy">{u.cognome || "-"}</td>
                     <td className="px-6 py-3 text-navy/80">{u.email}</td>
                     <td className="px-6 py-3">
-                      <span className={`px-2 py-1 rounded text-xs ${u.role === 'admin' ? 'bg-gold/25 text-golddark' : 'bg-ivory2 text-navy/80'}`}>
+                      <span className={`px-2 py-1 rounded text-xs ${u.role === 'admin' ? 'bg-gold/25 text-golddark' : u.role === 'moderatore' ? 'bg-mint/30 text-navy' : 'bg-ivory2 text-navy/80'}`}>
                         {u.role}
                       </span>
                     </td>
@@ -129,6 +131,9 @@ export default function UtentiPage() {
                         : <span className="text-navy/50">Attivo</span>}
                     </td>
                     <td className="px-6 py-3 whitespace-nowrap">
+                      {u.role !== "admin" && !u.banned && (u.role === "moderatore"
+                        ? <button onClick={() => moderate(u, "unmod")} className="text-xs mr-3 underline text-navy hover:text-wine">Rimuovi moderatore</button>
+                        : <button onClick={() => moderate(u, "mod")} className="text-xs mr-3 underline text-navy hover:text-wine">Nomina moderatore</button>)}
                       {u.role !== "admin" && (u.banned
                         ? <button onClick={() => moderate(u, "unblock")} className="text-xs mr-3 underline text-navy hover:text-wine">Sblocca</button>
                         : <>

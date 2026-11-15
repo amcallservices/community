@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
-import { requireUser, avatarUrl, suspendedError } from '@/lib/auth'
+import { requireUser, avatarUrl, suspendedError, isStaff } from '@/lib/auth'
 import { findMentions } from '@/lib/mentions'
 
 export async function POST(request: NextRequest) {
@@ -101,7 +101,7 @@ export async function DELETE(request: NextRequest) {
 
     const comment = await prisma.comment.findUnique({ where: { id } })
     if (!comment) return NextResponse.json({ error: 'Commento non trovato' }, { status: 404 })
-    if (user!.role !== 'admin' && comment.userId !== user!.id) {
+    if (!isStaff(user!.role) && comment.userId !== user!.id) {
       return NextResponse.json({ error: 'Non autorizzato' }, { status: 403 })
     }
 

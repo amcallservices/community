@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/db'
-import { requireAdmin } from '@/lib/auth'
+import { requireStaff } from '@/lib/auth'
 
 // Solo admin: numeri generali della community
 export async function GET() {
-  const { error } = await requireAdmin()
+  const { user, error } = await requireStaff()
   if (error) return error
   try {
+    if (user!.role !== 'admin') return NextResponse.json({ reports: await prisma.report.count({ where: { status: 'open' } }) })
     const week = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
     const [users, posts, comments, reactions, messages, newUsers, newPosts, banned, reports] = await Promise.all([
       prisma.user.count(),
