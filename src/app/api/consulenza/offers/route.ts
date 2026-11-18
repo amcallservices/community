@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-function parse(body: any) {
+function parse(body: any, role?: string) {
   const title = typeof body.title === 'string' ? body.title.trim().slice(0, 120) : ''
   const description = typeof body.description === 'string' ? body.description.trim().slice(0, 1500) : ''
   const durationMin = Math.round(Number(body.durationMin))
@@ -36,7 +36,8 @@ function parse(body: any) {
   if (title.length < 4) return { error: 'Scrivi un titolo' }
   if (description.length < 10) return { error: 'Scrivi una breve descrizione' }
   if (!(durationMin >= 15 && durationMin <= 240)) return { error: 'La durata deve essere tra 15 e 240 minuti' }
-  if (!(price >= 5 && price <= 2000)) return { error: 'Il prezzo deve essere tra 5 e 2000 euro' }
+  const min = role === 'admin' ? 1 : 5 // l'admin può creare anche consulenze da 1 euro (prove)
+  if (!(price >= min && price <= 2000)) return { error: `Il prezzo deve essere tra ${min} e 2000 euro` }
   return { data: { title, description, durationMin, priceCents: Math.round(price * 100), category } }
 }
 
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
   const { user, error } = await requireConsultant()
   if (error) return error
   try {
-    const p = parse(await request.json())
+    const p = parse(await request.json(), user!.role)
     if (p.error) return NextResponse.json({ error: p.error }, { status: 400 })
     const count = await prisma.consulenzaOffer.count({ where: { userId: user!.id } })
     if (count >= 30) return NextResponse.json({ error: 'Hai già troppe offerte' }, { status: 400 })
@@ -66,7 +67,7 @@ export async function PATCH(request: NextRequest) {
       await prisma.consulenzaOffer.update({ where: { id: o.id }, data: { active: body.active } })
       return NextResponse.json({ ok: true })
     }
-    const p = parse(body)
+    const p = parse(body, user!.role)
     if (p.error) return NextResponse.json({ error: p.error }, { status: 400 })
     await prisma.consulenzaOffer.update({ where: { id: o.id }, data: p.data! })
     return NextResponse.json({ ok: true })
