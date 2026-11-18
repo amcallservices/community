@@ -97,30 +97,37 @@ export default function Stories({ user, canPost, say }: { user: { id: number; no
 
   if (!user && !groups.length) return null;
 
-  const ring = (unseen: boolean) => unseen ? "p-[3px] bg-gradient-to-tr from-brass via-coral to-wine" : "p-[3px] bg-line";
+  const ring = (unseen: boolean) => unseen ? "bg-gradient-to-tr from-brass via-coral to-wine" : "bg-white/70";
+  const Thumb = ({ g }: { g: Group }) => {
+    const it = g.items[g.items.length - 1];
+    return it.type === "video"
+      ? <video src={it.url + "#t=0.1"} preload="metadata" muted playsInline className="absolute inset-0 w-full h-full object-cover" />
+      : <img src={it.url} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />;
+  };
+  const card = "relative shrink-0 w-[112px] sm:w-[128px] h-[190px] sm:h-[220px] rounded-2xl overflow-hidden border border-line bg-ivory2 text-left snap-start transition hover:brightness-95 active:scale-[.98]";
 
   return (
-    <section aria-label="Storie" className="bg-white rounded-2xl border border-line p-3 mb-4">
-      <div className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none]">
+    <section aria-label="Storie" className="mb-4">
+      <div className="flex gap-2.5 overflow-x-auto pb-2 snap-x [scrollbar-width:none]">
         {user && (
-          <div className="shrink-0 w-[76px] text-center">
-            <div className="relative mx-auto w-[68px] h-[68px]">
-              <button onClick={() => mine ? openGroup(mine) : (canPost ? setCreating(true) : say("Sei sospeso: non puoi pubblicare"))} aria-label={mine ? "Guarda la tua storia" : "Crea una storia"} className={`rounded-full ${mine ? ring(mine.hasUnseen) : "p-[3px] bg-ivory2"} block`}>
-                <span className="block rounded-full bg-white p-[2px]"><Face g={{ userId: user.id, nome: user.nome || "", avatar: user.avatar ?? null }} size={58} /></span>
-              </button>
-              <button onClick={() => canPost ? setCreating(true) : say("Sei sospeso: non puoi pubblicare")} aria-label="Aggiungi una storia" className="absolute -bottom-0.5 -right-0.5 w-6 h-6 rounded-full bg-wine text-white grid place-items-center border-2 border-white active:scale-90 transition"><Plus className="w-3.5 h-3.5" /></button>
-            </div>
-            <div className="text-xs mt-1 font-semibold truncate">La tua storia</div>
+          <div className={`${card} bg-white`}>
+            {mine ? <button onClick={() => openGroup(mine)} aria-label="Guarda la tua storia" className="absolute inset-0"><Thumb g={mine} /><span className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60" /></button>
+              : <div className="absolute inset-x-0 top-0 h-[68%] grid place-items-center" style={{ background: colorFor(user.id) + "33" }}><Face g={{ userId: user.id, nome: user.nome || "", avatar: user.avatar ?? null }} size={64} /></div>}
+            <button onClick={() => canPost ? setCreating(true) : say("Sei sospeso: non puoi pubblicare")} aria-label="Crea una storia" className={`absolute left-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-wine text-white grid place-items-center border-[3px] border-white active:scale-90 transition ${mine ? "top-2" : "top-[68%] -mt-[18px]"}`}><Plus className="w-5 h-5" /></button>
+            <div className={`absolute inset-x-0 bottom-0 p-2.5 text-center text-sm font-bold ${mine ? "text-white drop-shadow" : "text-navy"}`}>{mine ? "La tua storia" : "Crea storia"}</div>
           </div>
         )}
         {others.map(g => (
-          <button key={g.userId} onClick={() => openGroup(g)} className="shrink-0 w-[76px] text-center" aria-label={`Storie di ${g.nome} ${g.cognome}`}>
-            <span className={`block mx-auto w-[68px] h-[68px] rounded-full ${ring(g.hasUnseen)}`}><span className="block rounded-full bg-white p-[2px]"><Face g={g} size={58} /></span></span>
-            <div className={`text-xs mt-1 truncate ${g.hasUnseen ? "font-bold" : "text-navy/60"}`}>{g.nome}</div>
+          <button key={g.userId} onClick={() => openGroup(g)} className={card} aria-label={`Storie di ${g.nome} ${g.cognome}`}>
+            <Thumb g={g} />
+            <span className="absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/65" />
+            <span className={`absolute top-2 left-2 rounded-full p-[3px] ${ring(g.hasUnseen)}`}><span className="block rounded-full bg-white p-[2px]"><Face g={g} size={34} /></span></span>
+            <span className="absolute inset-x-0 bottom-0 p-2.5 text-white text-sm font-bold leading-tight drop-shadow line-clamp-2">{g.nome} {g.cognome}</span>
           </button>
         ))}
-        {!others.length && !mine && <p className="self-center text-sm text-navy/55 pl-2">Nessuna storia per ora. Pubblica la prima!</p>}
+        {!others.length && !mine && !user && null}
       </div>
+      {user && !others.length && !mine && <p className="text-sm text-navy/55 -mt-1 mb-1">Nessuna storia per ora. Pubblica la prima!</p>}
 
       {creating && (
         <div className="fixed inset-0 z-[70] bg-navy/70 grid place-items-center p-4" onClick={closeCreate} role="dialog" aria-modal="true" aria-label="Nuova storia">

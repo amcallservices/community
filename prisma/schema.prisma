@@ -237,3 +237,8 @@ model ConsulenzaBooking {
   createdAt       DateTime  @default(now())
   paidAt          DateTime?
 }
+
+model AppFlag {
+  key   String @id
+  value String @default("")
+}
