@@ -101,6 +101,12 @@ export default function ConsulenzaPage() {
     const r = await fetch(`/api/consulenza/offers?id=${o.id}`, { method: "DELETE" });
     if (r.ok) { say("Consulenza eliminata"); loadOffers(); } else say("Errore");
   };
+  const removeBooking = async (b: Booking) => {
+    if (!confirm(`Eliminare la prenotazione “${b.title}”? Non si può annullare.`)) return;
+    const r = await fetch(`/api/consulenza/bookings?id=${b.id}`, { method: "DELETE" });
+    const d = await r.json().catch(() => ({}));
+    if (r.ok) { say("Prenotazione eliminata"); loadBookings(); } else say(d.error || "Errore");
+  };
   const complete = async (b: Booking) => {
     const r = await fetch("/api/consulenza/bookings", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: b.id, action: "complete" }) });
     if (r.ok) { say("Segnata come svolta"); loadBookings(); } else say("Errore");
@@ -123,6 +129,7 @@ export default function ConsulenzaPage() {
           <Link href={`/consulenza/stanza/${b.id}`} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-wine text-white font-semibold hover:brightness-110"><Video className="w-4 h-4" />Entra nella videochiamata</Link>
           {as === "seller" && <button onClick={() => complete(b)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-mint/30 font-semibold hover:bg-mint/50"><Check className="w-4 h-4" />Svolta</button>}
         </>}
+        {(b.status === "pending" || b.status === "completed" || user?.role === "admin") && <button onClick={() => removeBooking(b)} aria-label="Elimina prenotazione" className="p-2 rounded-lg text-red-600 hover:bg-red-50"><Trash2 className="w-4 h-4" /></button>}
       </div>
     );
   };

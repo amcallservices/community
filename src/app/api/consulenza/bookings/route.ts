@@ -49,3 +49,23 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ ok: true })
   } catch { return NextResponse.json({ error: 'Errore' }, { status: 500 }) }
 }
+
+// DELETE ?id= - elimina una prenotazione: non pagata (cliente o admin) o svolta (consulente, cliente o admin).
+// Una prenotazione pagata e non ancora svolta si può eliminare solo dall'admin.
+export async function DELETE(request: NextRequest) {
+  const { user, error } = await requireUser()
+  if (error) return error
+  try {
+    const id = parseInt(new URL(request.url).searchParams.get('id') || '')
+    const b = id ? await prisma.consulenzaBooking.findUnique({ where: { id } }) : null
+    const admin = user!.role === 'admin'
+    const mine = !!b && (b.buyerId === user!.id || b.sellerId === user!.id)
+    if (!b || (!mine && !admin)) return NextResponse.json({ error: 'Prenotazione non trovata' }, { status: 404 })
+    const ok = admin || (b.status === 'pending' && b.buyerId === user!.id) || b.status === 'completed'
+    if (!ok) return NextResponse.json({ error: 'Una consulenza pagata si elimina dopo che è stata svolta' }, { status: 400 })
+    // se il pagamento era ancora aperto su Stripe, lo chiudo così non può essere pagato dopo
+    if (b.status === 'pending' && b.stripeSessionId) { try { await stripe()?.checkout.sessions.expire(b.stripeSessionId) } catch {} }
+    await prisma.consulenzaBooking.delete({ where: { id: b.id } })
+    return NextResponse.json({ ok: true })
+  } catch { return NextResponse.json({ error: 'Errore' }, { status: 500 }) }
+}
