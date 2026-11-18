@@ -127,103 +127,145 @@ export default function ConsulenzaPage() {
   };
 
   const total = (bookings?.asBuyer.length || 0) + (bookings?.asSeller.length || 0);
+  const FIELDS = [
+    { bg: "bg-brass", fg: "text-navy", btn: "bg-navy text-white" },
+    { bg: "bg-mint", fg: "text-navy", btn: "bg-navy text-white" },
+    { bg: "bg-wine", fg: "text-white", btn: "bg-brass text-navy" },
+    { bg: "bg-coral", fg: "text-navy", btn: "bg-navy text-white" },
+  ];
+  const STEPS = [
+    ["Scegli e paga.", "Scegli la consulenza che ti serve e paghi in sicurezza con carta, tramite Stripe."],
+    ["Poi vi scrivete.", "Dopo il pagamento scrivi al consulente nei messaggi e fissate giorno e ora."],
+    ["Infine vi vedete.", "All’ora stabilita entri nella stanza privata dal sito, senza installare nulla."],
+  ];
+  const FAQ = [
+    ["Come pago?", "Con carta tramite Stripe, il circuito che usano milioni di negozi online. I dati della carta non passano dal nostro sito."],
+    ["Quando faccio la consulenza?", "Appena hai pagato, scrivi al consulente dai messaggi e vi accordate sull’orario. La videochiamata si apre dal sito, nella sezione Le mie prenotazioni."],
+    ["Serve installare qualcosa?", "No. La videochiamata si apre nel browser, da computer o da telefono, con microfono e camera."],
+    ["Posso farmi rimborsare?", "Se non riuscite a fissare un orario o ci sono problemi, scrivi al consulente: i rimborsi si gestiscono direttamente con lui."],
+    ["Chi sono i consulenti?", "Amministratori e moderatori della community, persone che pubblicano libri ogni giorno."],
+  ];
 
   return (
-    <main className="max-w-4xl mx-auto px-4 py-6 md:py-8">
-      <header className="rounded-3xl p-6 md:p-8 mb-6 text-white relative overflow-hidden" style={{ background: "linear-gradient(120deg,#1b1464 0%,#5b3df5 70%)" }}>
-        <span className="absolute -top-8 -right-6 w-36 h-36 rounded-full opacity-90" style={{ background: "#ffc83d" }} />
-        <span className="absolute bottom-3 right-28 w-12 h-12 rounded-full" style={{ background: "#2dd4a7" }} />
-        <span className="absolute bottom-6 right-6 w-14 h-14 rounded-2xl rotate-12" style={{ background: "#ff6b6b" }} />
-        <div className="relative max-w-xl">
-          <h1 className="text-3xl md:text-4xl font-extrabold flex items-center gap-3"><Briefcase className="w-8 h-8 text-brass shrink-0" />Consulenze</h1>
-          <p className="mt-2 text-white/85 text-lg">Parla in videochiamata con chi pubblica libri ogni giorno: copertine, stesura, vendite e molto altro.</p>
-          {canOffer && <button onClick={() => startForm()} className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brass text-navy font-bold hover:brightness-105 active:scale-95 transition"><Plus className="w-4 h-4" />Offri una consulenza</button>}
+    <main className="pb-16">
+      {/* titolo */}
+      <header className="bg-navy text-white">
+        <div className="max-w-6xl mx-auto px-5 md:px-8 pt-12 md:pt-20 pb-12 md:pb-16">
+          <h1 className="font-black tracking-tight leading-[0.9] text-[clamp(52px,11vw,150px)]">Parla con<br />chi pubblica.</h1>
+          <div className="mt-8 md:mt-10 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+            <p className="text-lg md:text-xl text-white/90 max-w-xl">Consulenze in videochiamata su copertine, stesura, vendite e pubblicazione dei tuoi libri. Da 30 minuti, con prezzo chiaro.</p>
+            <div className="flex flex-wrap gap-3">
+              <a href="#pacchetti" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-brass text-navy font-extrabold text-lg hover:brightness-105 active:scale-95 transition">Scegli la consulenza</a>
+              {canOffer && <button onClick={() => startForm()} className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-white/10 text-white font-bold hover:bg-white/20 active:scale-95 transition"><Plus className="w-5 h-5" />Offri una consulenza</button>}
+            </div>
+          </div>
         </div>
       </header>
 
-      {banner && <div role="status" className="mb-4 rounded-2xl border-2 border-mint bg-mint/15 p-4 font-semibold flex items-start gap-3"><span className="flex-1">{banner}</span><button onClick={() => setBanner("")} aria-label="Chiudi" className="p-1"><X className="w-4 h-4" /></button></div>}
-      {!payments && canOffer && <div className="mb-4 rounded-2xl border-2 border-brass bg-brass/20 p-4 text-sm"><b>Pagamenti non ancora attivi.</b> Per incassare serve collegare Stripe: aggiungi la chiave segreta nelle impostazioni del sito (<code>STRIPE_SECRET_KEY</code>). Finché manca, nessuno può prenotare.</div>}
+      <div className="max-w-6xl mx-auto px-5 md:px-8">
+        {banner && <div role="status" className="mt-6 rounded-2xl bg-mint/25 p-4 font-semibold flex items-start gap-3"><span className="flex-1">{banner}</span><button onClick={() => setBanner("")} aria-label="Chiudi" className="p-1"><X className="w-4 h-4" /></button></div>}
+        {!payments && canOffer && <div className="mt-6 rounded-2xl bg-brass/30 p-4 text-sm"><b>Pagamenti non ancora attivi.</b> Per incassare serve la chiave segreta di Stripe (<code>STRIPE_SECRET_KEY</code>) nelle impostazioni del sito. Finché manca, nessuno può prenotare.</div>}
 
-      {/* come funziona */}
-      <ol className="grid sm:grid-cols-3 gap-3 mb-6">
-        {[[CreditCard, "1. Scegli e paga", "Scegli la consulenza e paghi in sicurezza con Stripe."], [MessageCircle, "2. Fissa l’orario", "Scrivi al consulente nei messaggi e vi accordate su giorno e ora."], [Video, "3. Videochiamata", "Entri nella stanza privata direttamente dal sito, senza installare nulla."]].map(([Icon, t, d]: any, i) => (
-          <li key={i} className="bg-white border border-line rounded-2xl p-4"><Icon className="w-6 h-6 text-wine" /><b className="block mt-2">{t}</b><span className="text-sm text-navy/65">{d}</span></li>
-        ))}
-      </ol>
+        {/* le mie prenotazioni */}
+        {user && bookings && total > 0 && (
+          <section className="mt-10" aria-labelledby="h-pren">
+            <h2 id="h-pren" className="text-3xl md:text-4xl font-black tracking-tight mb-4">Le mie prenotazioni</h2>
+            <div className="space-y-3">
+              {bookings.asSeller.map(b => <BookingRow key={"s" + b.id} b={b} as="seller" />)}
+              {bookings.asBuyer.map(b => <BookingRow key={"b" + b.id} b={b} as="buyer" />)}
+            </div>
+          </section>
+        )}
 
-      {/* le mie prenotazioni */}
-      {user && bookings && total > 0 && (
-        <section className="mb-8" aria-label="Le mie prenotazioni">
-          <h2 className="text-xl font-extrabold mb-3">Le mie prenotazioni</h2>
-          <div className="space-y-3">
-            {bookings.asSeller.map(b => <BookingRow key={"s" + b.id} b={b} as="seller" />)}
-            {bookings.asBuyer.map(b => <BookingRow key={"b" + b.id} b={b} as="buyer" />)}
-          </div>
-        </section>
-      )}
-
-      {/* offerte */}
-      <section aria-label="Consulenze disponibili">
-        <h2 className="text-xl font-extrabold mb-3">Consulenze disponibili</h2>
-        <div className="flex gap-1.5 overflow-x-auto pb-2 mb-3" role="group" aria-label="Categorie">
-          {[{ k: "tutte", label: "Tutte" }, ...TEMPLATES.filter(t => t.k !== "altro")].map(t => (
-            <button key={t.k} onClick={() => setCat(t.k)} aria-pressed={cat === t.k} className={`shrink-0 px-3 py-1.5 rounded-full text-sm font-semibold transition ${cat === t.k ? "bg-navy text-white" : "bg-white border border-line hover:border-navy/40"}`}>{t.label}</button>
-          ))}
-        </div>
-        {offers === null ? <div className="h-32 rounded-2xl bg-ivory2 animate-pulse" aria-busy="true" /> : shown.length > 0 ? (
-          <div className="grid md:grid-cols-2 gap-4">
-            {shown.map(o => (
-              <article key={o.id} className="bg-white rounded-3xl border border-line p-5 flex flex-col rise hover:shadow-md transition">
-                <span className="self-start px-3 py-1 rounded-full bg-ivory2 text-xs font-bold">{categoryLabel(o.category)}</span>
-                <h3 className="text-lg font-extrabold mt-2 leading-snug">{o.title}</h3>
-                <p className="text-navy/75 mt-2 text-sm leading-relaxed whitespace-pre-wrap flex-1">{o.description}</p>
-                <Link href={`/utente/${o.seller.id}`} className="mt-4 flex items-center gap-3 hover:underline"><Face p={o.seller} size={40} /><span className="min-w-0"><b className="block truncate">{o.seller.nome} {o.seller.cognome}</b><span className="text-xs text-navy/55">{o.seller.role === "admin" ? "Amministratore" : "Moderatore"}</span></span></Link>
-                <div className="flex items-center justify-between gap-3 mt-4 pt-4 border-t border-line">
-                  <div><div className="text-2xl font-extrabold">{eur(o.priceCents)}</div><div className="text-xs text-navy/55 flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{o.durationMin} minuti</div></div>
-                  {o.mine ? <span className="text-sm text-navy/55">È la tua offerta</span>
-                    : <button onClick={() => book(o)} disabled={buying === o.id} className="px-5 py-2.5 rounded-xl bg-wine text-white font-semibold hover:brightness-110 active:scale-95 transition disabled:opacity-60">{buying === o.id ? "Apro il pagamento…" : "Prenota e paga"}</button>}
-                </div>
-              </article>
+        {/* pacchetti */}
+        <section id="pacchetti" className="mt-12 md:mt-20 scroll-mt-20" aria-labelledby="h-pack">
+          <h2 id="h-pack" className="text-4xl md:text-6xl font-black tracking-tight leading-[0.95]">Scegli quanto tempo ti serve.</h2>
+          <div className="flex gap-2 overflow-x-auto py-5" role="group" aria-label="Categorie">
+            {[{ k: "tutte", label: "Tutte" }, ...TEMPLATES.filter(t => t.k !== "altro")].map(t => (
+              <button key={t.k} onClick={() => setCat(t.k)} aria-pressed={cat === t.k} className={`shrink-0 px-4 py-2 rounded-full font-bold transition ${cat === t.k ? "bg-navy text-white" : "bg-ivory2 hover:bg-line"}`}>{t.label}</button>
             ))}
           </div>
-        ) : (
-          <div className="bg-white border border-line rounded-2xl p-8 text-center text-navy/65">
-            {(offers || []).length === 0 ? "Le prime consulenze arrivano presto. Intanto guarda di cosa si potrà parlare qui sotto." : "Nessuna consulenza in questa categoria."}
-          </div>
-        )}
-      </section>
-
-      {/* ipotesi di consulenza */}
-      <section className="mt-8" aria-label="Di cosa si può parlare">
-        <h2 className="text-xl font-extrabold">Di cosa si può parlare</h2>
-        <p className="text-navy/65 text-sm mt-1 mb-3">Alcuni esempi di consulenza che gli esperti della community possono offrire.</p>
-        <div className="grid sm:grid-cols-2 gap-3">
-          {TEMPLATES.filter(t => t.k !== "altro").map(t => (
-            <div key={t.k} className="bg-white border border-line rounded-2xl p-4">
-              <b>{t.title}</b>
-              <p className="text-sm text-navy/70 mt-1">{t.description}</p>
-              <div className="flex items-center justify-between mt-3 text-sm"><span className="text-navy/55 flex items-center gap-1"><Clock className="w-3.5 h-3.5" />circa {t.durationMin} minuti</span>{canOffer && <button onClick={() => startForm(t)} className="font-semibold text-wine hover:underline">Offri questa consulenza</button>}</div>
+          {offers === null ? <div className="h-64 rounded-3xl bg-ivory2 animate-pulse" aria-busy="true" /> : shown.length > 0 ? (
+            <div className="grid md:grid-cols-3 gap-4">
+              {[...shown].sort((a, b) => a.priceCents - b.priceCents).map((o, i) => {
+                const f = FIELDS[i % FIELDS.length];
+                return (
+                  <article key={o.id} className={`${f.bg} ${f.fg} rounded-3xl p-6 md:p-7 flex flex-col min-h-[440px] rise`}>
+                    <div className="text-sm font-bold opacity-80">{categoryLabel(o.category)} · {o.durationMin} minuti</div>
+                    <h3 className="text-2xl md:text-3xl font-black tracking-tight leading-tight mt-2">{o.title}</h3>
+                    <p className="mt-3 leading-relaxed flex-1 whitespace-pre-wrap">{o.description}</p>
+                    <Link href={`/utente/${o.seller.id}`} className="mt-5 flex items-center gap-3 hover:underline"><Face p={o.seller} size={36} /><span className="font-bold truncate">{o.seller.nome} {o.seller.cognome}</span></Link>
+                    <div className="mt-5 flex items-end justify-between gap-3">
+                      <div className="text-5xl md:text-6xl font-black tracking-tight leading-none">{eur(o.priceCents)}</div>
+                      {o.mine ? <span className="text-sm font-bold opacity-80">La tua offerta</span>
+                        : <button onClick={() => book(o)} disabled={buying === o.id} className={`${f.btn} px-5 py-3 rounded-full font-extrabold hover:brightness-110 active:scale-95 transition disabled:opacity-60`}>{buying === o.id ? "Apro…" : "Prenota"}</button>}
+                    </div>
+                  </article>
+                );
+              })}
             </div>
-          ))}
-        </div>
-      </section>
-
-      {/* gestione offerte (solo staff) */}
-      {canOffer && (
-        <section className="mt-8" aria-label="Le tue consulenze">
-          <div className="flex items-center justify-between mb-3"><h2 className="text-xl font-extrabold">Le tue consulenze</h2><button onClick={() => startForm()} className="text-sm font-semibold text-wine hover:underline">+ Nuova</button></div>
-          {mine.length === 0 ? <p className="text-navy/60 text-sm">Non hai ancora offerte. Scegli un modello tra gli esempi qui sopra oppure creane una tua.</p> : (
-            <div className="space-y-3">{mine.map(o => (
-              <div key={o.id} className={`bg-white border border-line rounded-2xl p-4 flex flex-wrap items-center gap-3 ${o.active ? "" : "opacity-60"}`}>
-                <div className="min-w-0 flex-1"><b>{o.title}</b><div className="text-sm text-navy/60">{categoryLabel(o.category)} · {o.durationMin} min · {eur(o.priceCents)} {!o.active && "· in pausa"}</div></div>
-                <button onClick={() => editForm(o)} aria-label="Modifica" className="p-2 rounded-lg hover:bg-ivory2"><Pencil className="w-4 h-4" /></button>
-                <button onClick={() => toggle(o)} aria-label={o.active ? "Metti in pausa" : "Riattiva"} className="p-2 rounded-lg hover:bg-ivory2">{o.active ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}</button>
-                <button onClick={() => remove(o)} aria-label="Elimina" className="p-2 rounded-lg text-red-600 hover:bg-red-50"><Trash2 className="w-4 h-4" /></button>
-              </div>))}
-            </div>
+          ) : (
+            <div className="bg-ivory2 rounded-3xl p-10 text-center text-lg">{(offers || []).length === 0 ? "Le prime consulenze arrivano presto." : "Nessuna consulenza in questa categoria."}</div>
           )}
         </section>
-      )}
+
+        {/* come funziona */}
+        <section className="mt-16 md:mt-28" aria-labelledby="h-how">
+          <h2 id="h-how" className="sr-only">Come funziona</h2>
+          <ol className="space-y-8 md:space-y-10">
+            {STEPS.map(([t, d], i) => (
+              <li key={i} style={{ marginLeft: `${i * 6}%` }} className="max-w-3xl">
+                <div className="text-[clamp(32px,5vw,72px)] font-black tracking-tight leading-none">{t}</div>
+                <p className="mt-3 text-lg text-navy/80 max-w-xl">{d}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        {/* di cosa si può parlare */}
+        <section className="mt-16 md:mt-28" aria-labelledby="h-topics">
+          <h2 id="h-topics" className="text-4xl md:text-6xl font-black tracking-tight leading-[0.95]">Di cosa si può parlare.</h2>
+          <div className="mt-6 grid md:grid-cols-2 gap-4">
+            {TEMPLATES.filter(t => t.k !== "altro").map((t, i) => (
+              <div key={t.k} className={`${i % 3 === 0 ? "bg-ivory2" : i % 3 === 1 ? "bg-navy text-white" : "bg-brass/40"} rounded-3xl p-6 flex flex-col`}>
+                <h3 className="text-xl font-black leading-snug">{t.title}</h3>
+                <p className="mt-2 opacity-85 flex-1">{t.description}</p>
+                <div className="mt-4 flex items-center justify-between gap-3 font-bold"><span className="flex items-center gap-1.5"><Clock className="w-4 h-4" />circa {t.durationMin} minuti · {eur(t.price * 100)}</span>{canOffer && <button onClick={() => startForm(t)} className="underline underline-offset-4">Offri questa</button>}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* domande */}
+        <section className="mt-16 md:mt-28" aria-labelledby="h-faq">
+          <h2 id="h-faq" className="text-4xl md:text-6xl font-black tracking-tight leading-[0.95]">Domande frequenti.</h2>
+          <div className="mt-6 space-y-3">
+            {FAQ.map(([q, a]) => (
+              <details key={q} className="group bg-ivory2 rounded-2xl open:bg-wine open:text-white transition-colors">
+                <summary className="cursor-pointer list-none p-5 md:p-6 text-xl md:text-2xl font-black flex items-center justify-between gap-4">{q}<Plus className="w-6 h-6 shrink-0 transition-transform group-open:rotate-45" /></summary>
+                <p className="px-5 md:px-6 pb-6 text-lg max-w-3xl">{a}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+
+        {/* gestione offerte (solo staff) */}
+        {canOffer && (
+          <section className="mt-16 md:mt-28" aria-labelledby="h-mine">
+            <div className="flex items-end justify-between gap-3 mb-4"><h2 id="h-mine" className="text-3xl md:text-4xl font-black tracking-tight">Le tue consulenze</h2><button onClick={() => startForm()} className="font-bold text-wine hover:underline">+ Nuova</button></div>
+            {mine.length === 0 ? <p className="text-navy/70">Non hai ancora offerte. Scegli un modello tra gli esempi qui sopra oppure creane una tua.</p> : (
+              <div className="space-y-3">{mine.map(o => (
+                <div key={o.id} className={`bg-ivory2 rounded-2xl p-4 flex flex-wrap items-center gap-3 ${o.active ? "" : "opacity-60"}`}>
+                  <div className="min-w-0 flex-1"><b>{o.title}</b><div className="text-sm text-navy/70">{categoryLabel(o.category)} · {o.durationMin} min · {eur(o.priceCents)} {!o.active && "· in pausa"}</div></div>
+                  <button onClick={() => editForm(o)} aria-label="Modifica" className="p-2 rounded-lg hover:bg-white"><Pencil className="w-4 h-4" /></button>
+                  <button onClick={() => toggle(o)} aria-label={o.active ? "Metti in pausa" : "Riattiva"} className="p-2 rounded-lg hover:bg-white">{o.active ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}</button>
+                  <button onClick={() => remove(o)} aria-label="Elimina" className="p-2 rounded-lg text-red-600 hover:bg-white"><Trash2 className="w-4 h-4" /></button>
+                </div>))}
+              </div>
+            )}
+          </section>
+        )}
+      </div>
 
       {form && (
         <div className="fixed inset-0 z-50 bg-navy/60 grid place-items-center p-4" onClick={() => setForm(null)} role="dialog" aria-modal="true" aria-label="Offerta di consulenza">

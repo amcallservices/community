@@ -57,9 +57,9 @@ function hashPassword(p) {
         const owner = await prisma.user.findFirst({ where: { role: 'admin' }, orderBy: { id: 'asc' } });
         if (owner) {
           const pk = [
-            { category: 'altro', title: 'Consulenza lampo (30 minuti)', description: 'Una sessione breve per sciogliere un dubbio preciso: una copertina, un titolo, un passaggio della pubblicazione. Ideale per avere una risposta chiara in poco tempo.', durationMin: 30, priceCents: 3000 },
-            { category: 'altro', title: 'Consulenza completa (60 minuti)', description: 'Un\u2019ora dedicata al tuo libro: analizziamo la situazione, scegliamo cosa migliorare e ti lascio un piano d\u2019azione concreto da seguire subito.', durationMin: 60, priceCents: 6000 },
-            { category: 'altro', title: 'Consulenza approfondita (90 minuti)', description: 'Una sessione lunga per lavorare insieme sul progetto dall\u2019idea alla pubblicazione: struttura, copertina, vendite e promozione, con tutto il tempo per le tue domande.', durationMin: 90, priceCents: 9000 },
+            { category: 'altro', title: 'Consulenza lampo (30 minuti)', description: 'Una sessione breve per sciogliere un dubbio preciso: una copertina, un titolo, un passaggio della pubblicazione. Ideale per avere una risposta chiara in poco tempo.', durationMin: 30, priceCents: 20000 },
+            { category: 'altro', title: 'Consulenza completa (60 minuti)', description: 'Un\u2019ora dedicata al tuo libro: analizziamo la situazione, scegliamo cosa migliorare e ti lascio un piano d\u2019azione concreto da seguire subito.', durationMin: 60, priceCents: 35000 },
+            { category: 'altro', title: 'Consulenza approfondita (90 minuti)', description: 'Una sessione lunga per lavorare insieme sul progetto dall\u2019idea alla pubblicazione: struttura, copertina, vendite e promozione, con tutto il tempo per le tue domande.', durationMin: 90, priceCents: 50000 },
           ];
           for (const o of pk) await prisma.consulenzaOffer.create({ data: { ...o, userId: owner.id } });
           await prisma.appFlag.create({ data: { key: 'consulenza_seed', value: new Date().toISOString() } });
@@ -67,6 +67,15 @@ function hashPassword(p) {
         }
       }
     } catch (e) { console.warn('[predeploy] pacchetti non creati:', e.message || e); }
+    // Allinea i prezzi dei tre pacchetti già creati (una sola volta).
+    try {
+      const v2 = await prisma.appFlag.findUnique({ where: { key: 'consulenza_prezzi_v2' } });
+      if (!v2) {
+        for (const [t, c] of [['Consulenza lampo (30 minuti)', 20000], ['Consulenza completa (60 minuti)', 35000], ['Consulenza approfondita (90 minuti)', 50000]])
+          await prisma.consulenzaOffer.updateMany({ where: { title: t }, data: { priceCents: c } });
+        await prisma.appFlag.upsert({ where: { key: 'consulenza_prezzi_v2' }, update: {}, create: { key: 'consulenza_prezzi_v2', value: new Date().toISOString() } });
+      }
+    } catch (e) { console.warn('[predeploy] prezzi non aggiornati:', e.message || e); }
   } finally {
     await prisma.$disconnect();
   }
