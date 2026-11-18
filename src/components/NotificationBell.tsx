@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Bell, Heart, MessageCircle, Mail, CheckCheck, AtSign, CalendarDays, Flag } from "lucide-react";
+import { Bell, Heart, MessageCircle, Mail, CheckCheck, AtSign, CalendarDays, Flag, Briefcase } from "lucide-react";
 
 type Notif = { id: number; type: string; message: string; link?: string | null; read: boolean; createdAt: string };
 
@@ -26,6 +26,7 @@ export function NotifIcon({ type }: { type: string }) {
   if (type === "mention") return <span className="w-10 h-10 rounded-full bg-wine/10 text-wine grid place-items-center shrink-0"><AtSign className="w-5 h-5" /></span>;
   if (type === "event") return <span className="w-10 h-10 rounded-full bg-brass/30 text-navy grid place-items-center shrink-0"><CalendarDays className="w-5 h-5" /></span>;
   if (type === "report") return <span className="w-10 h-10 rounded-full bg-red-100 text-red-600 grid place-items-center shrink-0"><Flag className="w-5 h-5" /></span>;
+  if (type === "consulenza") return <span className="w-10 h-10 rounded-full bg-mint/25 text-navy grid place-items-center shrink-0"><Briefcase className="w-5 h-5" /></span>;
   if (type === "comment") return <span className="w-10 h-10 rounded-full bg-wine/10 text-wine grid place-items-center shrink-0"><MessageCircle className="w-5 h-5" /></span>;
   return <span className="w-10 h-10 rounded-full bg-brass/30 text-navy grid place-items-center shrink-0"><Bell className="w-5 h-5" /></span>;
 }

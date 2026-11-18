@@ -1,0 +1,51 @@
+import { NextRequest, NextResponse } from 'next/server'
+import prisma from '@/lib/db'
+import { requireUser, avatarUrl } from '@/lib/auth'
+import { stripe, markPaid } from '@/lib/consulenza'
+
+// GET - le mie prenotazioni (come cliente e come consulente). Controlla anche i pagamenti ancora in attesa.
+export async function GET() {
+  const { user, error } = await requireUser()
+  if (error) return error
+  try {
+    const where = { OR: [{ buyerId: user!.id }, { sellerId: user!.id }] }
+    // pagamenti in sospeso: li verifico direttamente su Stripe (funziona anche senza webhook)
+    const st = stripe()
+    if (st) {
+      const pend = await prisma.consulenzaBooking.findMany({ where: { AND: [where, { status: 'pending', stripeSessionId: { not: null }, createdAt: { gt: new Date(Date.now() - 48 * 3600 * 1000) } }] }, take: 10 })
+      for (const b of pend) {
+        try { const s = await st.checkout.sessions.retrieve(b.stripeSessionId!); if (s.payment_status === 'paid') await markPaid(b.id, s.id) } catch {}
+      }
+    }
+    const all = await prisma.consulenzaBooking.findMany({ where: { AND: [where, { OR: [{ status: { not: 'pending' } }, { createdAt: { gt: new Date(Date.now() - 48 * 3600 * 1000) } }] }] }, orderBy: { createdAt: 'desc' }, take: 60 })
+    const ids = [...new Set(all.flatMap(b => [b.buyerId, b.sellerId]))]
+    const users = await prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, nome: true, cognome: true, avatar: true, updatedAt: true } })
+    const who = (id: number) => { const u = users.find(x => x.id === id); return { id, nome: u?.nome || 'Utente', cognome: u?.cognome || '', avatar: u ? avatarUrl(u) : null } }
+    const view = (b: typeof all[number]) => ({
+      id: b.id, title: b.title, durationMin: b.durationMin, amountCents: b.amountCents, status: b.status, createdAt: b.createdAt.toISOString(), paidAt: b.paidAt?.toISOString() ?? null,
+      room: b.status === 'paid' || b.status === 'completed' ? b.room : null,
+      buyer: who(b.buyerId), seller: who(b.sellerId),
+    })
+    return NextResponse.json({
+      asBuyer: all.filter(b => b.buyerId === user!.id).map(view),
+      asSeller: all.filter(b => b.sellerId === user!.id && b.status !== 'pending').map(view),
+    })
+  } catch (e) {
+    console.error('bookings', e)
+    return NextResponse.json({ asBuyer: [], asSeller: [] })
+  }
+}
+
+// PATCH { id, action: 'complete' } - il consulente segna la consulenza come svolta
+export async function PATCH(request: NextRequest) {
+  const { user, error } = await requireUser()
+  if (error) return error
+  try {
+    const { id, action } = await request.json()
+    const b = await prisma.consulenzaBooking.findUnique({ where: { id: parseInt(id) } })
+    if (!b || (b.sellerId !== user!.id && user!.role !== 'admin')) return NextResponse.json({ error: 'Prenotazione non trovata' }, { status: 404 })
+    if (action !== 'complete' || b.status !== 'paid') return NextResponse.json({ error: 'Operazione non valida' }, { status: 400 })
+    await prisma.consulenzaBooking.update({ where: { id: b.id }, data: { status: 'completed' } })
+    return NextResponse.json({ ok: true })
+  } catch { return NextResponse.json({ error: 'Errore' }, { status: 500 }) }
+}

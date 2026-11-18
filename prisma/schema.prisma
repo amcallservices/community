@@ -189,3 +189,51 @@ model PollVote {
 
   @@unique([pollId, userId])
 }
+
+model Story {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  mediaUrl  String
+  mediaType String
+  caption   String?
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([expiresAt])
+}
+
+model StoryView {
+  id        Int      @id @default(autoincrement())
+  storyId   Int
+  userId    Int
+  createdAt DateTime @default(now())
+
+  @@unique([storyId, userId])
+}
+
+model ConsulenzaOffer {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  category    String   @default("altro")
+  title       String
+  description String
+  durationMin Int
+  priceCents  Int
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+model ConsulenzaBooking {
+  id              Int       @id @default(autoincrement())
+  offerId         Int
+  buyerId         Int
+  sellerId        Int
+  title           String
+  durationMin     Int
+  amountCents     Int
+  status          String    @default("pending")
+  stripeSessionId String?   @unique
+  room            String    @unique
+  createdAt       DateTime  @default(now())
+  paidAt          DateTime?
+}
