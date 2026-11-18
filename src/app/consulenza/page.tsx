@@ -134,9 +134,9 @@ export default function ConsulenzaPage() {
     { bg: "bg-coral", fg: "text-navy", btn: "bg-navy text-white" },
   ];
   const STEPS = [
-    ["Scegli e paga.", "Scegli la consulenza che ti serve e paghi in sicurezza con carta, tramite Stripe."],
-    ["Poi vi scrivete.", "Dopo il pagamento scrivi al consulente nei messaggi e fissate giorno e ora."],
-    ["Infine vi vedete.", "All’ora stabilita entri nella stanza privata dal sito, senza installare nulla."],
+    ["1. Scegli e paga", "Scegli la consulenza che ti serve e paghi in sicurezza con carta, tramite Stripe."],
+    ["2. Fissate l’orario", "Dopo il pagamento scrivi al consulente nei messaggi e fissate giorno e ora."],
+    ["3. Videochiamata", "All’ora stabilita entri nella stanza privata dal sito, senza installare nulla."],
   ];
   const FAQ = [
     ["Come pago?", "Con carta tramite Stripe, il circuito che usano milioni di negozi online. I dati della carta non passano dal nostro sito."],
@@ -147,29 +147,29 @@ export default function ConsulenzaPage() {
   ];
 
   return (
-    <main className="pb-16">
+    <main className="max-w-4xl mx-auto px-4 py-6 md:py-8">
       {/* titolo */}
-      <header className="bg-navy text-white">
-        <div className="max-w-6xl mx-auto px-5 md:px-8 pt-12 md:pt-20 pb-12 md:pb-16">
-          <h1 className="font-black tracking-tight leading-[0.9] text-[clamp(52px,11vw,150px)]">Parla con<br />chi pubblica.</h1>
-          <div className="mt-8 md:mt-10 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-            <p className="text-lg md:text-xl text-white/90 max-w-xl">Consulenze in videochiamata su copertine, stesura, vendite e pubblicazione dei tuoi libri. Da 30 minuti, con prezzo chiaro.</p>
+      <header className="bg-navy text-white rounded-3xl overflow-hidden">
+        <div className="p-6 md:p-8">
+          <h1 className="font-extrabold text-3xl md:text-4xl flex items-center gap-3"><Briefcase className="w-8 h-8 text-brass shrink-0" />Consulenze</h1>
+          <div className="mt-3 flex flex-col md:flex-row md:items-end md:justify-between gap-5">
+            <p className="text-white/85 text-lg max-w-xl">Consulenze in videochiamata su copertine, stesura, vendite e pubblicazione dei tuoi libri. Da 30 minuti, con prezzo chiaro.</p>
             <div className="flex flex-wrap gap-3">
-              <a href="#pacchetti" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-brass text-navy font-extrabold text-lg hover:brightness-105 active:scale-95 transition">Scegli la consulenza</a>
-              {canOffer && <button onClick={() => startForm()} className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-white/10 text-white font-bold hover:bg-white/20 active:scale-95 transition"><Plus className="w-5 h-5" />Offri una consulenza</button>}
+              <a href="#pacchetti" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brass text-navy font-bold hover:brightness-105 active:scale-95 transition">Scegli la consulenza</a>
+              {canOffer && <button onClick={() => startForm()} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 text-white font-semibold hover:bg-white/20 active:scale-95 transition"><Plus className="w-5 h-5" />Offri una consulenza</button>}
             </div>
           </div>
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-5 md:px-8">
+      <div>
         {banner && <div role="status" className="mt-6 rounded-2xl bg-mint/25 p-4 font-semibold flex items-start gap-3"><span className="flex-1">{banner}</span><button onClick={() => setBanner("")} aria-label="Chiudi" className="p-1"><X className="w-4 h-4" /></button></div>}
         {!payments && canOffer && <div className="mt-6 rounded-2xl bg-brass/30 p-4 text-sm"><b>Pagamenti non ancora attivi.</b> Per incassare serve la chiave segreta di Stripe (<code>STRIPE_SECRET_KEY</code>) nelle impostazioni del sito. Finché manca, nessuno può prenotare.</div>}
 
         {/* le mie prenotazioni */}
         {user && bookings && total > 0 && (
-          <section className="mt-10" aria-labelledby="h-pren">
-            <h2 id="h-pren" className="text-3xl md:text-4xl font-black tracking-tight mb-4">Le mie prenotazioni</h2>
+          <section className="mt-6" aria-labelledby="h-pren">
+            <h2 id="h-pren" className="text-xl font-extrabold mb-3">Le mie prenotazioni</h2>
             <div className="space-y-3">
               {bookings.asSeller.map(b => <BookingRow key={"s" + b.id} b={b} as="seller" />)}
               {bookings.asBuyer.map(b => <BookingRow key={"b" + b.id} b={b} as="buyer" />)}
@@ -178,27 +178,27 @@ export default function ConsulenzaPage() {
         )}
 
         {/* pacchetti */}
-        <section id="pacchetti" className="mt-12 md:mt-20 scroll-mt-20" aria-labelledby="h-pack">
-          <h2 id="h-pack" className="text-4xl md:text-6xl font-black tracking-tight leading-[0.95]">Scegli quanto tempo ti serve.</h2>
-          <div className="flex gap-2 overflow-x-auto py-5" role="group" aria-label="Categorie">
+        <section id="pacchetti" className="mt-8 scroll-mt-20" aria-labelledby="h-pack">
+          <h2 id="h-pack" className="text-xl font-extrabold">Consulenze disponibili</h2>
+          <div className="flex gap-1.5 overflow-x-auto py-3" role="group" aria-label="Categorie">
             {[{ k: "tutte", label: "Tutte" }, ...TEMPLATES.filter(t => t.k !== "altro")].map(t => (
-              <button key={t.k} onClick={() => setCat(t.k)} aria-pressed={cat === t.k} className={`shrink-0 px-4 py-2 rounded-full font-bold transition ${cat === t.k ? "bg-navy text-white" : "bg-ivory2 hover:bg-line"}`}>{t.label}</button>
+              <button key={t.k} onClick={() => setCat(t.k)} aria-pressed={cat === t.k} className={`shrink-0 px-3 py-1.5 rounded-full text-sm font-semibold transition ${cat === t.k ? "bg-navy text-white" : "bg-ivory2 hover:bg-line"}`}>{t.label}</button>
             ))}
           </div>
           {offers === null ? <div className="h-64 rounded-3xl bg-ivory2 animate-pulse" aria-busy="true" /> : shown.length > 0 ? (
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-2 gap-4">
               {[...shown].sort((a, b) => a.priceCents - b.priceCents).map((o, i) => {
                 const f = FIELDS[i % FIELDS.length];
                 return (
-                  <article key={o.id} className={`${f.bg} ${f.fg} rounded-3xl p-6 md:p-7 flex flex-col min-h-[440px] rise`}>
-                    <div className="text-sm font-bold opacity-80">{categoryLabel(o.category)} · {o.durationMin} minuti</div>
-                    <h3 className="text-2xl md:text-3xl font-black tracking-tight leading-tight mt-2">{o.title}</h3>
-                    <p className="mt-3 leading-relaxed flex-1 whitespace-pre-wrap">{o.description}</p>
+                  <article key={o.id} className={`${f.bg} ${f.fg} rounded-3xl p-5 flex flex-col rise`}>
+                    <div className="text-xs font-bold opacity-80">{categoryLabel(o.category)} · {o.durationMin} minuti</div>
+                    <h3 className="text-lg font-extrabold leading-snug mt-2">{o.title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed flex-1 whitespace-pre-wrap">{o.description}</p>
                     <Link href={`/utente/${o.seller.id}`} className="mt-5 flex items-center gap-3 hover:underline"><Face p={o.seller} size={36} /><span className="font-bold truncate">{o.seller.nome} {o.seller.cognome}</span></Link>
                     <div className="mt-5 flex items-end justify-between gap-3">
-                      <div className="text-5xl md:text-6xl font-black tracking-tight leading-none">{eur(o.priceCents)}</div>
+                      <div className="text-2xl font-extrabold leading-none">{eur(o.priceCents)}</div>
                       {o.mine ? <span className="text-sm font-bold opacity-80">La tua offerta</span>
-                        : <button onClick={() => book(o)} disabled={buying === o.id} className={`${f.btn} px-5 py-3 rounded-full font-extrabold hover:brightness-110 active:scale-95 transition disabled:opacity-60`}>{buying === o.id ? "Apro…" : "Prenota"}</button>}
+                        : <button onClick={() => book(o)} disabled={buying === o.id} className={`${f.btn} px-5 py-2.5 rounded-xl font-semibold hover:brightness-110 active:scale-95 transition disabled:opacity-60`}>{buying === o.id ? "Apro…" : "Prenota"}</button>}
                     </div>
                   </article>
                 );
@@ -210,40 +210,40 @@ export default function ConsulenzaPage() {
         </section>
 
         {/* come funziona */}
-        <section className="mt-16 md:mt-28" aria-labelledby="h-how">
-          <h2 id="h-how" className="sr-only">Come funziona</h2>
-          <ol className="space-y-8 md:space-y-10">
+        <section className="mt-8" aria-labelledby="h-how">
+          <h2 id="h-how" className="text-xl font-extrabold mb-3">Come funziona</h2>
+          <ol className="space-y-4">
             {STEPS.map(([t, d], i) => (
-              <li key={i} style={{ marginLeft: `${i * 6}%` }} className="max-w-3xl">
-                <div className="text-[clamp(32px,5vw,72px)] font-black tracking-tight leading-none">{t}</div>
-                <p className="mt-3 text-lg text-navy/80 max-w-xl">{d}</p>
+              <li key={i} className="max-w-3xl">
+                <div className="text-lg font-extrabold">{t}</div>
+                <p className="mt-1 text-sm text-navy/70 max-w-xl">{d}</p>
               </li>
             ))}
           </ol>
         </section>
 
         {/* di cosa si può parlare */}
-        <section className="mt-16 md:mt-28" aria-labelledby="h-topics">
-          <h2 id="h-topics" className="text-4xl md:text-6xl font-black tracking-tight leading-[0.95]">Di cosa si può parlare.</h2>
-          <div className="mt-6 grid md:grid-cols-2 gap-4">
+        <section className="mt-8" aria-labelledby="h-topics">
+          <h2 id="h-topics" className="text-xl font-extrabold">Di cosa si può parlare</h2>
+          <div className="mt-3 grid md:grid-cols-2 gap-3">
             {TEMPLATES.filter(t => t.k !== "altro").map((t, i) => (
-              <div key={t.k} className={`${i % 3 === 0 ? "bg-ivory2" : i % 3 === 1 ? "bg-navy text-white" : "bg-brass/40"} rounded-3xl p-6 flex flex-col`}>
-                <h3 className="text-xl font-black leading-snug">{t.title}</h3>
-                <p className="mt-2 opacity-85 flex-1">{t.description}</p>
-                <div className="mt-4 flex items-center justify-between gap-3 font-bold"><span className="flex items-center gap-1.5"><Clock className="w-4 h-4" />circa {t.durationMin} minuti · {eur(t.price * 100)}</span>{canOffer && <button onClick={() => startForm(t)} className="underline underline-offset-4">Offri questa</button>}</div>
+              <div key={t.k} className={`${i % 3 === 0 ? "bg-ivory2" : i % 3 === 1 ? "bg-navy text-white" : "bg-brass/40"} rounded-2xl p-4 flex flex-col`}>
+                <h3 className="font-bold">{t.title}</h3>
+                <p className="mt-1 text-sm opacity-85 flex-1">{t.description}</p>
+                <div className="mt-3 flex items-center justify-between gap-3 text-sm font-semibold"><span className="flex items-center gap-1.5"><Clock className="w-4 h-4" />circa {t.durationMin} minuti · {eur(t.price * 100)}</span>{canOffer && <button onClick={() => startForm(t)} className="underline underline-offset-4">Offri questa</button>}</div>
               </div>
             ))}
           </div>
         </section>
 
         {/* domande */}
-        <section className="mt-16 md:mt-28" aria-labelledby="h-faq">
-          <h2 id="h-faq" className="text-4xl md:text-6xl font-black tracking-tight leading-[0.95]">Domande frequenti.</h2>
-          <div className="mt-6 space-y-3">
+        <section className="mt-8" aria-labelledby="h-faq">
+          <h2 id="h-faq" className="text-xl font-extrabold">Domande frequenti</h2>
+          <div className="mt-3 space-y-2">
             {FAQ.map(([q, a]) => (
               <details key={q} className="group bg-ivory2 rounded-2xl open:bg-wine open:text-white transition-colors">
-                <summary className="cursor-pointer list-none p-5 md:p-6 text-xl md:text-2xl font-black flex items-center justify-between gap-4">{q}<Plus className="w-6 h-6 shrink-0 transition-transform group-open:rotate-45" /></summary>
-                <p className="px-5 md:px-6 pb-6 text-lg max-w-3xl">{a}</p>
+                <summary className="cursor-pointer list-none p-4 font-bold flex items-center justify-between gap-4">{q}<Plus className="w-6 h-6 shrink-0 transition-transform group-open:rotate-45" /></summary>
+                <p className="px-4 pb-4 text-sm max-w-3xl">{a}</p>
               </details>
             ))}
           </div>
@@ -251,8 +251,8 @@ export default function ConsulenzaPage() {
 
         {/* gestione offerte (solo staff) */}
         {canOffer && (
-          <section className="mt-16 md:mt-28" aria-labelledby="h-mine">
-            <div className="flex items-end justify-between gap-3 mb-4"><h2 id="h-mine" className="text-3xl md:text-4xl font-black tracking-tight">Le tue consulenze</h2><button onClick={() => startForm()} className="font-bold text-wine hover:underline">+ Nuova</button></div>
+          <section className="mt-8" aria-labelledby="h-mine">
+            <div className="flex items-end justify-between gap-3 mb-4"><h2 id="h-mine" className="text-xl font-extrabold">Le tue consulenze</h2><button onClick={() => startForm()} className="font-bold text-wine hover:underline">+ Nuova</button></div>
             {mine.length === 0 ? <p className="text-navy/70">Non hai ancora offerte. Scegli un modello tra gli esempi qui sopra oppure creane una tua.</p> : (
               <div className="space-y-3">{mine.map(o => (
                 <div key={o.id} className={`bg-ivory2 rounded-2xl p-4 flex flex-wrap items-center gap-3 ${o.active ? "" : "opacity-60"}`}>
