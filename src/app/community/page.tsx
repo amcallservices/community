@@ -3,9 +3,10 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { renderRich, parseRich } from "@/lib/sanitize";
 import { decorate, hashtagsOf, type Member } from "@/lib/rich";
+import Stories from "@/components/Stories";
 import { timeAgo } from "@/components/NotificationBell";
 import { upload } from "@vercel/blob/client";
-import { Heart, FileText, MessageCircle, Trash2, X, Send, Image, Link as LinkIcon, Share2, Check, ChevronDown, CalendarDays, Users, MessageSquare, User as UserIcon, Video as VideoIcon, Search, ArrowUp, Smile, Flag, Hash, BarChart3 } from "lucide-react";
+import { Heart, FileText, MessageCircle, Trash2, X, Send, Image, Link as LinkIcon, Share2, Check, ChevronDown, CalendarDays, Users, MessageSquare, User as UserIcon, Video as VideoIcon, Search, ArrowUp, Smile, Flag, Hash, BarChart3, Briefcase } from "lucide-react";
 
 type Post = { id: number; title: string; content: string; authorId?: number; authorNome: string; authorCogen: string; authorRole: string; authorAvatar: string | null; likes: number; comments: number; category: string; createdAt: string; reactions?: Record<string, number>; myReaction?: string | null; poll?: { options: { text: string; votes: number }[]; total: number; mine: number | null } | null };
 type Comment = { id: number; text: string; authorId?: number; authorNome: string; authorCogen: string; authorAvatar: string | null; time: string; parentId?: number | null; createdAt?: string };
@@ -129,11 +130,11 @@ export default function CommunityPage() {
       const u = JSON.parse(stored);
       setUser(u);
       setIsAdmin(u.role === 'admin');
-      setIsMod(u.role === 'moderatore');
+      setIsMod(u.role === 'moderatore' || u.role === 'sottoadmin');
     }
     loadPosts();
     if (stored) { try { const id = JSON.parse(stored).id; fetch(`/api/users/${id}`).then(r => r.ok ? r.json() : null).then(d => { if (!d) return; setSuspendedUntil(d.suspendedUntil || null); setIsAdmin(d.role === 'admin'); setIsMod(d.role === 'moderatore'); if (d.role && d.role !== JSON.parse(stored).role) { localStorage.setItem('user', JSON.stringify({ ...JSON.parse(stored), role: d.role })); if (d.role === 'admin' || d.role === 'moderatore') fetch('/api/admin/stats').then(r => r.ok ? r.json() : null).then(x => x && setReportsOpen(x.reports || 0)).catch(() => {}); } }).catch(() => {}); } catch {} }
-    if (stored && ["admin", "moderatore"].includes(JSON.parse(stored).role)) fetch("/api/admin/stats").then(r => r.ok ? r.json() : null).then(d => d && setReportsOpen(d.reports || 0)).catch(() => {});
+    if (stored && ["admin", "sottoadmin", "moderatore"].includes(JSON.parse(stored).role)) fetch("/api/admin/stats").then(r => r.ok ? r.json() : null).then(d => d && setReportsOpen(d.reports || 0)).catch(() => {});
     fetch("/api/events").then(r => r.ok ? r.json() : []).then(d => Array.isArray(d) && setEvents(d.slice(0, 3))).catch(() => {});
     fetch("/api/utenti").then(r => r.ok ? r.json() : []).then(d => { if (Array.isArray(d)) { setMembers(d.slice(-5).reverse()); setAllUsers(d.map((u: any) => ({ id: u.id, nome: u.nome || "", cognome: u.cognome || "" }))); } }).catch(() => {});
   }, []);
@@ -538,6 +539,7 @@ export default function CommunityPage() {
             )}
             <Link href="/messaggi" className={side}><MessageSquare className="w-6 h-6 text-wine" />Messaggi</Link>
             <Link href="/eventi" className={side}><CalendarDays className="w-6 h-6 text-wine" />Eventi</Link>
+            <Link href="/consulenza" className={side}><Briefcase className="w-6 h-6 text-wine" />Consulenza</Link>
             <Link href="/video" className={side}><VideoIcon className="w-6 h-6 text-wine" />Video</Link>
             {isAdmin && <Link href="/utenti" className={side}><Users className="w-6 h-6 text-wine" />Utenti</Link>}
             {(isAdmin || isMod) && <Link href="/admin/segnalazioni" className={side}><Flag className="w-6 h-6 text-wine" />Segnalazioni{reportsOpen > 0 && <span className="ml-auto min-w-[22px] h-[22px] px-1.5 rounded-full bg-coral text-white text-xs font-bold grid place-items-center">{reportsOpen}</span>}</Link>}
@@ -551,6 +553,7 @@ export default function CommunityPage() {
               Sei sospeso: non puoi pubblicare post e commenti fino a {new Date(suspendedUntil).toLocaleString("it-IT", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}. Puoi comunque leggere e mettere Mi piace.
             </div>
           )}
+          <Stories user={user} canPost={!(suspendedUntil && new Date(suspendedUntil) > new Date())} say={say} />
           {user ? (
             <div className={`bg-white rounded-2xl border shadow-sm p-4 mb-4 transition ${dragging ? "border-wine ring-4 ring-wine/20" : "border-line"}`}
               onDragOver={e => { e.preventDefault(); if (!dragging) { setDragging(true); setShowNewPost(true); } }}

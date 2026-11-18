@@ -18,7 +18,8 @@
     "nodemailer": "^6.10.1",
     "prisma": "^5.22.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "stripe": "^18.5.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
