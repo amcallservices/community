@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ExternalLink, MessageCircle, Check } from "lucide-react";
+import { ArrowLeft, MessageCircle, Check, Video, Copy, Monitor } from "lucide-react";
 
 type Party = { id: number; nome: string; cognome: string };
 type Booking = { id: number; title: string; durationMin: number; status: string; room: string | null; buyer: Party; seller: Party };
@@ -9,6 +9,7 @@ type Booking = { id: number; title: string; durationMin: number; status: string;
 export default function StanzaPage({ params }: { params: Promise<{ id: string }> }) {
   const [b, setB] = useState<Booking | null | undefined>(undefined);
   const [me, setMe] = useState<any>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -48,12 +49,20 @@ export default function StanzaPage({ params }: { params: Promise<{ id: string }>
         <Link href="/consulenza" className="inline-flex items-center gap-2 text-sm font-semibold text-navy/70 hover:text-navy"><ArrowLeft className="w-4 h-4" />Consulenze</Link>
         <div className="min-w-0 flex-1"><h1 className="font-extrabold truncate">{b.title}</h1><p className="text-sm text-navy/60">{staffGuest ? `${b.buyer.nome} ${b.buyer.cognome} con ${b.seller.nome} ${b.seller.cognome}` : `con ${other.nome} ${other.cognome}`} · {b.durationMin} minuti</p></div>
         <Link href={`/messaggi?to=${other.id}`} className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white border-2 border-line text-sm font-semibold hover:border-wine"><MessageCircle className="w-4 h-4" />Scrivi</Link>
-        <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white border-2 border-line text-sm font-semibold hover:border-wine"><ExternalLink className="w-4 h-4" />Apri a schermo intero</a>
       </div>
-      <div className="rounded-3xl overflow-hidden bg-black border border-line" style={{ height: "min(75vh, 720px)" }}>
-        <iframe src={url} title="Videochiamata" allow="camera; microphone; fullscreen; display-capture; autoplay; clipboard-write" className="w-full h-full border-0" />
-      </div>
-      <p className="text-sm text-navy/60 mt-3 flex items-start gap-2"><Check className="w-4 h-4 mt-0.5 shrink-0 text-mint" />Quando il browser lo chiede, consenti l&apos;uso di microfono e videocamera. La stanza è privata: il link non si può indovinare, quindi non condividerlo.</p>
+      <section className="rounded-3xl bg-navy text-white p-6 md:p-8" aria-label="Videochiamata">
+        <h2 className="text-xl font-extrabold flex items-center gap-2"><Video className="w-6 h-6 text-brass" />La stanza è pronta</h2>
+        <p className="mt-2 text-white/85">La videochiamata si apre in una nuova scheda, a schermo intero, con tutte le funzioni: condivisione dello schermo, chat, lavagna e alzata di mano.</p>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-brass text-navy font-bold hover:brightness-105 active:scale-95 transition"><Video className="w-5 h-5" />Entra nella videochiamata</a>
+          <button onClick={() => { navigator.clipboard?.writeText(`https://meet.jit.si/${b.room}`).then(() => setCopied(true)).catch(() => {}); }} className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white/10 font-semibold hover:bg-white/20 active:scale-95 transition"><Copy className="w-4 h-4" />{copied ? "Link copiato" : "Copia il link"}</button>
+        </div>
+      </section>
+      <ul className="mt-4 space-y-2 text-sm text-navy/75">
+        <li className="flex items-start gap-2"><Monitor className="w-4 h-4 mt-0.5 shrink-0 text-wine" /><span><b>Condividere lo schermo:</b> nella barra in basso clicca &ldquo;Condividi schermo&rdquo; e scegli se mostrare tutto lo schermo, una finestra o una scheda. Da telefono la funzione dipende dal dispositivo.</span></li>
+        <li className="flex items-start gap-2"><Check className="w-4 h-4 mt-0.5 shrink-0 text-mint" /><span>Quando il browser lo chiede, consenti l&apos;uso di microfono e videocamera. La stanza è privata: il link non si può indovinare, quindi non condividerlo.</span></li>
+        <li className="flex items-start gap-2"><Check className="w-4 h-4 mt-0.5 shrink-0 text-mint" /><span>Il primo che entra può dover accedere con Google o GitHub per avviare la stanza: dopo, tutti gli altri entrano liberamente.</span></li>
+      </ul>
     </main>
   );
 }

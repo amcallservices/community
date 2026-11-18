@@ -107,6 +107,14 @@ export default function ConsulenzaPage() {
     const d = await r.json().catch(() => ({}));
     if (r.ok) { say("Prenotazione eliminata"); loadBookings(); } else say(d.error || "Errore");
   };
+  const startLive = () => {
+    const a = new Uint8Array(9); crypto.getRandomValues(a);
+    const room = "SPI-LIVE-" + Array.from(a, x => x.toString(16).padStart(2, "0")).join("");
+    const link = `https://meet.jit.si/${room}`;
+    navigator.clipboard?.writeText(link).catch(() => {});
+    window.open(`${link}#config.subject=${encodeURIComponent(JSON.stringify("Diretta Self Publishing Italia"))}`, "_blank", "noopener");
+    say("Diretta avviata: il link è stato copiato, condividilo con chi vuoi invitare");
+  };
   const complete = async (b: Booking) => {
     const r = await fetch("/api/consulenza/bookings", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: b.id, action: "complete" }) });
     if (r.ok) { say("Segnata come svolta"); loadBookings(); } else say("Errore");
@@ -145,7 +153,7 @@ export default function ConsulenzaPage() {
   const STEPS = [
     ["1. Scegli e paga", "Scegli la consulenza che ti serve e paghi in sicurezza con carta, tramite Stripe."],
     ["2. Fissate l’orario", "Dopo il pagamento scrivi al consulente nei messaggi e fissate giorno e ora."],
-    ["3. Videochiamata", "All’ora stabilita entri nella stanza privata dal sito, senza installare nulla."],
+    ["3. Videochiamata", "All’ora stabilita entri nella stanza privata dal sito, senza installare nulla. Puoi anche condividere lo schermo."],
   ];
   const FAQ = [
     ["Come pago?", "Con carta tramite Stripe, il circuito che usano milioni di negozi online. I dati della carta non passano dal nostro sito."],
@@ -261,6 +269,17 @@ export default function ConsulenzaPage() {
             ))}
           </div>
         </section>
+
+        {/* videochiamata in diretta (solo admin e sotto admin) */}
+        {canOffer && (
+          <section className="mt-8" aria-labelledby="h-live">
+            <h2 id="h-live" className="text-xl font-extrabold">Videochiamata in diretta</h2>
+            <div className="mt-3 bg-ivory2 rounded-2xl p-4 flex flex-wrap items-center gap-3">
+              <p className="flex-1 min-w-[220px] text-sm text-navy/80">Avvia subito una stanza aperta a chi ha il link, senza prenotazione: puoi condividere lo schermo e, dal menu della stanza, trasmettere in diretta su YouTube.</p>
+              <button onClick={startLive} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-wine text-white font-semibold hover:brightness-110 active:scale-95 transition"><Video className="w-4 h-4" />Avvia diretta ora</button>
+            </div>
+          </section>
+        )}
 
         {/* gestione offerte (solo staff) */}
         {canOffer && (
