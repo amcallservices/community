@@ -8,7 +8,7 @@ import { timeAgo } from "@/components/NotificationBell";
 type Seller = { id: number; nome: string; cognome: string; role: string; avatar: string | null; bio: string | null };
 type Offer = { id: number; category: string; title: string; description: string; durationMin: number; priceCents: number; active: boolean; mine: boolean; seller: Seller };
 type Party = { id: number; nome: string; cognome: string; avatar: string | null };
-type Booking = { id: number; title: string; durationMin: number; amountCents: number; status: string; createdAt: string; paidAt: string | null; room: string | null; buyer: Party; seller: Party };
+type Booking = { id: number; meetUrl?: string | null; title: string; durationMin: number; amountCents: number; status: string; createdAt: string; paidAt: string | null; room: string | null; buyer: Party; seller: Party };
 
 const eur = (c: number) => (c / 100).toLocaleString("it-IT", { style: "currency", currency: "EUR", minimumFractionDigits: c % 100 ? 2 : 0 });
 const COLORS = ["#5b3df5", "#2dd4a7", "#ffc83d", "#ff6b6b", "#38bdf8", "#f472b6"];
@@ -136,6 +136,8 @@ export default function ConsulenzaPage() {
     );
   };
 
+  // riunioni in corso: consulenze pagate, non ancora svolte e non eliminate, con il link di Google Meet già pronto
+  const liveNow = [...(bookings?.asSeller || []), ...(bookings?.asStaff || [])].filter(b => b.status === "paid" && !!b.meetUrl);
   const total = (bookings?.asBuyer.length || 0) + (bookings?.asSeller.length || 0) + (bookings?.asStaff?.length || 0);
   const FIELDS = [
     { bg: "bg-brass", fg: "text-navy", btn: "bg-navy text-white" },
@@ -264,12 +266,16 @@ export default function ConsulenzaPage() {
         </section>
 
         {/* videochiamata in diretta (solo admin e sotto admin) */}
-        {canOffer && (
+        {canOffer && liveNow.length > 0 && (
           <section className="mt-8" aria-labelledby="h-live">
             <h2 id="h-live" className="text-xl font-extrabold">Riunione in diretta</h2>
-            <div className="mt-3 bg-ivory2 rounded-2xl p-4 flex flex-wrap items-center gap-3">
-              <p className="flex-1 min-w-[220px] text-sm text-navy/80">Avvia subito una riunione su Google Meet e condividi il link con chi vuoi invitare. Puoi presentare lo schermo e, dalle impostazioni di Meet, registrare.</p>
-              <a href="https://meet.new" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-wine text-white font-semibold hover:brightness-110 active:scale-95 transition"><Video className="w-4 h-4" />Avvia con Google Meet</a>
+            <div className="mt-3 space-y-3">
+              {liveNow.map(b => (
+                <div key={b.id} className="bg-mint/30 rounded-2xl p-4 flex flex-wrap items-center gap-3">
+                  <div className="min-w-0 flex-1"><b>{b.title}</b><div className="text-sm text-navy/70">{b.buyer.nome} {b.buyer.cognome} con {b.seller.nome} {b.seller.cognome} · {b.durationMin} min</div></div>
+                  <a href={b.meetUrl!} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-navy text-white font-semibold hover:brightness-110 active:scale-95 transition"><Video className="w-4 h-4" />Partecipa</a>
+                </div>
+              ))}
             </div>
           </section>
         )}
