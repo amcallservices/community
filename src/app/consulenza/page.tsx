@@ -125,6 +125,7 @@ export default function ConsulenzaPage() {
         </div>
         <span className={`px-3 py-1 rounded-full text-sm font-semibold ${st.c}`}>{st.l}</span>
         {b.room && as === "staff" && b.status !== "pending" && <Link href={`/consulenza/stanza/${b.id}`} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-wine text-white font-semibold hover:brightness-110"><Video className="w-4 h-4" />Videochiamata</Link>}
+        {as === "staff" && b.status === "paid" && user?.role === "admin" && <button onClick={() => complete(b)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-mint/30 font-semibold hover:bg-mint/50"><Check className="w-4 h-4" />Svolta</button>}
         {b.room && b.status === "paid" && as !== "staff" && <>
           <Link href={`/messaggi?to=${other.id}`} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border-2 border-line font-semibold hover:border-wine"><MessageCircle className="w-4 h-4" />Scrivi per l&apos;orario</Link>
           <Link href={`/consulenza/stanza/${b.id}`} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-wine text-white font-semibold hover:brightness-110"><Video className="w-4 h-4" />Google Meet</Link>
