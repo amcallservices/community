@@ -187,6 +187,24 @@ export default function Home() {
         </Reveal>
       </section>
 
+      {/* CONSULENZE */}
+      <section className="max-w-6xl mx-auto px-4 md:px-8 py-16 md:py-20" aria-labelledby="h-consulenze">
+        <Reveal>
+          <div className="bg-navy text-ivory rounded-3xl p-8 md:p-12 grid md:grid-cols-[1.3fr_1fr] gap-8 items-center">
+            <div>
+              <h2 id="h-consulenze" className="text-3xl md:text-4xl font-extrabold">Consulenze per autori in videochiamata</h2>
+              <p className="mt-4 text-ivory/85 max-w-xl">Parla con chi pubblica libri ogni giorno: copertina per libro cartaceo ed ebook, stesura e struttura, vendite in organico su Amazon, scelta della nicchia e pubblicazione su Amazon KDP, Liberamente.site e altri store.</p>
+              <Link href="/consulenza" className={`${btnYellow} mt-6`}>Scopri le consulenze<ArrowRight className="w-5 h-5" /></Link>
+            </div>
+            <ul className="space-y-3 text-lg font-bold">
+              <li className="bg-white/10 rounded-2xl p-4">Consulenza lampo: 30 minuti, 200 €</li>
+              <li className="bg-white/10 rounded-2xl p-4">Consulenza completa: 60 minuti, 350 €</li>
+              <li className="bg-white/10 rounded-2xl p-4">Consulenza approfondita: 90 minuti, 500 €</li>
+            </ul>
+          </div>
+        </Reveal>
+      </section>
+
       {/* VIDEO (mantenuto) */}
       <section id="video" className="max-w-4xl mx-auto px-4 md:px-8 py-16 md:py-20 scroll-mt-20">
         <Reveal>
@@ -254,7 +272,7 @@ export default function Home() {
           <p className="mt-3 text-ivory/85 max-w-xl mx-auto">{user ? "Pubblica un post o scrivi a un altro autore." : "Registrati, presentati e pubblica il tuo primo post. Ci vuole un minuto."}</p>
           <Link href={join} className={`${btnYellow} mt-8`}>{user ? "Vai alla community" : "Registrati"}<ArrowRight className="w-5 h-5" /></Link>
           <nav className="mt-12 flex flex-wrap justify-center gap-x-6 gap-y-2 text-ivory/75">
-            <Link href="/community" className="hover:text-gold">Community</Link><Link href="/video" className="hover:text-gold">Video corsi</Link><Link href="/eventi" className="hover:text-gold">Eventi</Link><Link href="/login" className="hover:text-gold">Accedi</Link>
+            <Link href="/community" className="hover:text-gold">Community</Link><Link href="/video" className="hover:text-gold">Video corsi</Link><Link href="/consulenza" className="hover:text-gold">Consulenza per autori</Link><Link href="/eventi" className="hover:text-gold">Eventi</Link><Link href="/login" className="hover:text-gold">Accedi</Link>
           </nav>
           <p className="mt-6 text-sm text-ivory/50">&copy; 2026 Self Publishing Italia. Tutti i diritti riservati.</p>
         </div>
