@@ -277,11 +277,11 @@ export default function ConsulenzaPage() {
         {/* gestione offerte (solo staff) */}
         {canOffer && (
           <section className="mt-8" aria-labelledby="h-mine">
-            <div className="flex items-end justify-between gap-3 mb-4"><h2 id="h-mine" className="text-xl font-extrabold">Le tue consulenze</h2><button onClick={() => startForm()} className="font-bold text-wine hover:underline">+ Nuova</button></div>
+            <div className="flex items-end justify-between gap-3 mb-4"><h2 id="h-mine" className="text-xl font-extrabold">{user?.role === "admin" ? "Tutte le consulenze" : "Le tue consulenze"}</h2><button onClick={() => startForm()} className="font-bold text-wine hover:underline">+ Nuova</button></div>
             {mine.length === 0 ? <p className="text-navy/70">Non hai ancora offerte. Scegli un modello tra gli esempi qui sopra oppure creane una tua.</p> : (
               <div className="space-y-3">{mine.map(o => (
                 <div key={o.id} className={`bg-ivory2 rounded-2xl p-4 flex flex-wrap items-center gap-3 ${o.active ? "" : "opacity-60"}`}>
-                  <div className="min-w-0 flex-1"><b>{o.title}</b><div className="text-sm text-navy/70">{categoryLabel(o.category)} · {o.durationMin} min · {eur(o.priceCents)} {!o.active && "· in pausa"}</div></div>
+                  <div className="min-w-0 flex-1"><b>{o.title}</b><div className="text-sm text-navy/70">{!o.mine && `di ${o.seller.nome} ${o.seller.cognome} · `}{categoryLabel(o.category)} · {o.durationMin} min · {eur(o.priceCents)} {!o.active && "· in pausa"}</div></div>
                   <button onClick={() => editForm(o)} aria-label="Modifica" className="p-2 rounded-lg hover:bg-white"><Pencil className="w-4 h-4" /></button>
                   <button onClick={() => toggle(o)} aria-label={o.active ? "Metti in pausa" : "Riattiva"} className="p-2 rounded-lg hover:bg-white">{o.active ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}</button>
                   <button onClick={() => remove(o)} aria-label="Elimina" className="p-2 rounded-lg text-red-600 hover:bg-white"><Trash2 className="w-4 h-4" /></button>

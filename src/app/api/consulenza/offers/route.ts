@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const me = await getSessionUser().catch(() => null)
     const mine = new URL(request.url).searchParams.get('mine') === '1' && !!me
     const offers = await prisma.consulenzaOffer.findMany({
-      where: mine ? { userId: me!.id } : { active: true },
+      where: mine ? (me!.role === 'admin' ? {} : { userId: me!.id }) : { active: true }, // l'admin gestisce anche le offerte dei sotto admin
       orderBy: { createdAt: 'desc' }, take: 100,
     })
     const users = await prisma.user.findMany({ where: { id: { in: [...new Set(offers.map(o => o.userId))] }, banned: false }, select: { id: true, nome: true, cognome: true, role: true, avatar: true, bio: true, updatedAt: true } })
