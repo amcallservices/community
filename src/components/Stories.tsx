@@ -52,48 +52,64 @@ export default function Stories({ user, canPost, say }: { user: { id: number; no
   const others = groups.filter(g => !g.mine);
 
   // ---------- creazione ----------
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState("");
-  const [caption, setCaption] = useState("");
+  type QItem = { file: File; preview: string; caption: string };
+  const [queue, setQueue] = useState<QItem[]>([]);
+  const [cur, setCur] = useState(0);
   const [progress, setProgress] = useState<number | null>(null);
+  const [step, setStep] = useState("");
   const VIDEO_EXT: Record<string, string> = { mp4: "video/mp4", m4v: "video/mp4", mov: "video/quicktime", webm: "video/webm", mkv: "video/x-matroska", avi: "video/x-msvideo", "3gp": "video/3gpp", mpeg: "video/mpeg", mpg: "video/mpeg" };
   const fixType = (f: File) => {
     if (f.type) return f;
     const t = VIDEO_EXT[(f.name.split(".").pop() || "").toLowerCase()];
     return t ? new File([f], f.name, { type: t }) : f;
   };
-  const pick = (f0?: File | null) => {
-    if (!f0) return;
-    const f = fixType(f0);
-    if (!f.type.startsWith("image/") && !f.type.startsWith("video/")) { say("Scegli una foto o un video"); return; }
-    if (f.size > 120 * 1024 * 1024) { say("Il file è troppo grande (massimo 120 MB)"); return; }
-    if (f.type.startsWith("video/")) {
+  const MAX_ITEMS = 10;
+  const addFiles = async (list: FileList | null) => {
+    if (!list || !list.length) return;
+    const room = MAX_ITEMS - queue.length;
+    if (room <= 0) { say(`Puoi pubblicare al massimo ${MAX_ITEMS} elementi alla volta`); return; }
+    const added: QItem[] = [];
+    for (const f0 of Array.from(list).slice(0, room)) {
+      const f = fixType(f0);
+      if (!f.type.startsWith("image/") && !f.type.startsWith("video/")) { say(`“${f.name}” non è una foto o un video`); continue; }
+      if (f.size > 120 * 1024 * 1024) { say(`“${f.name}” è troppo grande (massimo 120 MB)`); continue; }
       const url = URL.createObjectURL(f);
-      const v = document.createElement("video");
-      v.preload = "metadata";
-      v.onloadedmetadata = () => {
-        if (v.duration > MAX_VIDEO_SEC + 0.5) { URL.revokeObjectURL(url); say(`Il video dura ${Math.round(v.duration)} secondi: il massimo è ${MAX_VIDEO_SEC}`); return; }
-        setFile(f); setPreview(url);
-      };
-      v.onerror = () => { setFile(f); setPreview(url); };
-      v.src = url;
-    } else { setFile(f); setPreview(URL.createObjectURL(f)); }
+      if (f.type.startsWith("video/")) {
+        const dur = await new Promise<number>(res => { const v = document.createElement("video"); v.preload = "metadata"; v.onloadedmetadata = () => res(v.duration); v.onerror = () => res(0); v.src = url; });
+        if (dur > MAX_VIDEO_SEC + 0.5) { URL.revokeObjectURL(url); say(`Il video “${f.name}” dura ${Math.round(dur)} secondi: il massimo è ${MAX_VIDEO_SEC}`); continue; }
+      }
+      added.push({ file: f, preview: url, caption: "" });
+    }
+    if (list.length > room) say(`Ho aggiunto solo ${room} elementi: il massimo è ${MAX_ITEMS}`);
+    if (added.length) { setCur(queue.length); setQueue(q => [...q, ...added]); }
   };
-  const closeCreate = () => { if (progress !== null) return; setCreating(false); setFile(null); setPreview(""); setCaption(""); };
+  const clearQueue = () => { queue.forEach(q => URL.revokeObjectURL(q.preview)); setQueue([]); setCur(0); setStep(""); };
+  const closeCreate = () => { if (progress !== null) return; setCreating(false); clearQueue(); };
+  const removeAt = (i: number) => { URL.revokeObjectURL(queue[i].preview); setQueue(q => q.filter((_, k) => k !== i)); setCur(c => Math.max(0, Math.min(c, queue.length - 2))); };
+  const setCaptionAt = (i: number, caption: string) => setQueue(q => q.map((x, k) => k === i ? { ...x, caption } : x));
   const publish = async () => {
-    if (!file || progress !== null) return;
+    if (!queue.length || progress !== null) return;
     setProgress(0);
+    let ok = 0;
     try {
-      const f = await shrink(file);
-      const ext = (f.name.split(".").pop() || (f.type.startsWith("video") ? "mp4" : "jpg")).toLowerCase().replace(/[^a-z0-9]/g, "");
-      const blob = await upload(`stories/storia-${Date.now()}.${ext}`, f, { access: "public", handleUploadUrl: "/api/stories/upload", contentType: f.type, multipart: f.size > 8 * 1024 * 1024, onUploadProgress: ({ percentage }) => setProgress(Math.round(percentage)) });
-      const r = await fetch("/api/stories", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: blob.url, type: f.type.startsWith("video") ? "video" : "image", caption }) });
-      const d = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(d.error || "");
-      setProgress(null); setCreating(false); setFile(null); setPreview(""); setCaption("");
-      say("Storia pubblicata: resta visibile 24 ore");
+      for (let i = 0; i < queue.length; i++) {
+        setStep(queue.length > 1 ? `${i + 1} di ${queue.length}` : ""); setProgress(0);
+        const f = await shrink(queue[i].file);
+        const ext = (f.name.split(".").pop() || (f.type.startsWith("video") ? "mp4" : "jpg")).toLowerCase().replace(/[^a-z0-9]/g, "");
+        const blob = await upload(`stories/storia-${Date.now()}-${i}.${ext}`, f, { access: "public", handleUploadUrl: "/api/stories/upload", contentType: f.type, multipart: f.size > 8 * 1024 * 1024, onUploadProgress: ({ percentage }) => setProgress(Math.round(percentage)) });
+        const r = await fetch("/api/stories", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: blob.url, type: f.type.startsWith("video") ? "video" : "image", caption: queue[i].caption }) });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d.error || "");
+        ok++;
+      }
+      setProgress(null); setCreating(false); clearQueue();
+      say(ok > 1 ? `${ok} storie pubblicate: restano visibili 24 ore` : "Storia pubblicata: resta visibile 24 ore");
       load();
-    } catch (e: any) { setProgress(null); console.error("storia", e); say(e?.message ? `Storia non pubblicata: ${String(e.message).slice(0, 120)}` : "Storia non pubblicata, riprova"); }
+    } catch (e: any) {
+      console.error("storia", e); setProgress(null); setStep("");
+      if (ok) { load(); setQueue(q => q.slice(ok)); setCur(0); }
+      say(e?.message ? `Storia non pubblicata${ok ? ` (${ok} già pubblicate)` : ""}: ${String(e.message).slice(0, 120)}` : "Storia non pubblicata, riprova");
+    }
   };
 
   const openGroup = (g: Group) => {
@@ -140,23 +156,38 @@ export default function Stories({ user, canPost, say }: { user: { id: number; no
         <div className="fixed inset-0 z-[70] bg-navy/70 grid place-items-center p-4" onClick={closeCreate} role="dialog" aria-modal="true" aria-label="Nuova storia">
           <div className="bg-white rounded-3xl p-5 w-full max-w-md shadow-2xl rise max-h-[92vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between"><h2 className="text-xl font-extrabold">Nuova storia</h2><button onClick={closeCreate} aria-label="Chiudi" className="p-2 rounded-full hover:bg-ivory2"><X className="w-5 h-5" /></button></div>
-            <p className="text-sm text-navy/60 mt-1">Foto o video (fino a {MAX_VIDEO_SEC} secondi). Resta visibile 24 ore.</p>
-            {!file ? (
+            <p className="text-sm text-navy/60 mt-1">Foto o video (fino a {MAX_VIDEO_SEC} secondi ciascuno), anche più di uno. Restano visibili 24 ore.</p>
+            {!queue.length ? (
               <label className="mt-4 grid place-items-center gap-2 rounded-2xl border-2 border-dashed border-line p-10 cursor-pointer hover:border-wine transition text-center">
                 <span className="flex gap-3 text-wine"><ImageIcon className="w-8 h-8" /><Film className="w-8 h-8" /></span>
-                <b>Scegli una foto o un video</b>
-                <input type="file" accept="image/*,video/*" className="hidden" onChange={e => { pick(e.target.files?.[0]); e.target.value = ""; }} />
+                <b>Scegli foto o video</b>
+                <span className="text-sm text-navy/60">Puoi sceglierne più di uno</span>
+                <input type="file" multiple accept="image/*,video/*" className="hidden" onChange={e => { addFiles(e.target.files); e.target.value = ""; }} />
               </label>
             ) : (
               <div className="mt-4">
                 <div className="rounded-2xl overflow-hidden bg-black grid place-items-center" style={{ aspectRatio: "9 / 12" }}>
-                  {file.type.startsWith("video/") ? <video src={preview} controls muted playsInline className="max-h-full max-w-full" /> : <img src={preview} alt="Anteprima" className="max-h-full max-w-full object-contain" />}
+                  {queue[cur].file.type.startsWith("video/") ? <video key={cur} src={queue[cur].preview} controls muted playsInline className="max-h-full max-w-full" /> : <img src={queue[cur].preview} alt="Anteprima" className="max-h-full max-w-full object-contain" />}
                 </div>
-                <input value={caption} onChange={e => setCaption(e.target.value)} maxLength={140} placeholder="Aggiungi una scritta (facoltativa)" className="mt-3 w-full p-3 rounded-xl bg-ivory2 outline-none focus:ring-2 focus:ring-wine/40" />
+                <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+                  {queue.map((q, i) => (
+                    <div key={q.preview} className={`relative shrink-0 w-14 h-14 rounded-xl overflow-hidden border-2 ${i === cur ? "border-wine" : "border-transparent"}`}>
+                      <button onClick={() => setCur(i)} aria-label={`Elemento ${i + 1}`} className="absolute inset-0">{q.file.type.startsWith("video/") ? <video src={q.preview + "#t=0.1"} preload="metadata" muted className="w-full h-full object-cover" /> : <img src={q.preview} alt="" className="w-full h-full object-cover" />}</button>
+                      {progress === null && <button onClick={() => removeAt(i)} aria-label="Togli" className="absolute top-0 right-0 w-5 h-5 rounded-bl-lg bg-black/60 text-white grid place-items-center"><X className="w-3 h-3" /></button>}
+                    </div>
+                  ))}
+                  {progress === null && queue.length < MAX_ITEMS && (
+                    <label className="shrink-0 w-14 h-14 rounded-xl border-2 border-dashed border-line grid place-items-center cursor-pointer hover:border-wine text-wine" aria-label="Aggiungi altri">
+                      <Plus className="w-6 h-6" />
+                      <input type="file" multiple accept="image/*,video/*" className="hidden" onChange={e => { addFiles(e.target.files); e.target.value = ""; }} />
+                    </label>
+                  )}
+                </div>
+                <input value={queue[cur].caption} onChange={e => setCaptionAt(cur, e.target.value)} maxLength={140} placeholder={queue.length > 1 ? `Scritta per l’elemento ${cur + 1} (facoltativa)` : "Aggiungi una scritta (facoltativa)"} className="mt-3 w-full p-3 rounded-xl bg-ivory2 outline-none focus:ring-2 focus:ring-wine/40" />
                 {progress !== null && <div className="mt-3 h-2 rounded-full bg-ivory2 overflow-hidden"><div className="h-full bg-wine transition-all" style={{ width: `${progress}%` }} /></div>}
                 <div className="flex gap-2 mt-4">
-                  <button onClick={publish} disabled={progress !== null} className="flex-1 py-3 rounded-xl bg-wine text-white font-semibold disabled:opacity-60 hover:brightness-110">{progress !== null ? `Carico… ${progress}%` : "Pubblica storia"}</button>
-                  <button onClick={() => { setFile(null); setPreview(""); }} disabled={progress !== null} className="px-5 py-3 rounded-xl bg-white border-2 border-line font-semibold disabled:opacity-50">Cambia</button>
+                  <button onClick={publish} disabled={progress !== null} className="flex-1 py-3 rounded-xl bg-wine text-white font-semibold disabled:opacity-60 hover:brightness-110">{progress !== null ? `Carico${step ? " " + step : ""}… ${progress}%` : queue.length > 1 ? `Pubblica ${queue.length} storie` : "Pubblica storia"}</button>
+                  <button onClick={clearQueue} disabled={progress !== null} className="px-5 py-3 rounded-xl bg-white border-2 border-line font-semibold disabled:opacity-50">Ricomincia</button>
                 </div>
               </div>
             )}
