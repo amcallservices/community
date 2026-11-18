@@ -10,7 +10,7 @@ type Group = { userId: number; nome: string; cognome: string; avatar: string | n
 const COLORS = ["#5b3df5", "#2dd4a7", "#ffc83d", "#ff6b6b", "#38bdf8", "#f472b6", "#a78bfa", "#fb923c"];
 const colorFor = (id: number) => COLORS[id % COLORS.length];
 const IMG_MS = 5000;
-const MAX_VIDEO_SEC = 30;
+const MAX_VIDEO_SEC = 180;
 
 function Face({ g, size }: { g: { userId: number; nome: string; avatar: string | null }; size: number }) {
   return g.avatar
@@ -72,11 +72,11 @@ export default function Stories({ user, canPost, say }: { user: { id: number; no
     for (const f0 of Array.from(list).slice(0, room)) {
       const f = fixType(f0);
       if (!f.type.startsWith("image/") && !f.type.startsWith("video/")) { say(`“${f.name}” non è una foto o un video`); continue; }
-      if (f.size > 120 * 1024 * 1024) { say(`“${f.name}” è troppo grande (massimo 120 MB)`); continue; }
+      if (f.size > 300 * 1024 * 1024) { say(`“${f.name}” è troppo grande (massimo 300 MB)`); continue; }
       const url = URL.createObjectURL(f);
       if (f.type.startsWith("video/")) {
         const dur = await new Promise<number>(res => { const v = document.createElement("video"); v.preload = "metadata"; v.onloadedmetadata = () => res(v.duration); v.onerror = () => res(0); v.src = url; });
-        if (dur > MAX_VIDEO_SEC + 0.5) { URL.revokeObjectURL(url); say(`Il video “${f.name}” dura ${Math.round(dur)} secondi: il massimo è ${MAX_VIDEO_SEC}`); continue; }
+        if (dur > MAX_VIDEO_SEC + 0.5) { URL.revokeObjectURL(url); say(`Il video “${f.name}” dura ${Math.round(dur)} secondi: il massimo è ${MAX_VIDEO_SEC / 60} minuti`); continue; }
       }
       added.push({ file: f, preview: url, caption: "" });
     }
@@ -156,7 +156,7 @@ export default function Stories({ user, canPost, say }: { user: { id: number; no
         <div className="fixed inset-0 z-[70] bg-navy/70 grid place-items-center p-4" onClick={closeCreate} role="dialog" aria-modal="true" aria-label="Nuova storia">
           <div className="bg-white rounded-3xl p-5 w-full max-w-md shadow-2xl rise max-h-[92vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between"><h2 className="text-xl font-extrabold">Nuova storia</h2><button onClick={closeCreate} aria-label="Chiudi" className="p-2 rounded-full hover:bg-ivory2"><X className="w-5 h-5" /></button></div>
-            <p className="text-sm text-navy/60 mt-1">Foto o video (fino a {MAX_VIDEO_SEC} secondi ciascuno), anche più di uno. Restano visibili 24 ore.</p>
+            <p className="text-sm text-navy/60 mt-1">Foto o video (i video fino a {MAX_VIDEO_SEC / 60} minuti ciascuno), anche più di uno. Restano visibili 24 ore.</p>
             {!queue.length ? (
               <label className="mt-4 grid place-items-center gap-2 rounded-2xl border-2 border-dashed border-line p-10 cursor-pointer hover:border-wine transition text-center">
                 <span className="flex gap-3 text-wine"><ImageIcon className="w-8 h-8" /><Film className="w-8 h-8" /></span>
