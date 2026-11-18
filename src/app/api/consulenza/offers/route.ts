@@ -36,7 +36,7 @@ function parse(body: any, role?: string) {
   if (title.length < 4) return { error: 'Scrivi un titolo' }
   if (description.length < 10) return { error: 'Scrivi una breve descrizione' }
   if (!(durationMin >= 15 && durationMin <= 240)) return { error: 'La durata deve essere tra 15 e 240 minuti' }
-  const min = role === 'admin' ? 1 : 5 // l'admin può creare anche consulenze da 1 euro (prove)
+  const min = role === 'admin' || role === 'sottoadmin' ? 1 : 5 // admin e sotto admin possono creare anche consulenze da 1 euro
   if (!(price >= min && price <= 2000)) return { error: `Il prezzo deve essere tra ${min} e 2000 euro` }
   return { data: { title, description, durationMin, priceCents: Math.round(price * 100), category } }
 }
