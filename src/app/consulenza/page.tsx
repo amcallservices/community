@@ -286,7 +286,7 @@ export default function ConsulenzaPage() {
               <div className="text-xs text-navy/55 text-right -mt-2">{form.description.length} / 10000 caratteri</div>
               <div className="grid grid-cols-2 gap-3">
                 <label className="text-sm font-semibold">Durata (minuti)<input type="number" min={15} max={240} step={5} value={form.durationMin} onChange={e => setForm({ ...form, durationMin: e.target.value })} className={`${inp} mt-1`} /></label>
-                <label className="text-sm font-semibold">Prezzo (euro)<input type="number" min={user?.role === "admin" ? 1 : 5} max={2000} step={1} value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} className={`${inp} mt-1`} /></label>
+                <label className="text-sm font-semibold">Prezzo (euro)<input type="number" min={1} max={2000} step={1} value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} className={`${inp} mt-1`} /></label>
               </div>
             </div>
             <div className="flex gap-2 mt-5"><button onClick={saveForm} disabled={saving} className="px-6 py-2.5 rounded-xl bg-wine text-white font-semibold disabled:opacity-50">{saving ? "Salvo…" : "Pubblica"}</button><button onClick={() => setForm(null)} className="px-6 py-2.5 rounded-xl bg-white border-2 border-line font-semibold">Annulla</button></div>
