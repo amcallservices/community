@@ -55,7 +55,12 @@ export async function PATCH(request: NextRequest) {
       if (!(b.status === 'paid' || b.status === 'completed')) return NextResponse.json({ error: 'Operazione non valida' }, { status: 400 })
       if (raw && !/^https:\/\/meet\.google\.com\/[a-z0-9-]{6,}(\?.*)?$/i.test(raw)) return NextResponse.json({ error: 'Incolla un link di Google Meet (meet.google.com/...)' }, { status: 400 })
       await prisma.consulenzaBooking.update({ where: { id: b.id }, data: { meetUrl: raw || null } })
-      if (raw) await prisma.notification.create({ data: { userId: b.buyerId, type: 'consulenza', title: 'Link Google Meet', message: `Il consulente ha preparato la videochiamata Google Meet per “${b.title}”.`, link: `/consulenza/stanza/${b.id}` } }).catch(() => {})
+      if (raw) {
+        // avviso automatico: cliente, altri admin e sotto admin (tutti partecipano alle consulenze)
+        const team = await prisma.user.findMany({ where: { role: { in: ['admin', 'sottoadmin'] }, banned: false, id: { notIn: [user!.id, b.buyerId] } }, select: { id: true } })
+        const ids = [b.buyerId, ...team.map(t => t.id)]
+        await prisma.notification.createMany({ data: ids.map(uid => ({ userId: uid, type: 'consulenza', title: 'Link Google Meet', message: `È pronta la videochiamata Google Meet per “${b.title}”.`, link: `/consulenza/stanza/${b.id}` })) }).catch(() => {})
+      }
       return NextResponse.json({ ok: true })
     }
     if (action !== 'complete' || b.status !== 'paid') return NextResponse.json({ error: 'Operazione non valida' }, { status: 400 })
