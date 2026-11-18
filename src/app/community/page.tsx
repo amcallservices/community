@@ -130,11 +130,11 @@ export default function CommunityPage() {
       const u = JSON.parse(stored);
       setUser(u);
       setIsAdmin(u.role === 'admin');
-      setIsMod(u.role === 'moderatore');
+      setIsMod(u.role === 'moderatore' || u.role === 'sottoadmin');
     }
     loadPosts();
     if (stored) { try { const id = JSON.parse(stored).id; fetch(`/api/users/${id}`).then(r => r.ok ? r.json() : null).then(d => { if (!d) return; setSuspendedUntil(d.suspendedUntil || null); setIsAdmin(d.role === 'admin'); setIsMod(d.role === 'moderatore'); if (d.role && d.role !== JSON.parse(stored).role) { localStorage.setItem('user', JSON.stringify({ ...JSON.parse(stored), role: d.role })); if (d.role === 'admin' || d.role === 'moderatore') fetch('/api/admin/stats').then(r => r.ok ? r.json() : null).then(x => x && setReportsOpen(x.reports || 0)).catch(() => {}); } }).catch(() => {}); } catch {} }
-    if (stored && ["admin", "moderatore"].includes(JSON.parse(stored).role)) fetch("/api/admin/stats").then(r => r.ok ? r.json() : null).then(d => d && setReportsOpen(d.reports || 0)).catch(() => {});
+    if (stored && ["admin", "sottoadmin", "moderatore"].includes(JSON.parse(stored).role)) fetch("/api/admin/stats").then(r => r.ok ? r.json() : null).then(d => d && setReportsOpen(d.reports || 0)).catch(() => {});
     fetch("/api/events").then(r => r.ok ? r.json() : []).then(d => Array.isArray(d) && setEvents(d.slice(0, 3))).catch(() => {});
     fetch("/api/utenti").then(r => r.ok ? r.json() : []).then(d => { if (Array.isArray(d)) { setMembers(d.slice(-5).reverse()); setAllUsers(d.map((u: any) => ({ id: u.id, nome: u.nome || "", cognome: u.cognome || "" }))); } }).catch(() => {});
   }, []);

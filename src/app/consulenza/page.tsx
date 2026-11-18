@@ -143,7 +143,7 @@ export default function ConsulenzaPage() {
     ["Quando faccio la consulenza?", "Appena hai pagato, scrivi al consulente dai messaggi e vi accordate sull’orario. La videochiamata si apre dal sito, nella sezione Le mie prenotazioni."],
     ["Serve installare qualcosa?", "No. La videochiamata si apre nel browser, da computer o da telefono, con microfono e camera."],
     ["Posso farmi rimborsare?", "Se non riuscite a fissare un orario o ci sono problemi, scrivi al consulente: i rimborsi si gestiscono direttamente con lui."],
-    ["Chi sono i consulenti?", "Amministratori e moderatori della community, persone che pubblicano libri ogni giorno."],
+    ["Chi sono i consulenti?", "Amministratori e sotto admin della community, persone che pubblicano libri ogni giorno."],
   ];
 
   return (

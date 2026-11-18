@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
-import { requireStaff, getSessionUser, avatarUrl, isStaff } from '@/lib/auth'
+import { requireConsultant, getSessionUser, avatarUrl, canConsult } from '@/lib/auth'
 import { TEMPLATES } from '@/lib/consulenza'
 
 // GET /api/consulenza/offers - offerte attive (pubbliche). ?mine=1 = tutte le mie, anche sospese
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const users = await prisma.user.findMany({ where: { id: { in: [...new Set(offers.map(o => o.userId))] }, banned: false }, select: { id: true, nome: true, cognome: true, role: true, avatar: true, bio: true, updatedAt: true } })
     return NextResponse.json({
       payments: !!process.env.STRIPE_SECRET_KEY,
-      canOffer: !!me && isStaff(me.role),
+      canOffer: !!me && canConsult(me.role),
       offers: offers.filter(o => users.some(u => u.id === o.userId)).map(o => {
         const u = users.find(x => x.id === o.userId)!
         return { id: o.id, category: o.category, title: o.title, description: o.description, durationMin: o.durationMin, priceCents: o.priceCents, active: o.active, mine: me?.id === o.userId,
@@ -42,7 +42,7 @@ function parse(body: any) {
 
 // POST - crea un'offerta (solo admin e moderatori)
 export async function POST(request: NextRequest) {
-  const { user, error } = await requireStaff()
+  const { user, error } = await requireConsultant()
   if (error) return error
   try {
     const p = parse(await request.json())
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
 
 // PATCH { id, active? , ...campi } - modifica o sospende la propria offerta
 export async function PATCH(request: NextRequest) {
-  const { user, error } = await requireStaff()
+  const { user, error } = await requireConsultant()
   if (error) return error
   try {
     const body = await request.json()
@@ -75,7 +75,7 @@ export async function PATCH(request: NextRequest) {
 
 // DELETE ?id= - elimina l'offerta (le prenotazioni già fatte restano)
 export async function DELETE(request: NextRequest) {
-  const { user, error } = await requireStaff()
+  const { user, error } = await requireConsultant()
   if (error) return error
   try {
     const id = parseInt(new URL(request.url).searchParams.get('id') || '')

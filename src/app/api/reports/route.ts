@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     await prisma.report.create({ data: { postId: commentId ? null : postId, commentId, reporterId: user!.id, reason: body.reason, note: note || null } })
 
     // avvisa gli admin (una sola notifica non letta alla volta)
-    const admins = await prisma.user.findMany({ where: { role: { in: ['admin', 'moderatore'] } }, select: { id: true } })
+    const admins = await prisma.user.findMany({ where: { role: { in: ['admin', 'sottoadmin', 'moderatore'] } }, select: { id: true } })
     const message = 'C’è una nuova segnalazione da controllare'
     for (const a of admins) {
       const exists = await prisma.notification.findFirst({ where: { userId: a.id, type: 'report', read: false } })

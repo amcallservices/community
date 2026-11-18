@@ -95,13 +95,23 @@ export async function requireAdmin() {
   return { user: user!, error: null }
 }
 
-export const isStaff = (role?: string | null) => role === 'admin' || role === 'moderatore'
+// Ruoli: admin, sottoadmin (moderatore + consulenze), moderatore, scrittore
+export const isStaff = (role?: string | null) => role === 'admin' || role === 'sottoadmin' || role === 'moderatore'
+// Chi può offrire consulenze a pagamento
+export const canConsult = (role?: string | null) => role === 'admin' || role === 'sottoadmin'
 
 // Admin o moderatore: può eliminare post/commenti e gestire le segnalazioni (non gli utenti).
 export async function requireStaff() {
   const { user, error } = await requireUser()
   if (error) return { user: null, error }
   if (!isStaff(user!.role)) return { user: null, error: NextResponse.json({ error: 'Solo admin e moderatori' }, { status: 403 }) }
+  return { user: user!, error: null }
+}
+
+export async function requireConsultant() {
+  const { user, error } = await requireUser()
+  if (error) return { user: null, error }
+  if (!canConsult(user!.role)) return { user: null, error: NextResponse.json({ error: 'Solo admin e sotto admin' }, { status: 403 }) }
   return { user: user!, error: null }
 }
 

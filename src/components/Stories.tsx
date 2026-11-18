@@ -43,7 +43,7 @@ export default function Stories({ user, canPost, say }: { user: { id: number; no
   }, []);
   useEffect(() => {
     load();
-    try { const r = JSON.parse(localStorage.getItem("user") || "{}").role; setStaff(r === "admin" || r === "moderatore"); } catch {}
+    try { const r = JSON.parse(localStorage.getItem("user") || "{}").role; setStaff(r === "admin" || r === "sottoadmin" || r === "moderatore"); } catch {}
     const t = setInterval(() => { if (document.visibilityState === "visible") load(); }, 90_000);
     return () => clearInterval(t);
   }, [load]);
