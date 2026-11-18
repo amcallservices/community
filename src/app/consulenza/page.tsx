@@ -32,6 +32,7 @@ export default function ConsulenzaPage() {
   const [cat, setCat] = useState("tutte");
   const [toast, setToast] = useState("");
   const [buying, setBuying] = useState<number | null>(null);
+  const [open, setOpen] = useState<number | null>(null);
   const [banner, setBanner] = useState("");
   const say = (m: string) => { setToast(m); setTimeout(() => setToast(""), 3200); };
 
@@ -193,7 +194,7 @@ export default function ConsulenzaPage() {
                   <article key={o.id} className={`${f.bg} ${f.fg} rounded-3xl p-5 flex flex-col rise`}>
                     <div className="text-xs font-bold opacity-80">{categoryLabel(o.category)} · {o.durationMin} minuti</div>
                     <h3 className="text-lg font-extrabold leading-snug mt-2">{o.title}</h3>
-                    <p className="mt-2 text-sm leading-relaxed flex-1 whitespace-pre-wrap">{o.description}</p>
+                    <div className="flex-1"><p className={`mt-2 text-sm leading-relaxed whitespace-pre-wrap ${open === o.id ? "" : "line-clamp-6"}`}>{o.description}</p>{o.description.length > 280 && <button onClick={() => setOpen(open === o.id ? null : o.id)} className="mt-2 text-sm font-bold underline underline-offset-4">{open === o.id ? "Mostra meno" : "Leggi tutto"}</button>}</div>
                     <Link href={`/utente/${o.seller.id}`} className="mt-5 flex items-center gap-3 hover:underline"><Face p={o.seller} size={36} /><span className="font-bold truncate">{o.seller.nome} {o.seller.cognome}</span></Link>
                     <div className="mt-5 flex items-end justify-between gap-3">
                       <div className="text-2xl font-extrabold leading-none">{eur(o.priceCents)}</div>
@@ -274,7 +275,8 @@ export default function ConsulenzaPage() {
             {!form.id && <div className="flex flex-wrap gap-1.5 mb-3"><span className="text-xs font-bold uppercase tracking-wide text-navy/45 w-full">Parti da un modello</span>{TEMPLATES.map(t => <button key={t.k} onClick={() => startForm(t)} className={`px-3 py-1 rounded-full text-sm font-semibold border-2 ${form.category === t.k ? "border-wine bg-wine/10" : "border-line hover:border-navy/30"}`}>{t.label}</button>)}</div>}
             <div className="space-y-3">
               <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} maxLength={120} placeholder="Titolo" className={inp} />
-              <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={5} maxLength={1500} placeholder="Cosa include la consulenza?" className={`${inp} resize-none`} />
+              <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={10} maxLength={10000} placeholder="Cosa include la consulenza?" className={`${inp} resize-y`} />
+              <div className="text-xs text-navy/55 text-right -mt-2">{form.description.length} / 10000 caratteri</div>
               <div className="grid grid-cols-2 gap-3">
                 <label className="text-sm font-semibold">Durata (minuti)<input type="number" min={15} max={240} step={5} value={form.durationMin} onChange={e => setForm({ ...form, durationMin: e.target.value })} className={`${inp} mt-1`} /></label>
                 <label className="text-sm font-semibold">Prezzo (euro)<input type="number" min={user?.role === "admin" ? 1 : 5} max={2000} step={1} value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} className={`${inp} mt-1`} /></label>
