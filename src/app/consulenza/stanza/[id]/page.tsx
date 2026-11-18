@@ -1,15 +1,17 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, MessageCircle, Check, Video, Copy, Monitor } from "lucide-react";
+import { ArrowLeft, ExternalLink, MessageCircle, Check, Video, Copy, Monitor } from "lucide-react";
 
 type Party = { id: number; nome: string; cognome: string };
-type Booking = { id: number; title: string; durationMin: number; status: string; room: string | null; buyer: Party; seller: Party };
+type Booking = { id: number; title: string; durationMin: number; status: string; room: string | null; meetUrl?: string | null; buyer: Party; seller: Party };
 
 export default function StanzaPage({ params }: { params: Promise<{ id: string }> }) {
   const [b, setB] = useState<Booking | null | undefined>(undefined);
   const [me, setMe] = useState<any>(null);
   const [copied, setCopied] = useState(false);
+  const [meet, setMeet] = useState("");
+  const [msg, setMsg] = useState("");
 
   useEffect(() => {
     let alive = true;
@@ -36,6 +38,12 @@ export default function StanzaPage({ params }: { params: Promise<{ id: string }>
     </div>
   );
 
+  const canSetMeet = me?.id === b.seller.id || me?.role === "admin";
+  const saveMeet = async () => {
+    const r = await fetch("/api/consulenza/bookings", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: b.id, action: "setlink", meetUrl: meet }) });
+    const d = await r.json().catch(() => ({}));
+    if (r.ok) { setB({ ...b, meetUrl: meet.trim() || null }); setMsg(meet.trim() ? "Link salvato: il cliente lo vede qui" : "Link rimosso"); } else setMsg(d.error || "Errore");
+  };
   const iAmBuyer = me?.id === b.buyer.id;
   const other = iAmBuyer ? b.seller : b.buyer;
   const staffGuest = me?.id !== b.buyer.id && me?.id !== b.seller.id;
@@ -58,6 +66,8 @@ export default function StanzaPage({ params }: { params: Promise<{ id: string }>
           <button onClick={() => { navigator.clipboard?.writeText(`https://meet.jit.si/${b.room}`).then(() => setCopied(true)).catch(() => {}); }} className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white/10 font-semibold hover:bg-white/20 active:scale-95 transition"><Copy className="w-4 h-4" />{copied ? "Link copiato" : "Copia il link"}</button>
         </div>
       </section>
+      {b.meetUrl && <section className="mt-4 rounded-3xl bg-mint/30 p-5 flex flex-wrap items-center gap-3"><div className="flex-1 min-w-[220px]"><h2 className="font-extrabold">Si può usare anche Google Meet</h2><p className="text-sm text-navy/75">Il consulente ha preparato un link Google Meet per questa consulenza.</p></div><a href={b.meetUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-navy text-white font-bold hover:brightness-110 active:scale-95 transition"><Video className="w-4 h-4" />Entra con Google Meet</a></section>}
+      {canSetMeet && <section className="mt-4 rounded-3xl bg-ivory2 p-5" aria-label="Google Meet"><h2 className="font-extrabold">Usa Google Meet</h2><p className="text-sm text-navy/70 mt-1">Crea una riunione su Google Meet, incolla qui il link e salva: il cliente lo vede in questa pagina e riceve una notifica.</p><div className="mt-3 flex flex-wrap gap-2"><a href="https://meet.new" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white font-semibold hover:bg-line"><ExternalLink className="w-4 h-4" />Crea con Google Meet</a><input value={meet} onChange={e => setMeet(e.target.value)} placeholder="https://meet.google.com/abc-defg-hij" className="flex-1 min-w-[220px] p-2.5 rounded-xl bg-white border-2 border-transparent focus:border-wine outline-none" /><button onClick={saveMeet} className="px-5 py-2.5 rounded-xl bg-wine text-white font-semibold hover:brightness-110 active:scale-95 transition">Salva</button></div>{msg && <p role="status" className="text-sm mt-2 font-semibold">{msg}</p>}</section>}
       <ul className="mt-4 space-y-2 text-sm text-navy/75">
         <li className="flex items-start gap-2"><Monitor className="w-4 h-4 mt-0.5 shrink-0 text-wine" /><span><b>Condividere lo schermo:</b> nella barra in basso clicca &ldquo;Condividi schermo&rdquo; e scegli se mostrare tutto lo schermo, una finestra o una scheda. Da telefono la funzione dipende dal dispositivo.</span></li>
         <li className="flex items-start gap-2"><Check className="w-4 h-4 mt-0.5 shrink-0 text-mint" /><span>Quando il browser lo chiede, consenti l&apos;uso di microfono e videocamera. La stanza è privata: il link non si può indovinare, quindi non condividerlo.</span></li>

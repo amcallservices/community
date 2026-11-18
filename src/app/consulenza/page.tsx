@@ -277,6 +277,7 @@ export default function ConsulenzaPage() {
             <div className="mt-3 bg-ivory2 rounded-2xl p-4 flex flex-wrap items-center gap-3">
               <p className="flex-1 min-w-[220px] text-sm text-navy/80">Avvia subito una stanza aperta a chi ha il link, senza prenotazione: puoi condividere lo schermo e, dal menu della stanza, trasmettere in diretta su YouTube.</p>
               <button onClick={startLive} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-wine text-white font-semibold hover:brightness-110 active:scale-95 transition"><Video className="w-4 h-4" />Avvia diretta ora</button>
+              <a href="https://meet.new" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white font-semibold hover:bg-line">Crea con Google Meet</a>
             </div>
           </section>
         )}
