@@ -107,14 +107,6 @@ export default function ConsulenzaPage() {
     const d = await r.json().catch(() => ({}));
     if (r.ok) { say("Prenotazione eliminata"); loadBookings(); } else say(d.error || "Errore");
   };
-  const startLive = () => {
-    const a = new Uint8Array(9); crypto.getRandomValues(a);
-    const room = "SPI-LIVE-" + Array.from(a, x => x.toString(16).padStart(2, "0")).join("");
-    const link = `https://meet.jit.si/${room}`;
-    navigator.clipboard?.writeText(link).catch(() => {});
-    window.open(`${link}#config.subject=${encodeURIComponent(JSON.stringify("Diretta Self Publishing Italia"))}`, "_blank", "noopener");
-    say("Diretta avviata: il link è stato copiato, condividilo con chi vuoi invitare");
-  };
   const complete = async (b: Booking) => {
     const r = await fetch("/api/consulenza/bookings", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: b.id, action: "complete" }) });
     if (r.ok) { say("Segnata come svolta"); loadBookings(); } else say("Errore");
@@ -132,10 +124,10 @@ export default function ConsulenzaPage() {
           <div className="text-sm text-navy/60">{as === "buyer" ? "con" : "cliente:"} {other.nome} {other.cognome}{as === "staff" && ` · consulente: ${b.seller.nome} ${b.seller.cognome}`} · {b.durationMin} min · {eur(b.amountCents)} · {timeAgo(b.paidAt || b.createdAt)}</div>
         </div>
         <span className={`px-3 py-1 rounded-full text-sm font-semibold ${st.c}`}>{st.l}</span>
-        {b.room && as === "staff" && b.status !== "pending" && <Link href={`/consulenza/stanza/${b.id}`} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-wine text-white font-semibold hover:brightness-110"><Video className="w-4 h-4" />Entra nella videochiamata</Link>}
+        {b.room && as === "staff" && b.status !== "pending" && <Link href={`/consulenza/stanza/${b.id}`} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-wine text-white font-semibold hover:brightness-110"><Video className="w-4 h-4" />Videochiamata</Link>}
         {b.room && b.status === "paid" && as !== "staff" && <>
           <Link href={`/messaggi?to=${other.id}`} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border-2 border-line font-semibold hover:border-wine"><MessageCircle className="w-4 h-4" />Scrivi per l&apos;orario</Link>
-          <Link href={`/consulenza/stanza/${b.id}`} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-wine text-white font-semibold hover:brightness-110"><Video className="w-4 h-4" />Entra nella videochiamata</Link>
+          <Link href={`/consulenza/stanza/${b.id}`} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-wine text-white font-semibold hover:brightness-110"><Video className="w-4 h-4" />Google Meet</Link>
           {as === "seller" && <button onClick={() => complete(b)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-mint/30 font-semibold hover:bg-mint/50"><Check className="w-4 h-4" />Svolta</button>}
         </>}
         {(b.status === "pending" || b.status === "completed" || user?.role === "admin") && <button onClick={() => removeBooking(b)} aria-label="Elimina prenotazione" className="p-2 rounded-lg text-red-600 hover:bg-red-50"><Trash2 className="w-4 h-4" /></button>}
@@ -153,12 +145,12 @@ export default function ConsulenzaPage() {
   const STEPS = [
     ["1. Scegli e paga", "Scegli la consulenza che ti serve e paghi in sicurezza con carta, tramite Stripe."],
     ["2. Fissate l’orario", "Dopo il pagamento scrivi al consulente nei messaggi e fissate giorno e ora."],
-    ["3. Videochiamata", "All’ora stabilita entri nella stanza privata dal sito, senza installare nulla. Puoi anche condividere lo schermo."],
+    ["3. Videochiamata", "Il consulente ti invia il link di Google Meet nella pagina della consulenza e all’ora stabilita entri in videochiamata. Puoi condividere lo schermo."],
   ];
   const FAQ = [
     ["Come pago?", "Con carta tramite Stripe, il circuito che usano milioni di negozi online. I dati della carta non passano dal nostro sito."],
-    ["Quando faccio la consulenza?", "Appena hai pagato, scrivi al consulente dai messaggi e vi accordate sull’orario. La videochiamata si apre dal sito, nella sezione Le mie prenotazioni."],
-    ["Serve installare qualcosa?", "No. La videochiamata si apre nel browser, da computer o da telefono, con microfono e camera."],
+    ["Quando faccio la consulenza?", "Appena hai pagato, scrivi al consulente dai messaggi e vi accordate sull’orario. Il link di Google Meet compare nella pagina della consulenza, in Le mie prenotazioni."],
+    ["Serve installare qualcosa?", "No. Si usa Google Meet dal browser, da computer o da telefono, con microfono e camera."],
     ["Posso farmi rimborsare?", "Se non riuscite a fissare un orario o ci sono problemi, scrivi al consulente: i rimborsi si gestiscono direttamente con lui."],
     ["Chi sono i consulenti?", "Amministratori e sotto admin della community, persone che pubblicano libri ogni giorno."],
   ];
@@ -273,11 +265,10 @@ export default function ConsulenzaPage() {
         {/* videochiamata in diretta (solo admin e sotto admin) */}
         {canOffer && (
           <section className="mt-8" aria-labelledby="h-live">
-            <h2 id="h-live" className="text-xl font-extrabold">Videochiamata in diretta</h2>
+            <h2 id="h-live" className="text-xl font-extrabold">Riunione in diretta</h2>
             <div className="mt-3 bg-ivory2 rounded-2xl p-4 flex flex-wrap items-center gap-3">
-              <p className="flex-1 min-w-[220px] text-sm text-navy/80">Avvia subito una stanza aperta a chi ha il link, senza prenotazione: puoi condividere lo schermo e, dal menu della stanza, trasmettere in diretta su YouTube.</p>
-              <button onClick={startLive} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-wine text-white font-semibold hover:brightness-110 active:scale-95 transition"><Video className="w-4 h-4" />Avvia diretta ora</button>
-              <a href="https://meet.new" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white font-semibold hover:bg-line">Crea con Google Meet</a>
+              <p className="flex-1 min-w-[220px] text-sm text-navy/80">Avvia subito una riunione su Google Meet e condividi il link con chi vuoi invitare. Puoi presentare lo schermo e, dalle impostazioni di Meet, registrare.</p>
+              <a href="https://meet.new" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-wine text-white font-semibold hover:brightness-110 active:scale-95 transition"><Video className="w-4 h-4" />Avvia con Google Meet</a>
             </div>
           </section>
         )}
