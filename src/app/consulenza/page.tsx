@@ -107,6 +107,15 @@ export default function ConsulenzaPage() {
     const d = await r.json().catch(() => ({}));
     if (r.ok) { say("Prenotazione eliminata"); loadBookings(); } else say(d.error || "Errore");
   };
+  const [live, setLive] = useState<{ url: string; by: string } | null>(null);
+  const [liveUrl, setLiveUrl] = useState("");
+  const loadLive = useCallback(async () => { try { const r = await fetch("/api/consulenza/live"); if (r.ok) { const d = await r.json(); setLive(d.live); } } catch {} }, []);
+  useEffect(() => { if (canOffer) loadLive(); }, [canOffer, loadLive]);
+  const shareLive = async (url: string) => {
+    const r = await fetch("/api/consulenza/live", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url }) });
+    const d = await r.json().catch(() => ({}));
+    if (r.ok) { say(url ? "Riunione condivisa con admin e sotto admin" : "Riunione chiusa"); setLiveUrl(""); loadLive(); } else say(d.error || "Errore");
+  };
   const complete = async (b: Booking) => {
     const r = await fetch("/api/consulenza/bookings", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: b.id, action: "complete" }) });
     if (r.ok) { say("Segnata come svolta"); loadBookings(); } else say("Errore");
@@ -270,6 +279,18 @@ export default function ConsulenzaPage() {
             <div className="mt-3 bg-ivory2 rounded-2xl p-4 flex flex-wrap items-center gap-3">
               <p className="flex-1 min-w-[220px] text-sm text-navy/80">Avvia subito una riunione su Google Meet e condividi il link con chi vuoi invitare. Puoi presentare lo schermo e, dalle impostazioni di Meet, registrare.</p>
               <a href="https://meet.new" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-wine text-white font-semibold hover:brightness-110 active:scale-95 transition"><Video className="w-4 h-4" />Avvia con Google Meet</a>
+            </div>
+            <div className="mt-3 bg-ivory2 rounded-2xl p-4">
+              <h3 className="font-bold">Riunione del team</h3>
+              {live ? <div className="mt-2 flex flex-wrap items-center gap-3">
+                <p className="flex-1 min-w-[200px] text-sm text-navy/80">Riunione avviata da <b>{live.by}</b>: admin e sotto admin possono partecipare.</p>
+                <a href={live.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-navy text-white font-semibold hover:brightness-110 active:scale-95 transition"><Video className="w-4 h-4" />Partecipa</a>
+                <button onClick={() => shareLive("")} className="px-4 py-2.5 rounded-xl bg-white font-semibold hover:bg-line">Chiudi riunione</button>
+              </div> : <p className="mt-1 text-sm text-navy/70">Nessuna riunione aperta. Crea una riunione su Google Meet, incolla il link e condividilo: admin e sotto admin ricevono una notifica e possono partecipare da qui.</p>}
+              <div className="mt-3 flex flex-wrap gap-2">
+                <input value={liveUrl} onChange={e => setLiveUrl(e.target.value)} placeholder="https://meet.google.com/abc-defg-hij" aria-label="Link Google Meet della riunione" className="flex-1 min-w-[220px] p-2.5 rounded-xl bg-white border-2 border-transparent focus:border-wine outline-none" />
+                <button onClick={() => shareLive(liveUrl)} className="px-5 py-2.5 rounded-xl bg-wine text-white font-semibold hover:brightness-110 active:scale-95 transition">Condividi con il team</button>
+              </div>
             </div>
           </section>
         )}
