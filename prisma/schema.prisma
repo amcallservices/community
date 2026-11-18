@@ -234,6 +234,7 @@ model ConsulenzaBooking {
   status          String    @default("pending")
   stripeSessionId String?   @unique
   room            String    @unique
+  meetUrl         String?
   createdAt       DateTime  @default(now())
   paidAt          DateTime?
 }

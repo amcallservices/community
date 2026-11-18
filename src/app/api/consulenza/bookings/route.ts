@@ -26,6 +26,7 @@ export async function GET() {
     const who = (id: number) => { const u = users.find(x => x.id === id); return { id, nome: u?.nome || 'Utente', cognome: u?.cognome || '', avatar: u ? avatarUrl(u) : null } }
     const view = (b: typeof all[number]) => ({
       id: b.id, title: b.title, durationMin: b.durationMin, amountCents: b.amountCents, status: b.status, createdAt: b.createdAt.toISOString(), paidAt: b.paidAt?.toISOString() ?? null,
+      meetUrl: b.status === 'paid' || b.status === 'completed' ? b.meetUrl : null,
       room: b.status === 'paid' || b.status === 'completed' ? b.room : null,
       buyer: who(b.buyerId), seller: who(b.sellerId),
     })
@@ -45,9 +46,18 @@ export async function PATCH(request: NextRequest) {
   const { user, error } = await requireUser()
   if (error) return error
   try {
-    const { id, action } = await request.json()
+    const body = await request.json()
+    const { id, action } = body
     const b = await prisma.consulenzaBooking.findUnique({ where: { id: parseInt(id) } })
     if (!b || (b.sellerId !== user!.id && user!.role !== 'admin')) return NextResponse.json({ error: 'Prenotazione non trovata' }, { status: 404 })
+    if (action === 'setlink') {
+      const raw = String((await Promise.resolve(body)).meetUrl || '').trim()
+      if (!(b.status === 'paid' || b.status === 'completed')) return NextResponse.json({ error: 'Operazione non valida' }, { status: 400 })
+      if (raw && !/^https:\/\/meet\.google\.com\/[a-z0-9-]{6,}(\?.*)?$/i.test(raw)) return NextResponse.json({ error: 'Incolla un link di Google Meet (meet.google.com/...)' }, { status: 400 })
+      await prisma.consulenzaBooking.update({ where: { id: b.id }, data: { meetUrl: raw || null } })
+      if (raw) await prisma.notification.create({ data: { userId: b.buyerId, type: 'consulenza', title: 'Link Google Meet', message: `Il consulente ha preparato la videochiamata Google Meet per “${b.title}”.`, link: `/consulenza/stanza/${b.id}` } }).catch(() => {})
+      return NextResponse.json({ ok: true })
+    }
     if (action !== 'complete' || b.status !== 'paid') return NextResponse.json({ error: 'Operazione non valida' }, { status: 400 })
     await prisma.consulenzaBooking.update({ where: { id: b.id }, data: { status: 'completed' } })
     return NextResponse.json({ ok: true })
