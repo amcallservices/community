@@ -1,6 +1,7 @@
 import { randomBytes } from 'crypto'
 import Stripe from 'stripe'
 import prisma from '@/lib/db'
+import { sendMail } from '@/lib/auth'
 
 import { TEMPLATES } from '@/lib/consulenza-templates'
 export { TEMPLATES }
@@ -17,14 +18,30 @@ export async function markPaid(bookingId: number, sessionId?: string) {
   const b = await prisma.consulenzaBooking.findUnique({ where: { id: bookingId } })
   if (!b || b.status !== 'pending') return b
   const updated = await prisma.consulenzaBooking.update({ where: { id: b.id }, data: { status: 'paid', paidAt: new Date(), ...(sessionId ? { stripeSessionId: sessionId } : {}) } })
-  const [buyer, seller] = await Promise.all([
-    prisma.user.findUnique({ where: { id: b.buyerId }, select: { nome: true, cognome: true } }),
-    prisma.user.findUnique({ where: { id: b.sellerId }, select: { nome: true, cognome: true } }),
+  const [buyer, seller, staff] = await Promise.all([
+    prisma.user.findUnique({ where: { id: b.buyerId }, select: { nome: true, cognome: true, email: true } }),
+    prisma.user.findUnique({ where: { id: b.sellerId }, select: { nome: true, cognome: true, email: true } }),
+    prisma.user.findMany({ where: { role: { in: ['admin', 'sottoadmin'] }, banned: false }, select: { id: true, email: true } }),
   ])
   const nm = (u: { nome: string | null; cognome: string | null } | null) => `${u?.nome || ''} ${u?.cognome || ''}`.trim() || 'Un utente'
-  await prisma.notification.createMany({ data: [
+  const esc = (t: string) => t.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string))
+  const eur = (b.amountCents / 100).toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })
+  const url = 'https://selfpublishingitalia.site/consulenza'
+  const row = `<p><b>${esc(b.title)}</b><br>${b.durationMin} minuti · ${eur}<br>Cliente: ${esc(nm(buyer))} · Consulente: ${esc(nm(seller))}</p>`
+  const btn = `<p><a href="${url}">Apri la pagina Consulenza</a></p>`
+
+  const notes: { userId: number; type: string; title: string; message: string; link: string }[] = [
     { userId: b.sellerId, type: 'consulenza', title: 'Nuova consulenza', message: `${nm(buyer)} ha prenotato: ${b.title}. Scrivigli per accordarvi sull’orario.`, link: '/consulenza' },
     { userId: b.buyerId, type: 'consulenza', title: 'Pagamento ricevuto', message: `Pagamento ricevuto per “${b.title}”. Scrivi a ${nm(seller)} per accordarvi sull’orario, poi entra nella videochiamata dalla pagina Consulenza.`, link: '/consulenza' },
-  ] }).catch(() => {})
+  ]
+  // anche tutti gli admin e i sotto admin sono avvisati
+  for (const u of staff) if (u.id !== b.sellerId && u.id !== b.buyerId) notes.push({ userId: u.id, type: 'consulenza', title: 'Nuova consulenza prenotata', message: `${nm(buyer)} ha prenotato “${b.title}” con ${nm(seller)} (${eur}).`, link: '/consulenza' })
+  await prisma.notification.createMany({ data: notes }).catch(() => {})
+
+  // email: consulente, admin e sotto admin (senza doppioni) + conferma al cliente
+  const staffMail = new Set<string>([...staff.map(u => u.email), ...(seller?.email ? [seller.email] : [])].filter(Boolean))
+  const jobs: Promise<boolean>[] = [...staffMail].map(to => sendMail(to, `Nuova consulenza prenotata: ${b.title}`, `<p>È stata pagata una nuova consulenza.</p>${row}<p>Cliente e consulente si accordano sull’orario dai messaggi.</p>${btn}`))
+  if (buyer?.email) jobs.push(sendMail(buyer.email, 'Pagamento ricevuto - Consulenza', `<p>Grazie! Abbiamo ricevuto il tuo pagamento.</p>${row}<p>Scrivi al consulente dai messaggi per fissare giorno e ora, poi entra nella videochiamata dalla pagina Consulenza.</p>${btn}`))
+  await Promise.allSettled(jobs)
   return updated
 }

@@ -135,9 +135,7 @@ export function hashToken(token: string) {
   return createHash('sha256').update(token).digest('hex')
 }
 
-export async function sendResetEmail(to: string, link: string): Promise<boolean> {
-  const subject = 'Recupero password - Self Publishing Italia'
-  const html = `<p>Hai chiesto di reimpostare la password.</p><p><a href="${link}">Clicca qui per sceglierne una nuova</a> (il link vale 1 ora).</p><p>Se non sei stato tu, ignora questa email.</p>`
+export async function sendMail(to: string, subject: string, html: string): Promise<boolean> {
 
   // Gmail (password per le app): funziona verso qualsiasi indirizzo, senza dominio da verificare.
   const gUser = process.env.GMAIL_USER
@@ -167,4 +165,9 @@ export async function sendResetEmail(to: string, link: string): Promise<boolean>
     }),
   })
   return res.ok
+}
+
+
+export async function sendResetEmail(to: string, link: string): Promise<boolean> {
+  return sendMail(to, 'Recupero password - Self Publishing Italia', `<p>Hai chiesto di reimpostare la password.</p><p><a href="${link}">Clicca qui per sceglierne una nuova</a> (il link vale 1 ora).</p><p>Se non sei stato tu, ignora questa email.</p>`)
 }
