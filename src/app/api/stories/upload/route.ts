@@ -14,7 +14,7 @@ export async function POST(request: Request) {
         if (!user) throw new Error("Devi accedere per pubblicare una storia");
         if (suspendedError(user)) throw new Error("Sei sospeso: non puoi pubblicare");
         return {
-          allowedContentTypes: ["image/jpeg", "image/png", "image/gif", "image/webp", "video/mp4", "video/webm", "video/quicktime"],
+          allowedContentTypes: ["image/*", "video/*"],
           maximumSizeInBytes: 120 * 1024 * 1024,
           addRandomSuffix: true,
         };
