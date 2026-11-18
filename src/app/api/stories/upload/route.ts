@@ -15,7 +15,7 @@ export async function POST(request: Request) {
         if (suspendedError(user)) throw new Error("Sei sospeso: non puoi pubblicare");
         return {
           allowedContentTypes: ["image/*", "video/*"],
-          maximumSizeInBytes: 120 * 1024 * 1024,
+          maximumSizeInBytes: 300 * 1024 * 1024,
           addRandomSuffix: true,
         };
       },
