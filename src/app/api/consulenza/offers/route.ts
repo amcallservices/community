@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 
 function parse(body: any, role?: string) {
   const title = typeof body.title === 'string' ? body.title.trim().slice(0, 120) : ''
-  const description = typeof body.description === 'string' ? body.description.trim().slice(0, 1500) : ''
+  const description = typeof body.description === 'string' ? body.description.trim().slice(0, 10000) : ''
   const durationMin = Math.round(Number(body.durationMin))
   const price = Number(String(body.price).replace(',', '.'))
   const category = TEMPLATES.some(t => t.k === body.category) ? body.category : 'altro'
