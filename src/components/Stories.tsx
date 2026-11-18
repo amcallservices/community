@@ -56,8 +56,15 @@ export default function Stories({ user, canPost, say }: { user: { id: number; no
   const [preview, setPreview] = useState("");
   const [caption, setCaption] = useState("");
   const [progress, setProgress] = useState<number | null>(null);
-  const pick = (f?: File | null) => {
-    if (!f) return;
+  const VIDEO_EXT: Record<string, string> = { mp4: "video/mp4", m4v: "video/mp4", mov: "video/quicktime", webm: "video/webm", mkv: "video/x-matroska", avi: "video/x-msvideo", "3gp": "video/3gpp", mpeg: "video/mpeg", mpg: "video/mpeg" };
+  const fixType = (f: File) => {
+    if (f.type) return f;
+    const t = VIDEO_EXT[(f.name.split(".").pop() || "").toLowerCase()];
+    return t ? new File([f], f.name, { type: t }) : f;
+  };
+  const pick = (f0?: File | null) => {
+    if (!f0) return;
+    const f = fixType(f0);
     if (!f.type.startsWith("image/") && !f.type.startsWith("video/")) { say("Scegli una foto o un video"); return; }
     if (f.size > 120 * 1024 * 1024) { say("Il file è troppo grande (massimo 120 MB)"); return; }
     if (f.type.startsWith("video/")) {
@@ -79,14 +86,14 @@ export default function Stories({ user, canPost, say }: { user: { id: number; no
     try {
       const f = await shrink(file);
       const ext = (f.name.split(".").pop() || (f.type.startsWith("video") ? "mp4" : "jpg")).toLowerCase().replace(/[^a-z0-9]/g, "");
-      const blob = await upload(`stories/storia-${Date.now()}.${ext}`, f, { access: "public", handleUploadUrl: "/api/stories/upload", contentType: f.type, onUploadProgress: ({ percentage }) => setProgress(Math.round(percentage)) });
+      const blob = await upload(`stories/storia-${Date.now()}.${ext}`, f, { access: "public", handleUploadUrl: "/api/stories/upload", contentType: f.type, multipart: f.size > 8 * 1024 * 1024, onUploadProgress: ({ percentage }) => setProgress(Math.round(percentage)) });
       const r = await fetch("/api/stories", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: blob.url, type: f.type.startsWith("video") ? "video" : "image", caption }) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(d.error || "");
       setProgress(null); setCreating(false); setFile(null); setPreview(""); setCaption("");
       say("Storia pubblicata: resta visibile 24 ore");
       load();
-    } catch (e: any) { setProgress(null); say(e?.message || "Storia non pubblicata, riprova"); }
+    } catch (e: any) { setProgress(null); console.error("storia", e); say(e?.message ? `Storia non pubblicata: ${String(e.message).slice(0, 120)}` : "Storia non pubblicata, riprova"); }
   };
 
   const openGroup = (g: Group) => {
