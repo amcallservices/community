@@ -19,7 +19,7 @@ export default function StanzaPage({ params }: { params: Promise<{ id: string }>
         const r = await fetch("/api/consulenza/bookings");
         if (r.status === 401) { location.href = "/login"; return; }
         const d = await r.json();
-        const found = [...(d.asBuyer || []), ...(d.asSeller || [])].find((x: Booking) => String(x.id) === id);
+        const found = [...(d.asBuyer || []), ...(d.asSeller || []), ...(d.asStaff || [])].find((x: Booking) => String(x.id) === id);
         if (alive) setB(found || null);
       } catch { if (alive) setB(null); }
     })();
@@ -37,6 +37,7 @@ export default function StanzaPage({ params }: { params: Promise<{ id: string }>
 
   const iAmBuyer = me?.id === b.buyer.id;
   const other = iAmBuyer ? b.seller : b.buyer;
+  const staffGuest = me?.id !== b.buyer.id && me?.id !== b.seller.id;
   const myName = `${me?.nome || ""} ${me?.cognome || ""}`.trim() || "Partecipante";
   const hash = `#config.prejoinPageEnabled=false&config.subject=${encodeURIComponent(JSON.stringify(b.title))}&userInfo.displayName=${encodeURIComponent(JSON.stringify(myName))}`;
   const url = `https://meet.jit.si/${b.room}${hash}`;
@@ -45,7 +46,7 @@ export default function StanzaPage({ params }: { params: Promise<{ id: string }>
     <main className="max-w-5xl mx-auto px-4 py-4">
       <div className="flex flex-wrap items-center gap-3 mb-3">
         <Link href="/consulenza" className="inline-flex items-center gap-2 text-sm font-semibold text-navy/70 hover:text-navy"><ArrowLeft className="w-4 h-4" />Consulenze</Link>
-        <div className="min-w-0 flex-1"><h1 className="font-extrabold truncate">{b.title}</h1><p className="text-sm text-navy/60">con {other.nome} {other.cognome} · {b.durationMin} minuti</p></div>
+        <div className="min-w-0 flex-1"><h1 className="font-extrabold truncate">{b.title}</h1><p className="text-sm text-navy/60">{staffGuest ? `${b.buyer.nome} ${b.buyer.cognome} con ${b.seller.nome} ${b.seller.cognome}` : `con ${other.nome} ${other.cognome}`} · {b.durationMin} minuti</p></div>
         <Link href={`/messaggi?to=${other.id}`} className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white border-2 border-line text-sm font-semibold hover:border-wine"><MessageCircle className="w-4 h-4" />Scrivi</Link>
         <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white border-2 border-line text-sm font-semibold hover:border-wine"><ExternalLink className="w-4 h-4" />Apri a schermo intero</a>
       </div>

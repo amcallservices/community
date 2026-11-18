@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
-import { requireUser, avatarUrl } from '@/lib/auth'
+import { requireUser, avatarUrl, canConsult } from '@/lib/auth'
 import { stripe, markPaid } from '@/lib/consulenza'
 
 // GET - le mie prenotazioni (come cliente e come consulente). Controlla anche i pagamenti ancora in attesa.
@@ -17,8 +17,11 @@ export async function GET() {
         try { const s = await st.checkout.sessions.retrieve(b.stripeSessionId!); if (s.payment_status === 'paid') await markPaid(b.id, s.id) } catch {}
       }
     }
+    // admin e sotto admin partecipano a tutte le consulenze pagate: le vedono tutte, con la stanza
+    const staffView = canConsult(user!.role)
+    const extra = staffView ? await prisma.consulenzaBooking.findMany({ where: { status: { in: ['paid', 'completed'] }, NOT: { OR: [{ buyerId: user!.id }, { sellerId: user!.id }] } }, orderBy: { createdAt: 'desc' }, take: 60 }) : []
     const all = await prisma.consulenzaBooking.findMany({ where: { AND: [where, { OR: [{ status: { not: 'pending' } }, { createdAt: { gt: new Date(Date.now() - 48 * 3600 * 1000) } }] }] }, orderBy: { createdAt: 'desc' }, take: 60 })
-    const ids = [...new Set(all.flatMap(b => [b.buyerId, b.sellerId]))]
+    const ids = [...new Set([...all, ...extra].flatMap(b => [b.buyerId, b.sellerId]))]
     const users = await prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, nome: true, cognome: true, avatar: true, updatedAt: true } })
     const who = (id: number) => { const u = users.find(x => x.id === id); return { id, nome: u?.nome || 'Utente', cognome: u?.cognome || '', avatar: u ? avatarUrl(u) : null } }
     const view = (b: typeof all[number]) => ({
@@ -29,10 +32,11 @@ export async function GET() {
     return NextResponse.json({
       asBuyer: all.filter(b => b.buyerId === user!.id).map(view),
       asSeller: all.filter(b => b.sellerId === user!.id && b.status !== 'pending').map(view),
+      asStaff: extra.map(view),
     })
   } catch (e) {
     console.error('bookings', e)
-    return NextResponse.json({ asBuyer: [], asSeller: [] })
+    return NextResponse.json({ asBuyer: [], asSeller: [], asStaff: [] })
   }
 }
 
