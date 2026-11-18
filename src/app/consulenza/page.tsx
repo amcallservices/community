@@ -28,7 +28,7 @@ export default function ConsulenzaPage() {
   const [mine, setMine] = useState<Offer[]>([]);
   const [payments, setPayments] = useState(true);
   const [canOffer, setCanOffer] = useState(false);
-  const [bookings, setBookings] = useState<{ asBuyer: Booking[]; asSeller: Booking[] } | null>(null);
+  const [bookings, setBookings] = useState<{ asBuyer: Booking[]; asSeller: Booking[]; asStaff?: Booking[] } | null>(null);
   const [cat, setCat] = useState("tutte");
   const [toast, setToast] = useState("");
   const [buying, setBuying] = useState<number | null>(null);
@@ -114,17 +114,18 @@ export default function ConsulenzaPage() {
 
   const inp = "w-full p-3 rounded-xl bg-ivory2 border-2 border-transparent focus:border-wine outline-none transition";
 
-  const BookingRow = ({ b, as }: { b: Booking; as: "buyer" | "seller" }) => {
+  const BookingRow = ({ b, as }: { b: Booking; as: "buyer" | "seller" | "staff" }) => {
     const other = as === "buyer" ? b.seller : b.buyer; const st = STATUS[b.status] || STATUS.pending;
     return (
       <div className="bg-white border border-line rounded-2xl p-4 flex flex-wrap items-center gap-3">
         <Face p={other} />
         <div className="min-w-0 flex-1">
           <div className="font-bold">{b.title}</div>
-          <div className="text-sm text-navy/60">{as === "buyer" ? "con" : "cliente:"} {other.nome} {other.cognome} · {b.durationMin} min · {eur(b.amountCents)} · {timeAgo(b.paidAt || b.createdAt)}</div>
+          <div className="text-sm text-navy/60">{as === "buyer" ? "con" : "cliente:"} {other.nome} {other.cognome}{as === "staff" && ` · consulente: ${b.seller.nome} ${b.seller.cognome}`} · {b.durationMin} min · {eur(b.amountCents)} · {timeAgo(b.paidAt || b.createdAt)}</div>
         </div>
         <span className={`px-3 py-1 rounded-full text-sm font-semibold ${st.c}`}>{st.l}</span>
-        {b.room && b.status === "paid" && <>
+        {b.room && as === "staff" && b.status !== "pending" && <Link href={`/consulenza/stanza/${b.id}`} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-wine text-white font-semibold hover:brightness-110"><Video className="w-4 h-4" />Entra nella videochiamata</Link>}
+        {b.room && b.status === "paid" && as !== "staff" && <>
           <Link href={`/messaggi?to=${other.id}`} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border-2 border-line font-semibold hover:border-wine"><MessageCircle className="w-4 h-4" />Scrivi per l&apos;orario</Link>
           <Link href={`/consulenza/stanza/${b.id}`} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-wine text-white font-semibold hover:brightness-110"><Video className="w-4 h-4" />Entra nella videochiamata</Link>
           {as === "seller" && <button onClick={() => complete(b)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-mint/30 font-semibold hover:bg-mint/50"><Check className="w-4 h-4" />Svolta</button>}
@@ -134,7 +135,7 @@ export default function ConsulenzaPage() {
     );
   };
 
-  const total = (bookings?.asBuyer.length || 0) + (bookings?.asSeller.length || 0);
+  const total = (bookings?.asBuyer.length || 0) + (bookings?.asSeller.length || 0) + (bookings?.asStaff?.length || 0);
   const FIELDS = [
     { bg: "bg-brass", fg: "text-navy", btn: "bg-navy text-white" },
     { bg: "bg-mint", fg: "text-navy", btn: "bg-navy text-white" },
@@ -182,6 +183,10 @@ export default function ConsulenzaPage() {
               {bookings.asSeller.map(b => <BookingRow key={"s" + b.id} b={b} as="seller" />)}
               {bookings.asBuyer.map(b => <BookingRow key={"b" + b.id} b={b} as="buyer" />)}
             </div>
+            {(bookings.asStaff?.length || 0) > 0 && <>
+              <h3 className="font-bold mt-5 mb-2">Altre consulenze: admin e sotto admin partecipano a tutte</h3>
+              <div className="space-y-3">{bookings.asStaff!.map(b => <BookingRow key={"t" + b.id} b={b} as="staff" />)}</div>
+            </>}
           </section>
         )}
 
