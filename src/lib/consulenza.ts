@@ -1,7 +1,6 @@
 import { randomBytes } from 'crypto'
 import Stripe from 'stripe'
 import prisma from '@/lib/db'
-import { sendMail } from '@/lib/auth'
 
 import { TEMPLATES } from '@/lib/consulenza-templates'
 export { TEMPLATES }
@@ -38,10 +37,5 @@ export async function markPaid(bookingId: number, sessionId?: string) {
   for (const u of staff) if (u.id !== b.sellerId && u.id !== b.buyerId) notes.push({ userId: u.id, type: 'consulenza', title: 'Nuova consulenza prenotata', message: `${nm(buyer)} ha prenotato “${b.title}” con ${nm(seller)} (${eur}).`, link: '/consulenza' })
   await prisma.notification.createMany({ data: notes }).catch(() => {})
 
-  // email: consulente, admin e sotto admin (senza doppioni) + conferma al cliente
-  const staffMail = new Set<string>([...staff.map(u => u.email), ...(seller?.email ? [seller.email] : [])].filter(Boolean))
-  const jobs: Promise<boolean>[] = [...staffMail].map(to => sendMail(to, `Nuova consulenza prenotata: ${b.title}`, `<p>È stata pagata una nuova consulenza.</p>${row}<p>Cliente e consulente si accordano sull’orario dai messaggi.</p>${btn}`))
-  if (buyer?.email) jobs.push(sendMail(buyer.email, 'Pagamento ricevuto - Consulenza', `<p>Grazie! Abbiamo ricevuto il tuo pagamento.</p>${row}<p>Scrivi al consulente dai messaggi per fissare giorno e ora, poi entra nella videochiamata dalla pagina Consulenza.</p>${btn}`))
-  await Promise.allSettled(jobs)
   return updated
 }
