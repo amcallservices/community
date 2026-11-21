@@ -16,9 +16,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Il ruolo è sempre "scrittore": gli admin si creano solo con lo script update_admin.js
-    await prisma.user.create({
+    const created = await prisma.user.create({
       data: { email: mail, name: `${nome} ${cognome}`, nome, cognome, password: hashPassword(password), role: 'scrittore' },
     })
+    // avviso agli admin: notifica sul sito e, in automatico, anche email
+    try {
+      const admins = await prisma.user.findMany({ where: { role: 'admin', banned: false }, select: { id: true } })
+      if (admins.length) await prisma.notification.createMany({ data: admins.map(a => ({ userId: a.id, type: 'iscrizione', title: 'Nuovo iscritto', message: `${nome} ${cognome} si è iscritto alla community (${mail}).`, link: `/utente/${created.id}` })) })
+    } catch (e) { console.error('Notifica iscrizione fallita:', e) }
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Register error:', error)
