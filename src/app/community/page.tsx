@@ -116,6 +116,7 @@ export default function CommunityPage() {
   const [pdfProgress, setPdfProgress] = useState<number | null>(null);
   const [pdfError, setPdfError] = useState("");
   const pdfInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
   const commentPdfInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const commentFileInputRef = useRef<HTMLInputElement>(null);
@@ -272,6 +273,27 @@ export default function CommunityPage() {
       else setNewComment(prev => prev + html);
     } catch (err: any) {
       setPdfError(err?.message?.includes("token") || err?.message?.includes("BLOB") ? "Il caricamento dei PDF non \u00e8 ancora attivo." : "Caricamento non riuscito. Riprova.");
+    }
+    setPdfProgress(null);
+  };
+
+  const uploadVideo = async (e: React.ChangeEvent<HTMLInputElement>, target: "post" | "comment") => {
+    const f0 = e.target.files?.[0];
+    e.target.value = "";
+    if (!f0) return;
+    setPdfError("");
+    const EXT: Record<string, string> = { mp4: "video/mp4", m4v: "video/mp4", mov: "video/quicktime", webm: "video/webm", mkv: "video/x-matroska", avi: "video/x-msvideo", "3gp": "video/3gpp" };
+    const type = f0.type || EXT[(f0.name.split(".").pop() || "").toLowerCase()] || "";
+    if (!type.startsWith("video/")) { setPdfError("Puoi caricare solo file video."); return; }
+    if (f0.size > 500 * 1024 * 1024) { setPdfError("Il video supera il limite di 500 MB."); return; }
+    setPdfProgress(0);
+    try {
+      const blob = await upload(f0.name.replace(/[^\w.\-]+/g, "_"), f0, { access: "public", handleUploadUrl: "/api/upload", multipart: true, contentType: type, onUploadProgress: ({ percentage }) => setPdfProgress(Math.round(percentage)) });
+      const html = `\n<video src="${blob.url}" controls></video>\n`;
+      if (target === "post") setNewContent(prev => prev + html);
+      else setNewComment(prev => prev + html);
+    } catch (err: any) {
+      setPdfError(err?.message ? `Video non caricato: ${String(err.message).slice(0, 100)}` : "Caricamento non riuscito. Riprova.");
     }
     setPdfProgress(null);
   };
@@ -615,8 +637,10 @@ export default function CommunityPage() {
               </div>
               <input type="file" multiple accept="image/jpeg,image/png,image/gif,image/webp" onChange={e => uploadImages(e, "post")} ref={fileInputRef} className="hidden" />
               <input type="file" accept="application/pdf,.pdf" onChange={e => uploadPdf(e, "post")} ref={pdfInputRef} className="hidden" />
+              <input type="file" accept="video/*" onChange={e => uploadVideo(e, "post")} ref={videoInputRef} className="hidden" />
               <div className="flex items-center gap-1 mt-3 pt-3 border-t border-ivory2 text-sm font-semibold">
                 <button onClick={() => { setShowNewPost(true); fileInputRef.current?.click(); }} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-ivory2"><Image className="w-5 h-5 text-mint" /><span className="hidden sm:inline">Foto</span></button>
+                <button onClick={() => { setShowNewPost(true); videoInputRef.current?.click(); }} disabled={pdfProgress !== null} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-ivory2 disabled:opacity-60"><VideoIcon className="w-5 h-5 text-wine" /><span className="hidden sm:inline">Video</span></button>
                 <button onClick={() => { setShowNewPost(true); pdfInputRef.current?.click(); }} disabled={pdfProgress !== null} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-ivory2 disabled:opacity-60"><FileText className="w-5 h-5 text-coral" /><span className="hidden sm:inline">PDF</span></button>
                 <button onClick={() => { setShowNewPost(true); setShowLinkInput(v => !v); }} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-ivory2"><LinkIcon className="w-5 h-5 text-wine" /><span className="hidden sm:inline">Link</span></button>
                 <button onClick={() => { setShowNewPost(true); setPollOn(v => !v); }} aria-pressed={pollOn} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-ivory2 ${pollOn ? "bg-ivory2" : ""}`}><BarChart3 className="w-5 h-5 text-coral" /><span className="hidden sm:inline">Sondaggio</span></button>
