@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Camera, Save, X, Lock, Eye, EyeOff, Send, Pencil, ShieldCheck, FileText, MessageCircle, Heart, CalendarDays, Image as ImageIcon, Users, Newspaper, Mail, Ban, KeyRound, Check, Copy, LayoutDashboard, Flag } from "lucide-react";
 import { timeAgo } from "@/components/NotificationBell";
+import ApiKeyCard from "@/components/ApiKeyCard";
 
 const PALETTE = ["#ffc83d", "#ff6b6b", "#2dd4a7", "#5b3df5", "#38bdf8", "#f472b6"];
 const colorFor = (id?: number) => PALETTE[Math.abs(id || 0) % PALETTE.length];
@@ -332,6 +333,8 @@ export default function ProfileView({ id }: { id: number | string }) {
           </div>
         )}
       </section>
+
+      {own && <ApiKeyCard />}
 
       {own && (
         <section className="mt-4 bg-white rounded-3xl border border-line p-5 md:p-6">

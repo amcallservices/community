@@ -35,7 +35,7 @@ const textOn = (c: string) => (c === "#5b3df5" || c === "#ff6b6b" ? "#fff" : "#1
 
 function PostBody({ content, onZoom, members, onTag }: { content: string; onZoom: (src: string) => void; members: Member[]; onTag: (t: string) => void }) {
   const parsed = parseRich(content);
-  const { images, pdfs } = parsed;
+  const { images, pdfs, videos } = parsed;
   const html = decorate(parsed.html, members);
   const [open, setOpen] = useState(false);
   const long = html.length > 260 || html.split("\n").length > 4;
@@ -57,6 +57,9 @@ function PostBody({ content, onZoom, members, onTag }: { content: string; onZoom
           ))}
         </div>
       )}
+      {videos.map((src, i) => (
+        <video key={i} src={src} controls playsInline preload="metadata" className="mt-3 w-full max-h-[32rem] rounded-xl bg-navy" />
+      ))}
       {pdfs.map((f, i) => (
         <a key={i} href={f.url} target="_blank" rel="noopener noreferrer nofollow" className="mt-3 flex items-center gap-3 p-3 rounded-2xl bg-ivory2 border-2 border-line hover:border-wine transition">
           <span className="w-11 h-11 rounded-xl bg-wine text-white grid place-items-center shrink-0"><FileText className="w-5 h-5" /></span>

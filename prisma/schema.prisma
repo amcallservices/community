@@ -45,6 +45,17 @@ model Book {
   updatedAt DateTime @updatedAt
 }
 
+model ApiToken {
+  id         Int       @id @default(autoincrement())
+  userId     Int
+  tokenHash  String    @unique
+  label      String    @default("BOOST AI")
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+
+  @@index([userId])
+}
+
 model Post {
   id        Int      @id @default(autoincrement())
   title     String
