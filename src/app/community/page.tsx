@@ -6,9 +6,9 @@ import { decorate, hashtagsOf, type Member } from "@/lib/rich";
 import Stories from "@/components/Stories";
 import { timeAgo } from "@/components/NotificationBell";
 import { upload } from "@vercel/blob/client";
-import { Heart, FileText, MessageCircle, Trash2, X, Send, Image, Link as LinkIcon, Share2, Check, ChevronDown, CalendarDays, Users, MessageSquare, User as UserIcon, Video as VideoIcon, Search, ArrowUp, Smile, Flag, Hash, BarChart3, Briefcase } from "lucide-react";
+import { Heart, FileText, MessageCircle, Trash2, X, Send, Image, Link as LinkIcon, Share2, Check, ChevronDown, CalendarDays, Users, MessageSquare, User as UserIcon, Video as VideoIcon, Search, ArrowUp, Smile, Flag, Hash, BarChart3, Briefcase, Pin } from "lucide-react";
 
-type Post = { id: number; title: string; content: string; authorId?: number; authorNome: string; authorCogen: string; authorRole: string; authorAvatar: string | null; likes: number; comments: number; category: string; createdAt: string; reactions?: Record<string, number>; myReaction?: string | null; poll?: { options: { text: string; votes: number }[]; total: number; mine: number | null } | null };
+type Post = { id: number; title: string; content: string; authorId?: number; authorNome: string; authorCogen: string; authorRole: string; authorAvatar: string | null; likes: number; comments: number; category: string; pinned?: boolean; createdAt: string; reactions?: Record<string, number>; myReaction?: string | null; poll?: { options: { text: string; votes: number }[]; total: number; mine: number | null } | null };
 type Comment = { id: number; text: string; authorId?: number; authorNome: string; authorCogen: string; authorAvatar: string | null; time: string; parentId?: number | null; createdAt?: string };
 
 const REACTIONS = [
@@ -403,6 +403,13 @@ export default function CommunityPage() {
     setSendingComment(false);
   };
 
+  const togglePin = async (p: Post) => {
+    try {
+      const res = await fetch("/api/posts", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: p.id, pinned: !p.pinned }) });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok) { say(p.pinned ? "Post tolto dall'evidenza" : "Post messo in evidenza"); loadPosts(); } else say(d.error || "Errore");
+    } catch { say("Errore"); }
+  };
   const deletePost = async (id: number) => {
     if (!confirm("Sei sicuro di voler eliminare questo post?")) return;
     try {
@@ -653,7 +660,8 @@ export default function CommunityPage() {
               const top = Object.entries(post.reactions || {}).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k]) => REACTIONS.find(r => r.k === k)?.e).filter(Boolean);
               const open = selectedPost?.id === post.id;
               return (
-              <article id={`post-${post.id}`} key={post.id} className="bg-white rounded-2xl border border-line shadow-sm transition-all hover:shadow-md scroll-mt-24 rise">
+              <article id={`post-${post.id}`} key={post.id} className={`bg-white rounded-2xl border shadow-sm transition-all hover:shadow-md scroll-mt-24 rise overflow-hidden ${post.pinned ? "border-brass border-2" : "border-line"}`}>
+                {post.pinned && <div className="bg-brass/40 px-4 py-1.5 text-sm font-bold flex items-center gap-2"><Pin className="w-4 h-4" />In evidenza</div>}
                 <div className="p-4 md:p-5">
                   <div className="flex items-center gap-3">
                     <Avatar id={post.authorId} nome={post.authorNome || post.authorCogen} src={post.authorAvatar} />
@@ -661,6 +669,7 @@ export default function CommunityPage() {
                       <Link href={`/utente/${post.authorId}`} className="font-semibold hover:underline">{post.authorNome} {post.authorCogen}</Link>
                       <div className="text-xs text-navy/60 flex flex-wrap items-center gap-x-2 gap-y-1" title={post.createdAt ? new Date(post.createdAt).toLocaleString("it-IT") : ""}>{timeAgo(post.createdAt)}{catOf(post.category) && catOf(post.category)!.k !== "generale" && <button onClick={() => setCatFilter(catOf(post.category)!.k)} className="px-2 py-0.5 rounded-full font-semibold text-navy hover:brightness-95" style={{ background: catOf(post.category)!.c + "40" }}>{catOf(post.category)!.l}</button>}</div>
                     </div>
+                    {isAdmin && <button onClick={() => togglePin(post)} aria-label={post.pinned ? "Togli dall'evidenza" : "Metti in evidenza"} title={post.pinned ? "Togli dall'evidenza" : "Metti in evidenza"} className={`p-2 rounded-full transition ${post.pinned ? "text-wine bg-brass/40" : "text-navy/40 hover:text-wine hover:bg-ivory2"}`}><Pin className="w-4 h-4" /></button>}
                     {user && user.id !== post.authorId && <button onClick={() => openReport({ postId: post.id })} aria-label="Segnala il post" title="Segnala" className="p-2 rounded-full text-navy/30 hover:text-red-600 hover:bg-red-50 transition"><Flag className="w-4 h-4" /></button>}
                     {(isAdmin || isMod || (user && user.id === post.authorId)) && (
                       <button onClick={() => deletePost(post.id)} aria-label="Elimina il post" className="p-2 rounded-full text-navy/40 hover:text-red-600 hover:bg-red-50 transition"><Trash2 className="w-4 h-4" /></button>

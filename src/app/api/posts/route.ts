@@ -9,7 +9,7 @@ const CATEGORIES = ['generale', 'scrittura', 'kdp', 'copertine', 'marketing', 'r
 export async function GET() {
   try {
     const posts = await prisma.post.findMany({
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ pinned: 'desc' }, { pinnedAt: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }],
       take: 50,
       include: {
         author: { select: { id: true, nome: true, cognome: true, role: true, avatar: true, updatedAt: true } }
@@ -34,6 +34,7 @@ export async function GET() {
       authorRole: post.author?.role || 'scrittore',
       authorAvatar: post.author ? avatarUrl(post.author) : null,
       category: post.category,
+      pinned: post.pinned,
       poll: polls.get(post.id) ?? null,
       likes: post.likes,
       comments: post.comments,
@@ -119,4 +120,22 @@ export async function DELETE(request: NextRequest) {
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 })
   }
+}
+
+// PATCH { id, pinned } - solo l'admin mette un post in evidenza (in cima alla community), al massimo 3
+export async function PATCH(request: NextRequest) {
+  const { user, error } = await requireUser()
+  if (error) return error
+  if (user!.role !== 'admin') return NextResponse.json({ error: 'Solo l\'admin' }, { status: 403 })
+  try {
+    const { id, pinned } = await request.json()
+    const post = await prisma.post.findUnique({ where: { id: Number(id) } })
+    if (!post) return NextResponse.json({ error: 'Post non trovato' }, { status: 404 })
+    if (pinned && !post.pinned) {
+      const n = await prisma.post.count({ where: { pinned: true } })
+      if (n >= 3) return NextResponse.json({ error: 'Puoi tenere al massimo 3 post in evidenza: toglierne uno prima' }, { status: 400 })
+    }
+    await prisma.post.update({ where: { id: post.id }, data: { pinned: !!pinned, pinnedAt: pinned ? new Date() : null }, select: { id: true } })
+    return NextResponse.json({ ok: true })
+  } catch (e) { return NextResponse.json({ error: String(e) }, { status: 500 }) }
 }
