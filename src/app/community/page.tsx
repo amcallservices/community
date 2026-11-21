@@ -645,6 +645,8 @@ export default function CommunityPage() {
                 <button onClick={() => { setShowNewPost(true); setShowLinkInput(v => !v); }} className="flex items-center justify-center gap-1 px-2 py-1 rounded-lg hover:bg-ivory2"><LinkIcon className="w-4 h-4 text-wine" /><span className="hidden sm:inline">Link</span></button>
                 <button onClick={() => { setShowNewPost(true); setPollOn(v => !v); }} aria-pressed={pollOn} className={`flex items-center justify-center gap-1 px-2 py-1 rounded-lg hover:bg-ivory2 ${pollOn ? "bg-ivory2" : ""}`}><BarChart3 className="w-4 h-4 text-coral" /><span className="hidden sm:inline">Sondaggio</span></button>
                 <button onClick={() => { setShowNewPost(true); composerRef.current?.focus(); }} className="flex items-center justify-center gap-1 px-2 py-1 rounded-lg hover:bg-ivory2"><Smile className="w-4 h-4 text-brass" /><span className="hidden sm:inline">Emoji</span></button>
+              </div>
+              <div className="flex items-center justify-end gap-2 mt-2 text-sm font-semibold">
                 {showNewPost && <button onClick={() => { setShowNewPost(false); setNewContent(""); setShowLinkInput(false); setPollOn(false); setPollOpts(["", ""]); if (composerRef.current) composerRef.current.style.height = ""; }} className="px-2 py-1 rounded-lg text-navy/60 hover:bg-ivory2">Annulla</button>}
                 <button onClick={handleCreatePost} disabled={!newContent.trim() || publishing} className="px-4 py-1 rounded-lg bg-wine text-white disabled:opacity-40 hover:brightness-110 active:scale-95 transition">{publishing ? "Pubblico…" : "Pubblica"}</button>
               </div>
