@@ -16,7 +16,7 @@ export async function POST(request: Request) {
         const { user } = await requireUser();
         if (!user) throw new Error("Devi accedere per caricare un file");
         return {
-          allowedContentTypes: ["application/pdf", "image/jpeg", "image/png", "image/gif", "image/webp"],
+          allowedContentTypes: ["application/pdf", "image/jpeg", "image/png", "image/gif", "image/webp", "video/*"],
           maximumSizeInBytes: MAX_PDF_BYTES,
           addRandomSuffix: true,
         };
