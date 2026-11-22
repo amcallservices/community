@@ -52,7 +52,7 @@ export default function Navbar() {
   };
 
   const link = (href: string, label: string, extra?: React.ReactNode) => (
-    <Link href={href} className={`text-[15px] hover:text-brass flex items-center gap-1 ${pathname === href ? "text-brass font-semibold" : "text-paper"}`}>
+    <Link href={href} data-tour={`nav-${href}`} className={`text-[15px] hover:text-brass flex items-center gap-1 ${pathname === href ? "text-brass font-semibold" : "text-paper"}`}>
       {label}{extra}
     </Link>
   );
@@ -67,7 +67,7 @@ export default function Navbar() {
           </Link>
 
           <div className="flex items-center gap-1 md:order-last">
-            {user && <NotificationBell />}
+            {user && <span data-tour="campanella" className="inline-flex"><NotificationBell /></span>}
             <button className="md:hidden p-2" aria-label="Menu" onClick={() => setOpen(o => !o)}>
               {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
