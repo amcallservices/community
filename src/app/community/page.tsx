@@ -4,9 +4,10 @@ import Link from "next/link";
 import { renderRich, parseRich } from "@/lib/sanitize";
 import { decorate, hashtagsOf, type Member } from "@/lib/rich";
 import Stories from "@/components/Stories";
+import GuidedTour from "@/components/GuidedTour";
 import { timeAgo } from "@/components/NotificationBell";
 import { upload } from "@vercel/blob/client";
-import { Heart, FileText, MessageCircle, Trash2, X, Send, Image, Link as LinkIcon, Share2, Check, ChevronDown, CalendarDays, Users, MessageSquare, User as UserIcon, Video as VideoIcon, Search, ArrowUp, Smile, Flag, Hash, BarChart3, Briefcase, Pin } from "lucide-react";
+import { Compass, Heart, FileText, MessageCircle, Trash2, X, Send, Image, Link as LinkIcon, Share2, Check, ChevronDown, CalendarDays, Users, MessageSquare, User as UserIcon, Video as VideoIcon, Search, ArrowUp, Smile, Flag, Hash, BarChart3, Briefcase, Pin } from "lucide-react";
 
 type Post = { id: number; title: string; content: string; authorId?: number; authorNome: string; authorCogen: string; authorRole: string; authorAvatar: string | null; likes: number; comments: number; category: string; pinned?: boolean; createdAt: string; reactions?: Record<string, number>; myReaction?: string | null; poll?: { options: { text: string; votes: number }[]; total: number; mine: number | null } | null };
 type Comment = { id: number; text: string; authorId?: number; authorNome: string; authorCogen: string; authorAvatar: string | null; time: string; parentId?: number | null; createdAt?: string };
@@ -575,6 +576,7 @@ export default function CommunityPage() {
             <Link href="/video" className={side}><VideoIcon className="w-6 h-6 text-wine" />Video</Link>
             {isAdmin && <Link href="/utenti" className={side}><Users className="w-6 h-6 text-wine" />Utenti</Link>}
             {(isAdmin || isMod) && <Link href="/admin/segnalazioni" className={side}><Flag className="w-6 h-6 text-wine" />Segnalazioni{reportsOpen > 0 && <span className="ml-auto min-w-[22px] h-[22px] px-1.5 rounded-full bg-coral text-white text-xs font-bold grid place-items-center">{reportsOpen}</span>}</Link>}
+            {user && <button onClick={() => window.dispatchEvent(new Event("spi-tour"))} className={side + " w-full text-left"}><Compass className="w-6 h-6 text-wine" />Visita guidata</button>}
             <p className="px-3 pt-4 text-xs text-navy/50">Self Publishing Italia · la community degli autori indipendenti</p>
           </div>
         </aside>
@@ -585,9 +587,11 @@ export default function CommunityPage() {
               Sei sospeso: non puoi pubblicare post e commenti fino a {new Date(suspendedUntil).toLocaleString("it-IT", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}. Puoi comunque leggere e mettere Mi piace.
             </div>
           )}
-          <Stories user={user} canPost={!(suspendedUntil && new Date(suspendedUntil) > new Date())} say={say} />
+          <GuidedTour enabled={!!user} />
+          <div data-tour="stories"><Stories user={user} canPost={!(suspendedUntil && new Date(suspendedUntil) > new Date())} say={say} /></div>
+          {user && <div className="lg:hidden -mt-2 mb-3 text-right"><button onClick={() => window.dispatchEvent(new Event("spi-tour"))} className="text-xs font-semibold text-wine hover:underline inline-flex items-center gap-1"><Compass className="w-3.5 h-3.5" />Rivedi la visita guidata</button></div>}
           {user ? (
-            <div className={`bg-white rounded-2xl border shadow-sm p-4 mb-4 transition ${dragging ? "border-wine ring-4 ring-wine/20" : "border-line"}`}
+            <div data-tour="composer" className={`bg-white rounded-2xl border shadow-sm p-4 mb-4 transition ${dragging ? "border-wine ring-4 ring-wine/20" : "border-line"}`}
               onDragOver={e => { e.preventDefault(); if (!dragging) { setDragging(true); setShowNewPost(true); } }}
               onDragLeave={() => setDragging(false)}
               onDrop={e => { e.preventDefault(); setDragging(false); const fs = Array.from(e.dataTransfer.files); if (fs.some(f => f.type.startsWith("image/"))) uploadImageFiles(fs, "post"); const pdf = fs.find(f => f.type === "application/pdf"); if (pdf) uploadPdf({ target: { files: [pdf], value: "" } } as any, "post"); }}>
@@ -638,7 +642,7 @@ export default function CommunityPage() {
               <input type="file" multiple accept="image/jpeg,image/png,image/gif,image/webp" onChange={e => uploadImages(e, "post")} ref={fileInputRef} className="hidden" />
               <input type="file" accept="application/pdf,.pdf" onChange={e => uploadPdf(e, "post")} ref={pdfInputRef} className="hidden" />
               <input type="file" accept="video/*" onChange={e => uploadVideo(e, "post")} ref={videoInputRef} className="hidden" />
-              <div className="flex items-center gap-0.5 mt-3 pt-2 border-t border-ivory2 text-xs font-semibold">
+              <div data-tour="allegati" className="flex items-center gap-0.5 mt-3 pt-2 border-t border-ivory2 text-xs font-semibold">
                 <button onClick={() => { setShowNewPost(true); fileInputRef.current?.click(); }} className="flex items-center justify-center gap-1 px-2 py-1 rounded-lg hover:bg-ivory2"><Image className="w-4 h-4 text-mint" /><span className="hidden sm:inline">Foto</span></button>
                 <button onClick={() => { setShowNewPost(true); videoInputRef.current?.click(); }} disabled={pdfProgress !== null} className="flex items-center justify-center gap-1 px-2 py-1 rounded-lg hover:bg-ivory2 disabled:opacity-60"><VideoIcon className="w-4 h-4 text-wine" /><span className="hidden sm:inline">Video</span></button>
                 <button onClick={() => { setShowNewPost(true); pdfInputRef.current?.click(); }} disabled={pdfProgress !== null} className="flex items-center justify-center gap-1 px-2 py-1 rounded-lg hover:bg-ivory2 disabled:opacity-60"><FileText className="w-4 h-4 text-coral" /><span className="hidden sm:inline">PDF</span></button>
@@ -655,7 +659,7 @@ export default function CommunityPage() {
             <div className="bg-white rounded-2xl border border-line p-5 mb-4 text-center"><Link href="/login" className="font-semibold underline">Accedi</Link> o <Link href="/registrati" className="font-semibold underline">registrati</Link> per scrivere, commentare e reagire ai post.</div>
           )}
 
-          <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1">
+          <div data-tour="filtri" className="flex items-center gap-2 mb-4 overflow-x-auto pb-1">
             <div className="relative shrink-0">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-navy/50" />
               <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Cerca nei post" aria-label="Cerca nei post" className="pl-9 pr-3 py-2 rounded-full bg-white border border-line text-sm w-40 focus:w-56 transition-all outline-none focus:border-wine" />
