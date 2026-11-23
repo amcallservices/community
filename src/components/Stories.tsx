@@ -14,7 +14,7 @@ const MAX_VIDEO_SEC = 180;
 
 function Face({ g, size }: { g: { userId: number; nome: string; avatar: string | null }; size: number }) {
   return g.avatar
-    ? <img src={g.avatar} alt="" className="rounded-full object-cover bg-white" style={{ width: size, height: size }} />
+    ? <img loading="lazy" decoding="async" src={g.avatar} alt="" className="rounded-full object-cover bg-white" style={{ width: size, height: size }} />
     : <span className="rounded-full grid place-items-center font-bold text-navy" style={{ width: size, height: size, background: colorFor(g.userId), fontSize: size / 2.4 }}>{(g.nome?.[0] || "?").toUpperCase()}</span>;
 }
 
@@ -167,12 +167,12 @@ export default function Stories({ user, canPost, say }: { user: { id: number; no
             ) : (
               <div className="mt-4">
                 <div className="rounded-2xl overflow-hidden bg-black grid place-items-center" style={{ aspectRatio: "9 / 12" }}>
-                  {queue[cur].file.type.startsWith("video/") ? <video key={cur} src={queue[cur].preview} controls muted playsInline className="max-h-full max-w-full" /> : <img src={queue[cur].preview} alt="Anteprima" className="max-h-full max-w-full object-contain" />}
+                  {queue[cur].file.type.startsWith("video/") ? <video key={cur} src={queue[cur].preview} controls muted playsInline className="max-h-full max-w-full" /> : <img loading="lazy" decoding="async" src={queue[cur].preview} alt="Anteprima" className="max-h-full max-w-full object-contain" />}
                 </div>
                 <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
                   {queue.map((q, i) => (
                     <div key={q.preview} className={`relative shrink-0 w-14 h-14 rounded-xl overflow-hidden border-2 ${i === cur ? "border-wine" : "border-transparent"}`}>
-                      <button onClick={() => setCur(i)} aria-label={`Elemento ${i + 1}`} className="absolute inset-0">{q.file.type.startsWith("video/") ? <video src={q.preview + "#t=0.1"} preload="metadata" muted className="w-full h-full object-cover" /> : <img src={q.preview} alt="" className="w-full h-full object-cover" />}</button>
+                      <button onClick={() => setCur(i)} aria-label={`Elemento ${i + 1}`} className="absolute inset-0">{q.file.type.startsWith("video/") ? <video src={q.preview + "#t=0.1"} preload="metadata" muted className="w-full h-full object-cover" /> : <img loading="lazy" decoding="async" src={q.preview} alt="" className="w-full h-full object-cover" />}</button>
                       {progress === null && <button onClick={() => removeAt(i)} aria-label="Togli" className="absolute top-0 right-0 w-5 h-5 rounded-bl-lg bg-black/60 text-white grid place-items-center"><X className="w-3 h-3" /></button>}
                     </div>
                   ))}
@@ -273,7 +273,7 @@ function Viewer({ groups, start, me, staff, onClose, onDelete }: { groups: Group
       <div className="relative w-full h-full max-w-[460px] bg-black select-none"
         onPointerDown={() => setPaused(true)} onPointerUp={() => setPaused(false)} onPointerLeave={() => setPaused(false)}>
         {item.type === "image"
-          ? <img src={item.url} alt={item.caption || "Storia"} className="absolute inset-0 w-full h-full object-contain" draggable={false} />
+          ? <img loading="lazy" decoding="async" src={item.url} alt={item.caption || "Storia"} className="absolute inset-0 w-full h-full object-contain" draggable={false} />
           : <video ref={videoRef} key={item.id} src={item.url} autoPlay playsInline onEnded={next} onTimeUpdate={e => { const v = e.currentTarget; if (v.duration) setProgress(v.currentTime / v.duration); }} className="absolute inset-0 w-full h-full object-contain" />}
         <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
         <div className="absolute top-2 inset-x-2 flex gap-1" aria-hidden>

@@ -199,7 +199,7 @@ export default function ProfileView({ id }: { id: number | string }) {
           <div className="flex items-end justify-between gap-3 -mt-14 md:-mt-16">
             <div className="relative">
               <div className="w-28 h-28 md:w-32 md:h-32 rounded-full border-4 border-white overflow-hidden grid place-items-center text-5xl font-extrabold shadow-lg" style={{ background: col, color: textOn(col) }}>
-                {(editing ? avatar : u.avatar) ? <img src={editing ? avatar : u.avatar} alt={u.nome} className="w-full h-full object-cover" /> : (u.nome || u.name || "?")[0].toUpperCase()}
+                {(editing ? avatar : u.avatar) ? <img loading="lazy" decoding="async" src={editing ? avatar : u.avatar} alt={u.nome} className="w-full h-full object-cover" /> : (u.nome || u.name || "?")[0].toUpperCase()}
               </div>
               {editing && (
                 <>

@@ -35,7 +35,7 @@ function linkify(text: string) {
 
 function Avatar({ p, size = "w-11 h-11" }: { p: Person; size?: string }) {
   const c = colorFor(p.id);
-  return <span className={`${size} rounded-full grid place-items-center font-bold overflow-hidden shrink-0`} style={{ background: c, color: textOn(c) }}>{p.avatar ? <img src={p.avatar} alt="" className="w-full h-full object-cover" /> : (p.nome?.[0] || p.email?.[0] || "?").toUpperCase()}</span>;
+  return <span className={`${size} rounded-full grid place-items-center font-bold overflow-hidden shrink-0`} style={{ background: c, color: textOn(c) }}>{p.avatar ? <img loading="lazy" decoding="async" src={p.avatar} alt="" className="w-full h-full object-cover" /> : (p.nome?.[0] || p.email?.[0] || "?").toUpperCase()}</span>;
 }
 
 export default function MessaggiPage() {

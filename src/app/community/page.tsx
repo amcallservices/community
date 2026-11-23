@@ -144,7 +144,7 @@ export default function CommunityPage() {
     fetch("/api/utenti").then(r => r.ok ? r.json() : []).then(d => { if (Array.isArray(d)) { setMembers(d.slice(-5).reverse()); setAllUsers(d.map((u: any) => ({ id: u.id, nome: u.nome || "", cognome: u.cognome || "" }))); } }).catch(() => {});
   }, []);
 
-  // Aggiornamento "in diretta": ogni 25 s controlla i nuovi post e aggiorna reazioni e commenti
+  // Aggiornamento "in diretta": ogni 40 s controlla i nuovi post e aggiorna reazioni e commenti
   useEffect(() => {
     const t = setInterval(async () => {
       if (document.hidden) return;
@@ -159,7 +159,7 @@ export default function CommunityPage() {
         setPosts(ps => ps.filter(p => fresh.some(f => f.id === p.id)).map(p => { const f = fresh.find(x => x.id === p.id)!; return { ...p, likes: f.likes, comments: f.comments, reactions: f.reactions, myReaction: f.myReaction }; }));
         setPending(added.length ? fresh : null);
       } catch {}
-    }, 25000);
+    }, 40000);
     return () => clearInterval(t);
   }, []);
 
@@ -241,7 +241,7 @@ export default function CommunityPage() {
           if (small.size > 1.5 * 1024 * 1024) throw new Error("Questa foto \u00e8 troppo pesante da inserire ora. Riprova pi\u00f9 tardi.");
           src = await new Promise<string>((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result as string); r.onerror = () => rej(new Error("lettura non riuscita")); r.readAsDataURL(small); });
         }
-        html += `\n<img src="${src}" alt="Immagine" />\n`;
+        html += `\n<img loading="lazy" decoding="async" src="${src}" alt="Immagine" />\n`;
       }
       if (target === "post") setNewContent(prev => prev + html);
       else setNewComment(prev => prev + html);
@@ -515,7 +515,7 @@ export default function CommunityPage() {
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
     return posts.filter(p => {
-      if (filter === "foto" && !/<img\b/i.test(p.content)) return false;
+      if (filter === "foto" && !/<img loading="lazy" decoding="async"\b/i.test(p.content)) return false;
       if (filter === "pdf" && !/\.pdf/i.test(p.content)) return false;
       if (filter === "miei" && p.authorId !== user?.id) return false;
       if (catFilter !== "tutte" && (catOf(p.category)?.k ?? "generale") !== catFilter) return false;
@@ -530,7 +530,7 @@ export default function CommunityPage() {
 
   const Avatar = ({ id, nome, src, size = "w-11 h-11" }: { id?: number; nome?: string; src?: string | null; size?: string }) => {
     const c = colorFor(id);
-    return <span className={`${size} rounded-full grid place-items-center font-bold overflow-hidden shrink-0`} style={{ background: c, color: textOn(c) }}>{src ? <img src={src} alt="" className="w-full h-full object-cover" /> : (nome?.[0] || "?").toUpperCase()}</span>;
+    return <span className={`${size} rounded-full grid place-items-center font-bold overflow-hidden shrink-0`} style={{ background: c, color: textOn(c) }}>{src ? <img loading="lazy" decoding="async" src={src} alt="" className="w-full h-full object-cover" /> : (nome?.[0] || "?").toUpperCase()}</span>;
   };
 
   const topComments = comments.filter(c => !c.parentId);
@@ -854,7 +854,7 @@ export default function CommunityPage() {
       {zoomSrc && (
         <div className="fixed inset-0 bg-navy/90 z-50 flex items-center justify-center p-4 cursor-zoom-out" onClick={() => setZoomSrc(null)} role="dialog" aria-label="Foto ingrandita">
           <button className="absolute top-4 right-4 text-white p-2" aria-label="Chiudi"><X className="w-7 h-7" /></button>
-          <img src={zoomSrc} alt="Foto ingrandita" className="max-w-full max-h-full rounded-xl" />
+          <img loading="lazy" decoding="async" src={zoomSrc} alt="Foto ingrandita" className="max-w-full max-h-full rounded-xl" />
         </div>
       )}
       {toast && <div role="status" className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-navy text-white px-5 py-3 rounded-full shadow-xl font-semibold text-sm toast">{toast}</div>}
