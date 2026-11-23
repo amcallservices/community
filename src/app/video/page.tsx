@@ -128,7 +128,7 @@ export default function Page() {
           <div className="flex items-center justify-between mb-3"><h2 className="font-extrabold text-lg">Nuovo video</h2><button onClick={() => setShowForm(false)} aria-label="Chiudi" className="p-2 rounded-full hover:bg-ivory2"><X className="w-5 h-5" /></button></div>
           <div className="grid md:grid-cols-[220px_1fr] gap-4">
             <div className="aspect-video rounded-2xl bg-ivory2 overflow-hidden grid place-items-center text-navy/50 text-sm text-center px-3">
-              {ytId ? <img src={thumb(ytId)} alt="Anteprima" className="w-full h-full object-cover" /> : "Incolla il link YouTube per vedere l'anteprima"}
+              {ytId ? <img loading="lazy" decoding="async" src={thumb(ytId)} alt="Anteprima" className="w-full h-full object-cover" /> : "Incolla il link YouTube per vedere l'anteprima"}
             </div>
             <div className="space-y-3">
               <input value={url} onChange={e => setUrl(e.target.value)} placeholder="Link YouTube (anche youtu.be o shorts)" className={inp} />
@@ -162,7 +162,7 @@ export default function Page() {
                   <iframe key={current.youtubeUrl} src={`https://www.youtube-nocookie.com/embed/${current.youtubeUrl}?autoplay=1&rel=0`} title={current.title} className="w-full h-full" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen />
                 ) : (
                   <button onClick={() => setPlaying(true)} aria-label={`Guarda: ${current.title}`} className="group absolute inset-0 w-full h-full">
-                    <img src={thumb(current.youtubeUrl)} alt="" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                    <img loading="lazy" decoding="async" src={thumb(current.youtubeUrl)} alt="" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
                     <span className="absolute inset-0 bg-gradient-to-t from-navy/70 to-transparent" />
                     <span className="absolute inset-0 grid place-items-center"><span className="w-20 h-20 rounded-full bg-brass text-navy grid place-items-center shadow-2xl group-hover:scale-110 transition"><Play className="w-9 h-9 fill-navy ml-1" /></span></span>
                   </button>

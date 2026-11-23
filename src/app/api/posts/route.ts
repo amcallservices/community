@@ -8,16 +8,21 @@ const CATEGORIES = ['generale', 'scrittura', 'kdp', 'copertine', 'marketing', 'r
 
 export async function GET() {
   try {
-    const posts = await prisma.post.findMany({
-      orderBy: [{ pinned: 'desc' }, { pinnedAt: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }],
-      take: 50,
-      include: {
-        author: { select: { id: true, nome: true, cognome: true, role: true, avatar: true, updatedAt: true } }
-      }
-    })
-    const me = await getSessionUser().catch(() => null)
-    const reacts = await prisma.like.findMany({ where: { postId: { in: posts.map(p => p.id) } }, select: { postId: true, userId: true, type: true } })
-    const polls = await pollsFor(posts.map(p => p.id), me?.id ?? null)
+    const [posts, me] = await Promise.all([
+      prisma.post.findMany({
+        orderBy: [{ pinned: 'desc' }, { pinnedAt: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }],
+        take: 50,
+        include: {
+          author: { select: { id: true, nome: true, cognome: true, role: true, avatar: true, updatedAt: true } }
+        }
+      }),
+      getSessionUser().catch(() => null),
+    ])
+    const ids = posts.map(p => p.id)
+    const [reacts, polls] = await Promise.all([
+      prisma.like.findMany({ where: { postId: { in: ids } }, select: { postId: true, userId: true, type: true } }),
+      pollsFor(ids, me?.id ?? null),
+    ])
     const transformed = posts.map(post => {
       const mine = reacts.filter(r => r.postId === post.id)
       const reactions: Record<string, number> = {}

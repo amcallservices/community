@@ -13,7 +13,7 @@ type Booking = { id: number; meetUrl?: string | null; title: string; durationMin
 const eur = (c: number) => (c / 100).toLocaleString("it-IT", { style: "currency", currency: "EUR", minimumFractionDigits: c % 100 ? 2 : 0 });
 const COLORS = ["#5b3df5", "#2dd4a7", "#ffc83d", "#ff6b6b", "#38bdf8", "#f472b6"];
 const Face = ({ p, size = 44 }: { p: { id: number; nome: string; avatar: string | null }; size?: number }) => p.avatar
-  ? <img src={p.avatar} alt="" className="rounded-full object-cover shrink-0" style={{ width: size, height: size }} />
+  ? <img loading="lazy" decoding="async" src={p.avatar} alt="" className="rounded-full object-cover shrink-0" style={{ width: size, height: size }} />
   : <span className="rounded-full grid place-items-center font-bold text-navy shrink-0" style={{ width: size, height: size, background: COLORS[p.id % COLORS.length] }}>{(p.nome?.[0] || "?").toUpperCase()}</span>;
 
 const STATUS: Record<string, { l: string; c: string }> = {
