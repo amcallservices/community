@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
-import { requireAdmin, getSessionUser } from '@/lib/auth'
+import { requireConsultant, getSessionUser } from '@/lib/auth'
 import { SITE_URL } from '@/lib/site'
 import { romeToUtc } from '@/lib/events'
 
@@ -20,7 +20,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const { user: admin, error: authError } = await requireAdmin()
+  const { user: admin, error: authError } = await requireConsultant()
   if (authError || !admin) return authError ?? NextResponse.json({ error: 'Accesso richiesto' }, { status: 401 })
   try {
     const body = await request.json()
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     const dateTime = time ? `${date} ${time}` : date
     
     const event = await prisma.event.create({
-      data: { title, date: dateTime, meetLink: meetLink || null, description: typeof description === 'string' && description.trim() ? description.trim().slice(0, 2000) : null }
+      data: { title, creatorId: admin.id, date: dateTime, meetLink: meetLink || null, description: typeof description === 'string' && description.trim() ? description.trim().slice(0, 2000) : null }
     })
     // Post automatico in community + notifica a tutti gli iscritti
     try {
@@ -49,11 +49,15 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const { error: authError } = await requireAdmin()
-  if (authError) return authError
+  const { user: me, error: authError } = await requireConsultant()
+  if (authError || !me) return authError ?? NextResponse.json({ error: 'Accesso richiesto' }, { status: 401 })
   try {
     const { searchParams } = new URL(request.url)
     const id = parseInt(searchParams.get('id') || '0')
+    if (me.role !== 'admin') {
+      const ev = await prisma.event.findUnique({ where: { id }, select: { creatorId: true } })
+      if (!ev || ev.creatorId !== me.id) return NextResponse.json({ error: 'Puoi eliminare solo gli eventi creati da te' }, { status: 403 })
+    }
     await prisma.eventRsvp.deleteMany({ where: { eventId: id } })
     await prisma.event.delete({ where: { id } })
     return NextResponse.json({ success: true })

@@ -145,6 +145,7 @@ model Event {
   type      String   @default("webinar")
   meetLink  String?
   description String?
+  creatorId Int?
   createdAt DateTime @default(now())
 }
 
