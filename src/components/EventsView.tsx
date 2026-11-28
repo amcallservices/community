@@ -32,8 +32,8 @@ export default function EventsView({ onlyId }: { onlyId?: number }) {
   const [loading, setLoading] = useState(true);
   const [showPast, setShowPast] = useState(false);
   const [toast, setToast] = useState("");
-  const isAdmin = user?.role === "admin" || user?.role === "sottoadmin";
-  const canDel = (ev: any) => user?.role === "admin" || (user?.role === "sottoadmin" && ev.creatorId === user?.id);
+  const isAdmin = user?.role === "admin" || user?.role === "sottoadmin" || user?.role === "promotore";
+  const canDel = (ev: any) => user?.role === "admin" || (isAdmin && ev.creatorId === user?.id);
   const say = (m: string) => { setToast(m); setTimeout(() => setToast(""), 2600); };
 
   const load = async () => {

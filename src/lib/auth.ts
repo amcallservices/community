@@ -100,6 +100,15 @@ export const isStaff = (role?: string | null) => role === 'admin' || role === 's
 // Chi può offrire consulenze a pagamento
 export const canConsult = (role?: string | null) => role === 'admin' || role === 'sottoadmin'
 
+// Chi può creare eventi (e cancellare i propri; l'admin tutti)
+export const canPromote = (role?: string | null) => role === 'admin' || role === 'sottoadmin' || role === 'promotore'
+export async function requirePromoter() {
+  const { user, error } = await requireUser()
+  if (error) return { user: null, error }
+  if (!canPromote(user!.role)) return { user: null, error: NextResponse.json({ error: 'Solo admin, sotto admin e promotori' }, { status: 403 }) }
+  return { user: user!, error: null }
+}
+
 // Admin o moderatore: può eliminare post/commenti e gestire le segnalazioni (non gli utenti).
 export async function requireStaff() {
   const { user, error } = await requireUser()

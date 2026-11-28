@@ -9,7 +9,7 @@ import ApiKeyCard from "@/components/ApiKeyCard";
 const PALETTE = ["#ffc83d", "#ff6b6b", "#2dd4a7", "#5b3df5", "#38bdf8", "#f472b6"];
 const colorFor = (id?: number) => PALETTE[Math.abs(id || 0) % PALETTE.length];
 const textOn = (c: string) => (c === "#5b3df5" || c === "#ff6b6b" ? "#fff" : "#1b1464");
-const ROLE: Record<string, string> = { admin: "Amministratore", sottoadmin: "Sotto admin", moderatore: "Moderatore", scrittore: "Autore", lettore: "Lettore" };
+const ROLE: Record<string, string> = { admin: "Amministratore", sottoadmin: "Sotto admin", moderatore: "Moderatore", promotore: "Promotore", scrittore: "Autore", lettore: "Lettore" };
 
 // Riduce la foto del profilo a 320 px: resta leggera e non serve l'archivio file
 function shrinkAvatar(file: File): Promise<string> {
@@ -139,10 +139,10 @@ export default function ProfileView({ id }: { id: number | string }) {
     try { await navigator.clipboard.writeText(d.link); say("Link copiato: valido 24 ore"); } catch {}
   };
 
-  const setRole = async (role: "sottoadmin" | "moderatore" | "scrittore") => {
+  const setRole = async (role: "sottoadmin" | "moderatore" | "promotore" | "scrittore") => {
     const r = await fetch("/api/users/role", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: u.id, role }) });
     const d = await r.json().catch(() => ({}));
-    if (r.ok) { say(role === "sottoadmin" ? "Ora \u00e8 sotto admin" : role === "moderatore" ? "Ora \u00e8 moderatore" : "Ruolo rimosso"); load(); } else say(d.error || "Errore");
+    if (r.ok) { say(role === "sottoadmin" ? "Ora \u00e8 sotto admin" : role === "moderatore" ? "Ora \u00e8 moderatore" : role === "promotore" ? "Ora \u00e8 promotore" : "Ruolo rimosso"); load(); } else say(d.error || "Errore");
   };
 
   const suspend = async (hours: 0 | 24 | 48) => {
@@ -190,6 +190,7 @@ export default function ProfileView({ id }: { id: number | string }) {
           <span className="absolute -top-6 right-10 w-28 h-28 rounded-full opacity-90" style={{ background: "#ffc83d" }} />
           <span className="absolute top-14 right-36 w-10 h-10 rounded-full" style={{ background: "#ff6b6b" }} />
           <span className="absolute bottom-4 right-6 w-16 h-16 rounded-2xl rotate-12" style={{ background: "#2dd4a7" }} />
+          {u.role === "promotore" && <span className="absolute top-4 left-4 inline-flex items-center gap-1.5 bg-brass text-navy text-xs font-bold px-3 py-1.5 rounded-full"><ShieldCheck className="w-4 h-4" />Promotore</span>}
           {u.role === "moderatore" && <span className="absolute top-4 left-4 inline-flex items-center gap-1.5 bg-mint text-navy text-xs font-bold px-3 py-1.5 rounded-full"><ShieldCheck className="w-4 h-4" />Moderatore</span>}
           {u.role === "sottoadmin" && <span className="absolute top-4 left-4 inline-flex items-center gap-1.5 bg-coral text-navy text-xs font-bold px-3 py-1.5 rounded-full"><ShieldCheck className="w-4 h-4" />Sotto admin</span>}
           {isAdminUser && <span className="absolute top-4 left-4 inline-flex items-center gap-1.5 bg-brass text-navy text-xs font-bold px-3 py-1.5 rounded-full"><ShieldCheck className="w-4 h-4" />Amministratore</span>}
@@ -294,7 +295,8 @@ export default function ProfileView({ id }: { id: number | string }) {
             <button onClick={makeLink} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-ivory2 font-semibold hover:bg-line"><KeyRound className="w-4 h-4" />Link recupero password</button>
             {!u.banned && u.role !== "sottoadmin" && <button onClick={() => setRole("sottoadmin")} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold bg-coral/30 hover:bg-coral/50"><ShieldCheck className="w-4 h-4" />Nomina sotto admin</button>}
             {!u.banned && u.role !== "moderatore" && <button onClick={() => setRole("moderatore")} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold bg-mint/30 hover:bg-mint/50"><ShieldCheck className="w-4 h-4" />{u.role === "sottoadmin" ? "Solo moderatore" : "Nomina moderatore"}</button>}
-            {!u.banned && (u.role === "moderatore" || u.role === "sottoadmin") && <button onClick={() => setRole("scrittore")} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold bg-ivory2 hover:bg-line"><ShieldCheck className="w-4 h-4" />Rimuovi ruolo</button>}
+            {!u.banned && u.role !== "promotore" && <button onClick={() => setRole("promotore")} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold bg-brass/30 hover:bg-brass/50"><ShieldCheck className="w-4 h-4" />Nomina promotore</button>}
+            {!u.banned && (u.role === "moderatore" || u.role === "sottoadmin" || u.role === "promotore") && <button onClick={() => setRole("scrittore")} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold bg-ivory2 hover:bg-line"><ShieldCheck className="w-4 h-4" />Rimuovi ruolo</button>}
             {!u.banned && (u.suspendedUntil
               ? <button onClick={() => suspend(0)} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold bg-mint/30 hover:bg-mint/50"><Check className="w-4 h-4" />Revoca sospensione</button>
               : <>
