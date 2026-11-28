@@ -43,6 +43,25 @@ const QUICK = [
 ];
 
 
+const PACCHETTI: [string, string, string][] = [["30", "lampo", "30 minuti"], ["60", "completa", "60 minuti"], ["90", "approfondita", "90 minuti"]];
+
+// Prezzi presi in tempo reale dalle consulenze attive: se li cambi, la home si aggiorna da sola.
+function ConsulenzePrezzi() {
+  const [prezzi, setPrezzi] = useState<Record<string, number> | null>(null);
+  useEffect(() => {
+    fetch("/api/consulenza/prezzi").then(r => r.ok ? r.json() : {}).then(setPrezzi).catch(() => setPrezzi({}));
+  }, []);
+  const eur = (c: number) => `${(c / 100).toLocaleString("it-IT", { minimumFractionDigits: c % 100 ? 2 : 0 })} €`;
+  return (
+    <ul className="space-y-3 text-lg font-bold">
+      {PACCHETTI.map(([k, nome, dur]) => {
+        if (prezzi && prezzi[k] === undefined) return null;
+        return <li key={k} className="bg-white/10 rounded-2xl p-4 min-h-[3.5rem]">Consulenza {nome}: {dur}{prezzi && prezzi[k] !== undefined ? `, ${eur(prezzi[k])}` : ""}</li>;
+      })}
+    </ul>
+  );
+}
+
 export default function Home() {
   const [user, setUser] = useState<any>(null);
   const [posts, setPosts] = useState<PostPreview[]>([]);
@@ -196,11 +215,7 @@ export default function Home() {
               <p className="mt-4 text-ivory/85 max-w-xl">Parla con chi pubblica libri ogni giorno: copertina per libro cartaceo ed ebook, stesura e struttura, vendite in organico su Amazon, scelta della nicchia e pubblicazione su Amazon KDP, Liberamente.site e altri store.</p>
               <Link href="/consulenza" className={`${btnYellow} mt-6`}>Scopri le consulenze<ArrowRight className="w-5 h-5" /></Link>
             </div>
-            <ul className="space-y-3 text-lg font-bold">
-              <li className="bg-white/10 rounded-2xl p-4">Consulenza lampo: 30 minuti, 200 €</li>
-              <li className="bg-white/10 rounded-2xl p-4">Consulenza completa: 60 minuti, 350 €</li>
-              <li className="bg-white/10 rounded-2xl p-4">Consulenza approfondita: 90 minuti, 500 €</li>
-            </ul>
+            <ConsulenzePrezzi />
           </div>
         </Reveal>
       </section>
