@@ -32,7 +32,8 @@ export default function EventsView({ onlyId }: { onlyId?: number }) {
   const [loading, setLoading] = useState(true);
   const [showPast, setShowPast] = useState(false);
   const [toast, setToast] = useState("");
-  const isAdmin = user?.role === "admin";
+  const isAdmin = user?.role === "admin" || user?.role === "sottoadmin";
+  const canDel = (ev: any) => user?.role === "admin" || (user?.role === "sottoadmin" && ev.creatorId === user?.id);
   const say = (m: string) => { setToast(m); setTimeout(() => setToast(""), 2600); };
 
   const load = async () => {
@@ -116,7 +117,7 @@ export default function EventsView({ onlyId }: { onlyId?: number }) {
                 </button>
               )}
               {ev.meetLink && !w.past && <a href={ev.meetLink} target="_blank" rel="noopener noreferrer" className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold border-2 transition ${w.live ? "bg-brass border-brass text-navy hover:brightness-105" : "bg-white border-line hover:border-wine"}`}><Video className="w-4 h-4" />Entra su Google Meet</a>}
-              {isAdmin && <button onClick={() => deleteEvent(ev.id)} aria-label="Elimina evento" className="p-2.5 rounded-xl text-red-600 bg-red-50 hover:bg-red-100 ml-auto"><Trash2 className="w-4 h-4" /></button>}
+              {canDel(ev) && <button onClick={() => deleteEvent(ev.id)} aria-label="Elimina evento" className="p-2.5 rounded-xl text-red-600 bg-red-50 hover:bg-red-100 ml-auto"><Trash2 className="w-4 h-4" /></button>}
             </div>
             <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-line">
               <span className="text-sm font-semibold text-navy/60 flex items-center gap-1.5 mr-1"><Share2 className="w-4 h-4" />Invita un amico</span>
