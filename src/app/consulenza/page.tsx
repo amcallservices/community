@@ -246,7 +246,7 @@ export default function ConsulenzaPage() {
               <div key={t.k} className={`${i % 3 === 0 ? "bg-ivory2" : i % 3 === 1 ? "bg-navy text-white" : "bg-brass/40"} rounded-2xl p-4 flex flex-col`}>
                 <h3 className="font-bold">{t.title}</h3>
                 <p className="mt-1 text-sm opacity-85 flex-1">{t.description}</p>
-                <div className="mt-3 flex items-center justify-between gap-3 text-sm font-semibold"><span className="flex items-center gap-1.5"><Clock className="w-4 h-4" />circa {t.durationMin} minuti · {eur(t.price * 100)}</span>{canOffer && <button onClick={() => startForm(t)} className="underline underline-offset-4">Offri questa</button>}</div>
+                <div className="mt-3 flex items-center justify-between gap-3 text-sm font-semibold"><span className="flex items-center gap-1.5"><Clock className="w-4 h-4" />circa {t.durationMin} minuti</span>{canOffer && <button onClick={() => startForm(t)} className="underline underline-offset-4">Offri questa</button>}</div>
               </div>
             ))}
           </div>
