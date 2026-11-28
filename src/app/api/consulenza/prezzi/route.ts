@@ -6,11 +6,12 @@ import prisma from '@/lib/db'
 export async function GET() {
   try {
     const offers = await prisma.consulenzaOffer.findMany({
-      where: { active: true, durationMin: { in: [30, 60, 90] }, priceCents: { gte: 500 }, user: { banned: false } },
-      select: { durationMin: true, priceCents: true },
+      where: { active: true, durationMin: { in: [30, 60, 90] }, priceCents: { gte: 500 } },
+      select: { durationMin: true, priceCents: true, userId: true },
     })
+    const ok = new Set((await prisma.user.findMany({ where: { id: { in: [...new Set(offers.map(o => o.userId))] }, banned: false }, select: { id: true } })).map(u => u.id))
     const out: Record<string, number> = {}
-    for (const o of offers) {
+    for (const o of offers.filter(o => ok.has(o.userId))) {
       const k = String(o.durationMin)
       if (out[k] === undefined || o.priceCents < out[k]) out[k] = o.priceCents
     }
