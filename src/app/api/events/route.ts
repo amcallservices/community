@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
-import { requireConsultant, getSessionUser } from '@/lib/auth'
+import { requirePromoter, getSessionUser } from '@/lib/auth'
 import { SITE_URL } from '@/lib/site'
 import { romeToUtc } from '@/lib/events'
 
@@ -20,7 +20,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const { user: admin, error: authError } = await requireConsultant()
+  const { user: admin, error: authError } = await requirePromoter()
   if (authError || !admin) return authError ?? NextResponse.json({ error: 'Accesso richiesto' }, { status: 401 })
   try {
     const body = await request.json()
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const { user: me, error: authError } = await requireConsultant()
+  const { user: me, error: authError } = await requirePromoter()
   if (authError || !me) return authError ?? NextResponse.json({ error: 'Accesso richiesto' }, { status: 401 })
   try {
     const { searchParams } = new URL(request.url)
