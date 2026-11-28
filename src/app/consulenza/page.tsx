@@ -34,6 +34,17 @@ export default function ConsulenzaPage() {
   const [buying, setBuying] = useState<number | null>(null);
   const [open, setOpen] = useState<number | null>(null);
   const [banner, setBanner] = useState("");
+  const [hl, setHl] = useState<number | null>(null);
+  const offerUrl = (o: Offer) => `${location.origin}/consulenza#offerta-${o.id}`;
+  const waLink = (o: Offer) => `https://wa.me/?text=${encodeURIComponent(`${o.title} \u2014 ${o.durationMin} minuti, ${eur(o.priceCents)}\n${offerUrl(o)}`)}`;
+  const copyLink = async (o: Offer) => { try { await navigator.clipboard.writeText(offerUrl(o)); say("Link copiato"); } catch { say("Copia non riuscita"); } };
+  useEffect(() => {
+    if (!offers) return;
+    const m = location.hash.match(/^#offerta-(\d+)$/);
+    if (!m) return;
+    const id = Number(m[1]);
+    setTimeout(() => { document.getElementById(`offerta-${id}`)?.scrollIntoView({ block: "center", behavior: "smooth" }); setHl(id); setTimeout(() => setHl(null), 3500); }, 300);
+  }, [offers]);
   const say = (m: string) => { setToast(m); setTimeout(() => setToast(""), 3200); };
 
   // form offerta
@@ -206,7 +217,7 @@ export default function ConsulenzaPage() {
               {[...shown].sort((a, b) => a.priceCents - b.priceCents).map((o, i) => {
                 const f = FIELDS[i % FIELDS.length];
                 return (
-                  <article key={o.id} className={`${f.bg} ${f.fg} rounded-3xl p-5 flex flex-col rise`}>
+                  <article key={o.id} id={`offerta-${o.id}`} className={`${f.bg} ${f.fg} rounded-3xl p-5 flex flex-col rise scroll-mt-24 ${hl === o.id ? "ring-4 ring-brass" : ""}`}>
                     <div className="text-xs font-bold opacity-80">{categoryLabel(o.category)} · {o.durationMin} minuti</div>
                     <h3 className="text-lg font-extrabold leading-snug mt-2">{o.title}</h3>
                     <div className="flex-1"><p className={`mt-2 text-sm leading-relaxed whitespace-pre-wrap ${open === o.id ? "" : "line-clamp-6"}`}>{o.description}</p>{o.description.length > 280 && <button onClick={() => setOpen(open === o.id ? null : o.id)} className="mt-2 text-sm font-bold underline underline-offset-4">{open === o.id ? "Mostra meno" : "Leggi tutto"}</button>}</div>
@@ -215,6 +226,10 @@ export default function ConsulenzaPage() {
                       <div className="text-2xl font-extrabold leading-none">{eur(o.priceCents)}</div>
                       {o.mine ? <span className="text-sm font-bold opacity-80">La tua offerta</span>
                         : <button onClick={() => book(o)} disabled={buying === o.id} className={`${f.btn} px-5 py-2.5 rounded-xl font-semibold hover:brightness-110 active:scale-95 transition disabled:opacity-60`}>{buying === o.id ? "Apro…" : "Prenota"}</button>}
+                    </div>
+                    <div className="mt-3 flex items-center gap-3 text-sm font-semibold">
+                      <a href={waLink(o)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 underline underline-offset-4 hover:opacity-80"><MessageCircle className="w-4 h-4" />Condividi su WhatsApp</a>
+                      <button onClick={() => copyLink(o)} className="underline underline-offset-4 hover:opacity-80">Copia link</button>
                     </div>
                   </article>
                 );
